@@ -151,6 +151,12 @@ function estimateDataSize(data: any): number {
  * This replaces both the debug-deps.ts and use-debug.ts global objects
  */
 function createUnifiedDebugManager(): UnifiedSurfaceDebug {
+  // Memoization for expensive getters to prevent performance issues
+  let memoizedState: any = null;
+  let memoizedLogs: DebugLogEntry[] = [];
+  let lastStateChange = 0;
+  let lastLogsChange = 0;
+
   const manager: UnifiedSurfaceDebug = {
     // === CORE LOGGING FUNCTIONS ===
     log: (
@@ -301,7 +307,9 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
 
     toggle: (point: DebugPoint): void => {
       const globalState = getGlobalDebugState();
-      if (globalState.enabled.has(point)) {
+      const isCurrentlyEnabled = globalState.enabled.has(point);
+
+      if (isCurrentlyEnabled) {
         manager.disable(point);
       } else {
         manager.enable(point);
@@ -337,7 +345,18 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
     // === LOGS MANAGEMENT ===
     getLogs: (): DebugLogEntry[] => {
       const globalState = getGlobalDebugState();
-      return [...globalState.logs]; // Return a copy to prevent mutations
+      const currentTime = Date.now();
+
+      // Return memoized result if logs haven't changed (within 16ms for ~60fps)
+      if (memoizedLogs && currentTime - lastLogsChange < 16) {
+        return memoizedLogs;
+      }
+
+      // Create new array copy only when needed
+      memoizedLogs = [...globalState.logs];
+      lastLogsChange = currentTime;
+
+      return memoizedLogs;
     },
 
     clearLogs: (): void => {
@@ -350,53 +369,62 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
 
     getDependencyStatus: () => {
       const state = getGlobalDebugState();
-      return (
-        state.dependencies || {
-          enabled: false,
-          level: "normal" as DependencyLogLevel,
-          filter: "all" as DependencyFilter,
-          allowedHooks: null,
-          excludedHooks: [],
-          throttleMs: 100,
-        }
-      );
+      return {
+        enabled: state.enabled.has("dependencies"), // Use unified debug point system
+        level: state.dependencies.level,
+        filter: state.dependencies.filter,
+        allowedHooks: state.dependencies.allowedHooks,
+        excludedHooks: state.dependencies.excludedHooks,
+        throttleMs: state.dependencies.throttleMs,
+      };
     },
 
     // === CURRENT STATE GETTER ===
     get state() {
       const globalState = getGlobalDebugState();
-      return {
+      const currentTime = Date.now();
+
+      // Return memoized result if state hasn't changed (within 16ms for ~60fps)
+      if (memoizedState && currentTime - lastStateChange < 16) {
+        return memoizedState;
+      }
+
+      // Create new state object only when needed
+      memoizedState = {
         enabled: Array.from(globalState.enabled),
         console: globalState.console,
         visual: globalState.visual,
         performance: globalState.performance,
       };
+      lastStateChange = currentTime;
+
+      return memoizedState;
     },
 
     // === CONVENIENCE METHODS (from debug-deps.ts) ===
     deps: {
       off: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = false;
+        state.enabled.delete("dependencies"); // Use unified debug point system
         console.log("🔇 Dependency tracking disabled");
         notifySubscribers();
       },
       on: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         console.log("🔊 Dependency tracking enabled");
         notifySubscribers();
       },
       quiet: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.level = "quiet";
         console.log("🔇 Dependency tracking: quiet mode (critical only)");
         notifySubscribers();
       },
       initAware: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.level = "normal"; // Use valid DependencyLogLevel
         // TODO: Add custom initialization awareness logic if needed
         console.log(
@@ -406,42 +434,42 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
       },
       normal: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.level = "normal";
         console.log("🔊 Dependency tracking: normal mode");
         notifySubscribers();
       },
       verbose: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.level = "verbose";
         console.log("📢 Dependency tracking: verbose mode");
         notifySubscribers();
       },
       debug: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.level = "debug";
         console.log("🐛 Dependency tracking: debug mode (maximum detail)");
         notifySubscribers();
       },
       functionsOnly: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.filter = "functions-only";
-        console.log("🔧 Dependency tracking: functions only");
+        console.log("📝 Dependency tracking: functions only");
         notifySubscribers();
       },
       objectsOnly: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.filter = "objects-only";
-        console.log("📦 Dependency tracking: objects only");
+        console.log("🔗 Dependency tracking: objects only");
         notifySubscribers();
       },
       unstableOnly: () => {
         const state = getGlobalDebugState();
-        state.dependencies.enabled = true;
+        state.enabled.add("dependencies"); // Use unified debug point system
         state.dependencies.filter = "unstable-only";
         console.log("⚠️ Dependency tracking: unstable only");
         notifySubscribers();

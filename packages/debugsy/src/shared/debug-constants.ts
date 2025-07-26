@@ -41,8 +41,9 @@ export type DependencyFilter =
   | "stable-only"
   | "loop-risks";
 
+// Dependency tracking configuration
 export interface DependencyTrackingConfig {
-  enabled: boolean;
+  // REMOVED: enabled - now derived from debug point system (globalState.enabled.has("dependencies"))
   level: DependencyLogLevel;
   filter: DependencyFilter;
   allowedHooks: string[] | null;

@@ -15,7 +15,7 @@ let globalDebugState: DebugState = {
   timers: new Map(),
   visualMessages: [],
   dependencies: {
-    enabled: true,
+    // REMOVED: enabled - now derived from debug point system
     level: "normal" as DependencyLogLevel,
     filter: "all" as DependencyFilter,
     allowedHooks: null,
@@ -125,64 +125,93 @@ export function saveDebugConfig(): void {
 }
 
 /**
+ * Debounced version of saveDebugConfig to prevent UI blocking
+ * Batches multiple rapid changes into a single localStorage write
+ */
+let saveTimeout: NodeJS.Timeout | null = null;
+const SAVE_DEBOUNCE_MS = 100; // 100ms delay for batching
+
+function debouncedSaveDebugConfig(): void {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+
+  saveTimeout = setTimeout(() => {
+    saveDebugConfig();
+    saveTimeout = null;
+  }, SAVE_DEBOUNCE_MS);
+}
+
+/**
  * Debug control functions for global state
  */
 export const debugStateControls = {
   enable: (point: DebugPoint) => {
     globalDebugState.enabled.add(point);
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   disable: (point: DebugPoint) => {
     globalDebugState.enabled.delete(point);
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   enableAll: () => {
     globalDebugState.enabled.add("all");
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   disableAll: () => {
     globalDebugState.enabled.clear();
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   setConsoleEnabled: (enabled: boolean) => {
     globalDebugState.console = enabled;
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   setVisualEnabled: (enabled: boolean) => {
     globalDebugState.visual = enabled;
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   setPerformanceEnabled: (enabled: boolean) => {
     globalDebugState.performance = enabled;
-    saveDebugConfig();
+    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
   },
   clearLogs: () => {
     globalDebugState.logs = [];
+    // No need to save config for log clearing - it's transient state
   },
 };
 
 /**
  * Dependency tracking controls for global state
+ * UNIFIED: Now uses debug point system instead of separate enabled state
  */
 export const dependencyStateControls = {
   setEnabled: (enabled: boolean) => {
-    globalDebugState.dependencies.enabled = enabled;
+    // Use unified debug point system instead of separate enabled state
+    if (enabled) {
+      globalDebugState.enabled.add("dependencies");
+    } else {
+      globalDebugState.enabled.delete("dependencies");
+    }
+    // Use debounced save like other debug controls
+    debouncedSaveDebugConfig();
   },
   setLevel: (level: DependencyLogLevel) => {
     globalDebugState.dependencies.level = level;
+    // No need to save level changes - they're runtime configuration
   },
   setFilter: (filter: DependencyFilter) => {
     globalDebugState.dependencies.filter = filter;
+    // No need to save filter changes - they're runtime configuration
   },
-  setAllowedHooks: (hooks: string[] | null) => {
-    globalDebugState.dependencies.allowedHooks = hooks;
+  // Getters that derive from unified debug point system
+  getEnabled: (): boolean => {
+    return globalDebugState.enabled.has("dependencies");
   },
-  setExcludedHooks: (hooks: string[]) => {
-    globalDebugState.dependencies.excludedHooks = hooks;
+  getLevel: (): DependencyLogLevel => {
+    return globalDebugState.dependencies.level;
   },
-  resetFilters: () => {
-    globalDebugState.dependencies.allowedHooks = null;
-    globalDebugState.dependencies.excludedHooks = [];
+  getFilter: (): DependencyFilter => {
+    return globalDebugState.dependencies.filter;
   },
 };
 

@@ -101,7 +101,7 @@ export const useDebug = (point?: DebugPoint): UnifiedSurfaceDebug => {
 
 /**
  * Unified dependency state hook - replaces the old useDependencyState from debug-deps.ts
- * Now properly integrated with the main debug system
+ * UNIFIED: Now uses debug point system for enabled state
  */
 export const useDependencyState = () => {
   // Subscribe to debug state changes
@@ -136,20 +136,17 @@ export const useDependencyState = () => {
   }, []);
 
   return {
-    // State
-    enabled: globalDebugState.dependencies.enabled,
-    filter: globalDebugState.dependencies.filter,
-    logLevel: globalDebugState.dependencies.level,
+    // State - now unified through debug point system
+    enabled: dependencyStateControls.getEnabled(),
+    logLevel: dependencyStateControls.getLevel(),
+    filter: dependencyStateControls.getFilter(),
+    logs: getDependencyLogs(),
 
-    // Control functions
-    setFilter,
-    setLogLevel,
+    // Controls - same interface, unified implementation
     enable,
     disable,
-
-    // Data access
-    getDependencyLogs,
-    logs: getDependencyLogs(),
+    setLogLevel,
+    setFilter,
   };
 };
 

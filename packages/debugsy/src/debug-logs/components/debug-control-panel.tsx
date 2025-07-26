@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useDebug } from "../hooks/use-debug";
 import { DebugDependencyControls } from "./debug-dependency-controls";
 import { DebugDisplayPanel } from "./debug-display-panel";
@@ -52,9 +52,24 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   showDependencyControls = true,
 }) => {
   const debug = useDebug();
-  const enabledPoints = debug.state.enabled;
-  const logs = debug.getLogs();
-  const clearLogs = debug.clearLogs;
+
+  // PERFORMANCE FIX: Memoize expensive operations to prevent cascade re-renders
+  const expensiveState = useMemo(
+    () => ({
+      enabledPoints: debug.state.enabled,
+      logs: debug.getLogs(),
+    }),
+    [debug.state.enabled, debug.getLogs]
+  );
+
+  // Extract only the functions DebugPointButtons needs (stable references)
+  const debugPointProps = useMemo(
+    () => ({
+      isEnabled: debug.isEnabled,
+      onToggle: debug.toggle,
+    }),
+    [debug.isEnabled, debug.toggle]
+  );
 
   // Don't render if not visible
   if (!isVisible) {
@@ -66,11 +81,11 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
       {/* Main control panel with embedded logs */}
       <div className="bg-white/90 backdrop-blur border-t border-gray-200 shadow-sm">
         <div className="flex items-start gap-4 px-4 py-1">
-          {/* Debug Points */}
+          {/* Debug Points - Optimized with stable props */}
           <DebugPointButtons
             debugPoints={DEBUG_POINTS}
-            isEnabled={debug.isEnabled}
-            onToggle={debug.toggle}
+            isEnabled={debugPointProps.isEnabled}
+            onToggle={debugPointProps.onToggle}
           />
 
           {/* Dependency Controls */}
@@ -78,8 +93,8 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
 
           {/* Display Panel */}
           <DebugDisplayPanel
-            logs={logs}
-            onClearLogs={clearLogs}
+            logs={expensiveState.logs}
+            onClearLogs={debug.clearLogs}
             onClose={onClose}
             showExternalPanel={showExternalPanel}
             onExternalPanelToggle={onExternalPanelToggle}
