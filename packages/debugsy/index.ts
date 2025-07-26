@@ -27,6 +27,12 @@ export {
   useDependencyState,
 } from "./src/hooks";
 
+// Unified debug system exports
+export {
+  initializeUnifiedDebugSystem,
+  type UnifiedSurfaceDebug,
+} from "./src/shared/global-debug-manager";
+
 // Type exports
 export type {
   DebugPoint,
