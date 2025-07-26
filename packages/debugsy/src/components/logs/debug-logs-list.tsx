@@ -70,27 +70,142 @@ const MemoizedLogEntry: React.FC<{
 MemoizedLogEntry.displayName = "MemoizedLogEntry";
 
 /**
- * Simple log container that renders all logs without virtualization complexity
- * Fixes the height issue while maintaining proper scrolling behavior
+ * Virtualized log container that only renders visible logs for performance
+ * Solves browser freezing when logs > 50 by limiting DOM elements
  */
-const LogContainer: React.FC<{
+const VirtualizedLogContainer: React.FC<{
   logs: DebugLogEntry[];
-}> = React.memo(({ logs }) => {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}> = React.memo(({ logs, containerRef }) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(600);
+
+  const itemHeight = 28; // Approximate height per log entry
+
+  // Update container height and track scroll position
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+
+    const updateHeight = () => {
+      if (container) {
+        setContainerHeight(container.clientHeight);
+      }
+    };
+
+    const handleScroll = () => {
+      if (container) {
+        setScrollTop(container.scrollTop);
+      }
+    };
+
+    updateHeight();
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [containerRef]);
+
+  // Calculate visible range with 5x rendering area (2 up, 1 visible, 2 down)
+  const visibleRange = useMemo(() => {
+    const visibleItemCount = Math.ceil(containerHeight / itemHeight);
+    const visibleStartIndex = Math.floor(scrollTop / itemHeight);
+    const visibleEndIndex = visibleStartIndex + visibleItemCount - 1;
+
+    // Calculate 5x rendering area with smart boundary handling
+    const totalRenderCount = visibleItemCount * 5;
+    const sectionSize = visibleItemCount;
+
+    let renderStartIndex: number;
+    let renderEndIndex: number;
+
+    // Boundary handling
+    if (visibleStartIndex < sectionSize * 2) {
+      // Upper boundary: 1 visible + 4 down
+      renderStartIndex = 0;
+      renderEndIndex = Math.min(logs.length - 1, totalRenderCount - 1);
+    } else if (visibleEndIndex > logs.length - 1 - sectionSize * 2) {
+      // Lower boundary: 4 up + 1 visible
+      renderStartIndex = Math.max(0, logs.length - totalRenderCount);
+      renderEndIndex = logs.length - 1;
+    } else {
+      // Normal case: 2 up + 1 visible + 2 down
+      renderStartIndex = visibleStartIndex - sectionSize * 2;
+      renderEndIndex = Math.min(
+        logs.length - 1,
+        visibleEndIndex + sectionSize * 2
+      );
+    }
+
+    return {
+      startIndex: renderStartIndex,
+      endIndex: renderEndIndex,
+      visibleStartIndex,
+      visibleEndIndex,
+    };
+  }, [scrollTop, containerHeight, logs.length, itemHeight]);
+
+  // Only use virtualization for large lists to avoid unnecessary complexity
+  if (logs.length <= 50) {
+    return (
+      <>
+        {logs.map((log, index) => (
+          <MemoizedLogEntry
+            key={`${log.timestamp}-${index}`}
+            log={log}
+            index={index}
+            uniqueKey={`${log.timestamp}-${log.point}-${index}`}
+          />
+        ))}
+      </>
+    );
+  }
+
+  // Get logs to render (5x visible area: 2 up + 1 visible + 2 down)
+  const logsToRender = logs.slice(
+    visibleRange.startIndex,
+    visibleRange.endIndex + 1
+  );
+
   return (
     <>
-      {logs.map((log, index) => (
-        <MemoizedLogEntry
-          key={`${log.timestamp}-${index}`}
-          log={log}
-          index={index}
-          uniqueKey={`${log.timestamp}-${log.point}-${index}`}
+      {/* Spacer for items before render range */}
+      {visibleRange.startIndex > 0 && (
+        <div style={{ height: visibleRange.startIndex * itemHeight }} />
+      )}
+
+      {/* Rendered items (5x visible area with smart boundaries) */}
+      {logsToRender.map((log, relativeIndex) => {
+        const actualIndex = visibleRange.startIndex + relativeIndex;
+        return (
+          <MemoizedLogEntry
+            key={`${log.timestamp}-${actualIndex}`}
+            log={log}
+            index={actualIndex}
+            uniqueKey={`${log.timestamp}-${log.point}-${actualIndex}`}
+          />
+        );
+      })}
+
+      {/* Spacer for items after render range */}
+      {visibleRange.endIndex < logs.length - 1 && (
+        <div
+          style={{
+            height: (logs.length - 1 - visibleRange.endIndex) * itemHeight,
+          }}
         />
-      ))}
+      )}
     </>
   );
 });
 
-LogContainer.displayName = "LogContainer";
+VirtualizedLogContainer.displayName = "VirtualizedLogContainer";
 
 /**
  * Debug Logs List - Displays the scrollable list of debug log entries
@@ -341,9 +456,9 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
         tabIndex={0}
         style={{
           flex: 1,
-          overflowY: "auto", // Natural scrolling behavior restored
+          overflowY: "auto",
           padding: "4px 8px",
-          outline: "none", // Remove focus outline
+          outline: "none",
         }}
       >
         {truncationInfo.isLogsTruncated && (
@@ -375,8 +490,11 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
           </div>
         ) : (
           <>
-            {/* Simple log container that allows natural scrolling */}
-            <LogContainer logs={reversedLogs} />
+            {/* Virtualized container that only renders visible logs */}
+            <VirtualizedLogContainer
+              logs={reversedLogs}
+              containerRef={logsContainerRef}
+            />
 
             {truncationInfo.isLogsTruncated && (
               <div

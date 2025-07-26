@@ -12,7 +12,7 @@
  * Rendering configuration constants for debug logs
  */
 export const LOG_RENDERING_CONFIG = {
-  MAX_RENDERED_LOGS: 400, // Maximum logs to render for performance
+  MAX_RENDERED_LOGS: 400, // Higher limit supported by virtualization
   COPY_PARTIAL_COUNT: 200, // Number of logs to copy on first click
 } as const;
 
