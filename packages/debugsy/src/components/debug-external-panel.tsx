@@ -231,7 +231,7 @@ export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
             <DebugPanelHeader onClear={handleClearClick} onClose={onClose} />
 
             {/* Logs Content */}
-            <DebugLogsList logs={logs} />
+            <DebugLogsList logs={logs} onClearLogs={onClearLogs} />
           </div>
 
           {/* Right Panel - Stats & Controls */}

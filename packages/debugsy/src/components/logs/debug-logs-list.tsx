@@ -40,6 +40,7 @@ import {
 
 export interface DebugLogsListProps {
   logs: DebugLogEntry[];
+  onClearLogs?: () => void;
 }
 
 /**
@@ -72,11 +73,17 @@ MemoizedLogEntry.displayName = "MemoizedLogEntry";
 /**
  * Virtualized log container that only renders visible logs for performance
  * Solves browser freezing when logs > 50 by limiting DOM elements
+ * Enhanced with scroll following detection
  */
 const VirtualizedLogContainer: React.FC<{
   logs: DebugLogEntry[];
   containerRef: React.RefObject<HTMLDivElement | null>;
-}> = React.memo(({ logs, containerRef }) => {
+  onScrollFollowing?: (
+    scrollTop: number,
+    containerHeight: number,
+    contentHeight: number
+  ) => void;
+}> = React.memo(({ logs, containerRef, onScrollFollowing }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(600);
 
@@ -96,7 +103,18 @@ const VirtualizedLogContainer: React.FC<{
 
     const handleScroll = () => {
       if (container) {
-        setScrollTop(container.scrollTop);
+        const newScrollTop = container.scrollTop;
+        setScrollTop(newScrollTop);
+
+        // Notify parent about scroll position for following logic
+        if (onScrollFollowing) {
+          const contentHeight = container.scrollHeight;
+          onScrollFollowing(
+            newScrollTop,
+            container.clientHeight,
+            contentHeight
+          );
+        }
       }
     };
 
@@ -110,7 +128,7 @@ const VirtualizedLogContainer: React.FC<{
       resizeObserver.disconnect();
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [containerRef]);
+  }, [containerRef, onScrollFollowing, logs.length, itemHeight]);
 
   // Calculate visible range with 5x rendering area (2 up, 1 visible, 2 down)
   const visibleRange = useMemo(() => {
@@ -244,28 +262,86 @@ VirtualizedLogContainer.displayName = "VirtualizedLogContainer";
  */
 // Timing constants moved to ../config/copy-config.ts for centralized configuration
 
-export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
+export const DebugLogsList: React.FC<DebugLogsListProps> = ({
+  logs,
+  onClearLogs,
+}) => {
   const [copyState, setCopyState] = useState<CopyState>(0);
   const [isPaused, setIsPaused] = useState(false);
   const [pausedLogs, setPausedLogs] = useState<DebugLogEntry[]>([]);
+  const [isFollowing, setIsFollowing] = useState(true);
+  const [snapshotLogs, setSnapshotLogs] = useState<DebugLogEntry[]>([]);
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
   const stateResetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Memoize active logs to prevent unnecessary recalculations
   const activeLogs = useMemo(() => {
-    return isPaused ? pausedLogs : logs;
-  }, [isPaused, pausedLogs, logs]);
+    if (isPaused) return pausedLogs;
+    if (!isFollowing) return snapshotLogs;
+    return logs;
+  }, [isPaused, pausedLogs, isFollowing, snapshotLogs, logs]);
+
+  // Memoize truncation info based on the ORIGINAL logs, not activeLogs
+  const truncationInfo = useMemo(() => {
+    return getLogsTruncationInfo(logs.length); // Always use full logs array
+  }, [logs.length]); // Based on full logs, not activeLogs
 
   // Memoize prepared logs for rendering to prevent repeated processing
   const reversedLogs = useMemo(() => {
     return prepareLogsForRendering(activeLogs);
   }, [activeLogs]);
 
-  // Memoize truncation info
-  const truncationInfo = useMemo(() => {
-    return getLogsTruncationInfo(activeLogs.length);
-  }, [activeLogs.length]);
+  // Handle scroll following logic
+  const handleScrollFollowing = useCallback(
+    (scrollTop: number, containerHeight: number, contentHeight: number) => {
+      if (isPaused) return; // Don't change following state when paused
+
+      const itemHeight = 28;
+      const threshold = itemHeight * 3; // Allow 3 items of scroll before stopping following
+      const isNearTop = scrollTop <= threshold; // Since logs are reversed, check proximity to top
+
+      if (!isNearTop && isFollowing) {
+        // User scrolled away from top, stop following and capture snapshot
+        setIsFollowing(false);
+        setSnapshotLogs([...logs]);
+      } else if (isNearTop && !isFollowing) {
+        // User scrolled back to top, resume following
+        setIsFollowing(true);
+        setSnapshotLogs([]);
+      }
+    },
+    [isPaused, isFollowing, logs]
+  );
+
+  // Function to return to following mode
+  const returnToFollowing = useCallback(() => {
+    setIsFollowing(true);
+    setSnapshotLogs([]);
+
+    // Scroll to head (top) where newest logs are, since logs are reversed
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = 0;
+    }
+
+    // Show feedback
+    setDebugDisplayContent({
+      message: "Returned to following live logs",
+      type: "success",
+      duration: 2000,
+    });
+  }, []);
+
+  // Auto-scroll to top (head) when following and new logs arrive
+  useEffect(() => {
+    if (isFollowing && !isPaused && logsContainerRef.current) {
+      const container = logsContainerRef.current;
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        container.scrollTop = 0; // Scroll to top where newest logs appear
+      });
+    }
+  }, [logs.length, isFollowing, isPaused]);
 
   // Auto-reset copy state after synchronized display duration
   useEffect(() => {
@@ -325,6 +401,31 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
     }
   }, [activeLogs, copyState]);
 
+  // Copy all logs function
+  const handleCopyAllLogs = useCallback(async () => {
+    try {
+      await copyLogsToClipboard(activeLogs);
+
+      // Show feedback on display panels
+      setDebugDisplayContent({
+        message: `Copied all ${activeLogs.length} logs to clipboard`,
+        type: "success",
+        duration: 3000,
+      });
+
+      console.log(`📋 Copied all ${activeLogs.length} logs to clipboard`);
+    } catch (error) {
+      console.error("Failed to copy all logs:", error);
+
+      // Show error on display panels
+      setDebugDisplayContent({
+        message: "Failed to copy all logs",
+        type: "error",
+        duration: 3000,
+      });
+    }
+  }, [activeLogs]);
+
   const handleHealthSnapshot = useCallback(() => {
     // Call the framework's health snapshot function
     const globalDebug = (globalThis as any).surfaceDebug;
@@ -351,20 +452,31 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
 
   const handlePauseResume = useCallback(() => {
     if (isPaused) {
-      // Resume - clear paused logs and resume live updates
+      // Resume - clear paused logs, resume live updates, and return to following
       setIsPaused(false);
       setPausedLogs([]);
+      setIsFollowing(true);
+      setSnapshotLogs([]);
+
+      // Scroll to head (top) when resuming, where newest logs appear
+      setTimeout(() => {
+        if (logsContainerRef.current) {
+          logsContainerRef.current.scrollTop = 0;
+        }
+      }, 0);
 
       // Show feedback
       setDebugDisplayContent({
-        message: "Log rendering resumed",
+        message: "Log rendering resumed and following live stream",
         type: "success",
         duration: 2000,
       });
     } else {
-      // Pause - capture current logs state
+      // Pause - capture current logs state and stop following
       setIsPaused(true);
       setPausedLogs([...logs]);
+      setIsFollowing(false);
+      setSnapshotLogs([]);
 
       // Show feedback
       setDebugDisplayContent({
@@ -442,6 +554,11 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
     []
   );
 
+  // Calculate sticky panel positions for proper stacking (excluding truncation panel)
+  const panelHeight = 40; // Approximate height of each panel
+  const pausedPanelTop = 0; // First panel if active
+  const followingPanelTop = isPaused ? panelHeight : 0; // Second panel if both active
+
   return (
     <div
       style={{
@@ -461,12 +578,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
           outline: "none",
         }}
       >
-        {truncationInfo.isLogsTruncated && (
-          <div style={LOG_STYLES.truncationWarning}>
-            ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
-            {logs.length} logs (performance limit)
-          </div>
-        )}
+        {/* Moved truncation warning - no longer sticky */}
 
         {isPaused && (
           <div
@@ -476,9 +588,49 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
               borderColor: "#f59e0b44",
               color: "#f59e0b",
               fontWeight: "bold",
+              position: "sticky",
+              top: `${pausedPanelTop}px`,
+              zIndex: 11,
+              backdropFilter: "blur(8px)",
+              borderBottom: "1px solid #f59e0b44",
+              marginBottom: "2px",
             }}
           >
             ⏸️ Log rendering paused - {pausedLogs.length} logs frozen
+          </div>
+        )}
+
+        {!isPaused && !isFollowing && (
+          <div
+            onClick={returnToFollowing}
+            style={{
+              ...LOG_STYLES.truncationWarning,
+              backgroundColor: "#3b82f622",
+              borderColor: "#3b82f644",
+              color: "#60a5fa",
+              fontWeight: "bold",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              userSelect: "none",
+              position: "sticky",
+              top: `${followingPanelTop}px`,
+              zIndex: 10,
+              backdropFilter: "blur(8px)",
+              borderBottom: "1px solid #3b82f644",
+              marginBottom: "2px",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#3b82f633";
+              e.currentTarget.style.transform = "scale(1.02)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#3b82f622";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            title="Click to return to following live logs"
+          >
+            📌 Viewing snapshot at {snapshotLogs.length} logs - Click to return
+            to live stream
           </div>
         )}
 
@@ -494,34 +646,58 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
             <VirtualizedLogContainer
               logs={reversedLogs}
               containerRef={logsContainerRef}
+              onScrollFollowing={handleScrollFollowing}
             />
-
-            {truncationInfo.isLogsTruncated && (
-              <div
-                key="hidden-logs-indicator"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  marginTop: "8px",
-                  padding: "6px 8px",
-                  backgroundColor: "#78350f22",
-                  borderRadius: "4px",
-                  fontSize: "10px",
-                  fontFamily: "monospace",
-                  lineHeight: "1.2",
-                  justifyContent: "center",
-                  border: "1px dashed #78350f44",
-                }}
-              >
-                <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
-                <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
-                  ... and {truncationInfo.hiddenLogsCount.toLocaleString()} more
-                  logs hidden for performance
-                </span>
-              </div>
-            )}
           </>
+        )}
+
+        {/* Truncation warning at the true tail - after all logs */}
+        {truncationInfo.isLogsTruncated && (
+          <div
+            style={{
+              ...LOG_STYLES.truncationWarning,
+              marginTop: "12px",
+              marginBottom: "8px",
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+            ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
+            {logs.length} logs (performance limit)
+          </div>
+        )}
+
+        {/* Hidden logs indicator - keep at very bottom */}
+        {truncationInfo.isLogsTruncated && (
+          <div
+            key="hidden-logs-indicator"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              marginTop: "4px",
+              padding: "6px 8px",
+              backgroundColor: "#78350f22",
+              borderRadius: "4px",
+              fontSize: "10px",
+              fontFamily: "monospace",
+              lineHeight: "1.2",
+              justifyContent: "center",
+              border: "1px dashed #78350f44",
+              position: "sticky",
+              bottom: "0",
+              zIndex: 9,
+              backdropFilter: "blur(8px)",
+              borderTop: "1px solid #78350f44",
+              marginBottom: "0",
+            }}
+          >
+            <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
+            <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
+              ... and {truncationInfo.hiddenLogsCount.toLocaleString()} more
+              logs hidden for performance
+            </span>
+          </div>
         )}
       </div>
 
@@ -701,6 +877,107 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
           title="Capture health snapshot to debug logs"
         >
           🏥
+        </button>
+
+        {/* Utility Separator */}
+        <div
+          style={{
+            width: "16px",
+            height: "1px",
+            backgroundColor: "#334155",
+            margin: "4px 0",
+            opacity: 0.6,
+          }}
+        />
+
+        {/* Clear Logs Button */}
+        <button
+          onClick={() => onClearLogs?.()}
+          style={{
+            width: "24px",
+            height: "24px",
+            backgroundColor: "#2d3748",
+            color: "#e2e8f0",
+            border: "none",
+            borderRadius: "4px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "12px",
+            cursor: "pointer",
+            opacity: 0.9,
+            transition: `all ${getButtonTransitionDuration()}ms ease`,
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform =
+              "scale(1.08)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+              "0 2px 4px rgba(0, 0, 0, 0.4)";
+
+            // Show descriptive hover message
+            setDebugDisplayContent({
+              message: "Clear all debug logs",
+              type: "info",
+              duration: 0, // Don't auto-clear
+            });
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+              "0 1px 2px rgba(0, 0, 0, 0.3)";
+
+            // Clear hover message
+            clearDebugDisplayContent();
+          }}
+          title="Clear all debug logs"
+        >
+          🗑️
+        </button>
+
+        {/* Copy All Logs Button */}
+        <button
+          onClick={handleCopyAllLogs}
+          style={{
+            width: "24px",
+            height: "24px",
+            backgroundColor: "#2d3748",
+            color: "#e2e8f0",
+            border: "none",
+            borderRadius: "4px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "12px",
+            cursor: "pointer",
+            opacity: 0.9,
+            transition: `all ${getButtonTransitionDuration()}ms ease`,
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform =
+              "scale(1.08)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+              "0 2px 4px rgba(0, 0, 0, 0.4)";
+
+            // Show descriptive hover message
+            setDebugDisplayContent({
+              message: "Copy all debug logs",
+              type: "info",
+              duration: 0, // Don't auto-clear
+            });
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+              "0 1px 2px rgba(0, 0, 0, 0.3)";
+
+            // Clear hover message
+            clearDebugDisplayContent();
+          }}
+          title="Copy all debug logs"
+        >
+          📋
         </button>
 
         {/* Bottom Separator */}
