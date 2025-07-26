@@ -125,16 +125,36 @@ const logErrorToDebugSystem = (message: string, data?: any) => {
 // Get dependency state from unified debug system
 const getDependencyState = () => {
   const globalDebug = (globalThis as any).surfaceDebug;
-  return (
-    globalDebug?.getDependencyStatus?.() || {
+  if (globalDebug?.getDependencyStatus) {
+    return globalDebug.getDependencyStatus();
+  }
+
+  // Fallback: Try to get state from local debug state system
+  try {
+    // Dynamically import to avoid circular dependencies
+    const { getGlobalDebugState } = require("../hooks/debug-state");
+    const debugState = getGlobalDebugState();
+    return (
+      debugState.dependencies || {
+        enabled: false,
+        level: "normal",
+        filter: "all",
+        allowedHooks: null,
+        excludedHooks: [],
+        throttleMs: 100,
+      }
+    );
+  } catch {
+    // Final fallback
+    return {
       enabled: false,
       level: "normal",
       filter: "all",
       allowedHooks: null,
       excludedHooks: [],
       throttleMs: 100,
-    }
-  );
+    };
+  }
 };
 
 // Enhanced dependency change tracking
@@ -670,8 +690,97 @@ export function useEmergencySafeHook<T>(
   },
 };
 
+// Initialize global surfaceDebug object if it doesn't exist
+const initializeGlobalSurfaceDebug = () => {
+  if (!(globalThis as any).surfaceDebug) {
+    // Dynamically import to avoid circular dependencies
+    try {
+      const { getGlobalDebugState } = require("../hooks/debug-state");
+
+      (globalThis as any).surfaceDebug = {
+        getDebugState: () => getGlobalDebugState(),
+        getDependencyStatus: () => {
+          const state = getGlobalDebugState();
+          return (
+            state.dependencies || {
+              enabled: false,
+              level: "normal",
+              filter: "all",
+              allowedHooks: null,
+              excludedHooks: [],
+              throttleMs: 100,
+            }
+          );
+        },
+        // Add convenience methods for console usage
+        deps: {
+          off: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = false;
+            console.log("🔇 Dependency tracking disabled");
+          },
+          on: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            console.log("🔊 Dependency tracking enabled");
+          },
+          quiet: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.level = "quiet";
+            console.log("🔇 Dependency tracking: quiet mode (critical only)");
+          },
+          normal: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.level = "normal";
+            console.log("🔊 Dependency tracking: normal mode");
+          },
+          verbose: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.level = "verbose";
+            console.log("📢 Dependency tracking: verbose mode");
+          },
+          debug: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.level = "debug";
+            console.log("🐛 Dependency tracking: debug mode (maximum detail)");
+          },
+          functionsOnly: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.filter = "functions-only";
+            console.log("🔧 Dependency tracking: functions only");
+          },
+          objectsOnly: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.filter = "objects-only";
+            console.log("📦 Dependency tracking: objects only");
+          },
+          unstableOnly: () => {
+            const state = getGlobalDebugState();
+            state.dependencies.enabled = true;
+            state.dependencies.filter = "unstable-only";
+            console.log("⚠️ Dependency tracking: unstable only");
+          },
+        },
+      };
+
+      console.log("✅ Global surfaceDebug object initialized");
+    } catch (error) {
+      console.warn("Failed to initialize global surfaceDebug object:", error);
+    }
+  }
+};
+
 // Initialize notification system on module load
 initializeNotificationSystem();
+
+// Initialize global debug object
+initializeGlobalSurfaceDebug();
 
 console.log(`
 ✅ Surface Dependency Tracking (integrated with unified debug framework)

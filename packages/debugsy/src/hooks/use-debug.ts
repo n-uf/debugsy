@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from "react";
-import { useWhyDidYouUpdate } from "../debug-deps/debug-deps";
 import {
   getDebugEmoji,
   MAX_STORED_LOGS,
@@ -69,11 +68,6 @@ function estimateDataSize(data: any): number {
  * Provides granular control over different debug points without prop drilling
  */
 export const useDebug = (point?: DebugPoint) => {
-  // Debug dependency tracking
-  useWhyDidYouUpdate("useDebug", {
-    point,
-  });
-
   // Subscribe to global state changes
   useDebugSubscription();
 
