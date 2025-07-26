@@ -22,7 +22,6 @@ import {
 } from "./debug-state";
 import {
   captureHealthSnapshot as captureHealthSnapshotCore,
-  createHealthLogEntry,
   type HealthMetrics,
   type HealthSnapshotConfig,
 } from "./health-snapshot";
@@ -34,6 +33,36 @@ import {
 
 // Re-export types for backward compatibility
 export type { DebugLogEntry, DebugPoint, DependencyFilter, DependencyLogLevel };
+
+/**
+ * Safe size estimation that handles circular references and complex objects
+ */
+function estimateDataSize(data: any): number {
+  if (!data) return 0;
+
+  // Handle primitives
+  if (typeof data === "string") return data.length;
+  if (typeof data === "number") return 8; // Approximate bytes
+  if (typeof data === "boolean") return 4; // Approximate bytes
+  if (typeof data === "function") return data.toString().length;
+
+  // For objects, avoid JSON.stringify which fails on circular references
+  if (typeof data === "object") {
+    try {
+      // Use a simple heuristic based on keys and structure
+      if (Array.isArray(data)) {
+        return 50 + data.length * 20; // Rough estimate: 50 bytes overhead + 20 per item
+      } else {
+        const keys = Object.keys(data);
+        return 100 + keys.length * 30; // Rough estimate: 100 bytes overhead + 30 per property
+      }
+    } catch {
+      return 500; // Fallback estimate for complex objects
+    }
+  }
+
+  return 50; // Default fallback
+}
 
 /**
  * Centralized debug hook for surface components
@@ -109,8 +138,8 @@ export const useDebug = (point?: DebugPoint) => {
               console.log(
                 `🧹 [debugsy] Data sanitization active for heavy objects. Point: ${debugPoint}`,
                 {
-                  originalSize: JSON.stringify(data).length,
-                  sanitizedSize: JSON.stringify(sanitizedData).length,
+                  originalSize: estimateDataSize(data), // Safe size estimation
+                  sanitizedSize: estimateDataSize(sanitizedData), // Safe size estimation
                   timeTaken: sanitizedData.__sanitizationTime + "ms",
                 }
               );
@@ -315,189 +344,6 @@ export const useDebug = (point?: DebugPoint) => {
 };
 
 /**
- * Global debug control functions (for console usage)
- */
-if (typeof window !== "undefined") {
-  (window as any).surfaceDebug = {
-    enable: (point: DebugPoint) => {
-      debugStateControls.enable(point);
-      notifySubscribers();
-    },
-    disable: (point: DebugPoint) => {
-      debugStateControls.disable(point);
-      notifySubscribers();
-    },
-    enableAll: () => {
-      debugStateControls.enableAll();
-      notifySubscribers();
-    },
-    disableAll: () => {
-      debugStateControls.disableAll();
-      notifySubscribers();
-    },
-    list: () => {
-      const globalDebugState = getGlobalDebugState();
-      console.table({
-        "Enabled Points": Array.from(globalDebugState.enabled),
-        "Console Logging": globalDebugState.console,
-        "Visual Debug": globalDebugState.visual,
-        "Performance Timing": globalDebugState.performance,
-      });
-    },
-
-    // Integrated dependency tracking controls
-    deps: {
-      off: () => {
-        dependencyStateControls.setEnabled(false);
-        console.log("🚫 Dependency tracking disabled");
-        notifySubscribers();
-      },
-      quiet: () => {
-        dependencyStateControls.setEnabled(true);
-        dependencyStateControls.setLevel("quiet");
-        console.log(
-          "🔇 Dependency tracking: QUIET mode (functions + loops only)"
-        );
-        notifySubscribers();
-      },
-      normal: () => {
-        dependencyStateControls.setEnabled(true);
-        dependencyStateControls.setLevel("normal");
-        console.log("📊 Dependency tracking: NORMAL mode");
-        notifySubscribers();
-      },
-      verbose: () => {
-        dependencyStateControls.setEnabled(true);
-        dependencyStateControls.setLevel("verbose");
-        console.log("📢 Dependency tracking: VERBOSE mode");
-        notifySubscribers();
-      },
-      functionsOnly: () => {
-        dependencyStateControls.setEnabled(true);
-        dependencyStateControls.setFilter("functions-only");
-        console.log("📝 Dependency tracking: FUNCTIONS ONLY");
-        notifySubscribers();
-      },
-      objectsOnly: () => {
-        dependencyStateControls.setEnabled(true);
-        dependencyStateControls.setFilter("objects-only");
-        console.log("📦 Dependency tracking: OBJECTS ONLY");
-        notifySubscribers();
-      },
-      unstableOnly: () => {
-        dependencyStateControls.setEnabled(true);
-        dependencyStateControls.setFilter("unstable-only");
-        console.log("⚠️ Dependency tracking: UNSTABLE ONLY");
-        notifySubscribers();
-      },
-    },
-
-    // Dependency filtering
-    filterDependencies: (hooks: string[]) => {
-      dependencyStateControls.setAllowedHooks(hooks);
-      console.log(`🔍 Dependency tracking filtered to: ${hooks.join(", ")}`);
-      notifySubscribers();
-    },
-    excludeDependencies: (hooks: string[]) => {
-      dependencyStateControls.setExcludedHooks(hooks);
-      console.log(`🚫 Excluding from dependency tracking: ${hooks.join(", ")}`);
-      notifySubscribers();
-    },
-    resetDependencyFilters: () => {
-      dependencyStateControls.resetFilters();
-      console.log("🔄 Dependency filters reset");
-      notifySubscribers();
-    },
-    setDependencyFilter: (filter: DependencyFilter) => {
-      dependencyStateControls.setFilter(filter);
-      console.log(`🔧 Dependency filter: ${filter}`);
-      notifySubscribers();
-    },
-
-    // Status getters
-    getDependencyStatus: () => getGlobalDebugState().dependencies,
-    getDebugState: () => getGlobalDebugState(),
-
-    // Health snapshot function
-    captureHealthSnapshot: () => {
-      const globalDebugState = getGlobalDebugState();
-
-      // Create health log entry and add to logs
-      const healthMetrics = captureHealthSnapshotCore(
-        globalDebugState,
-        undefined,
-        {
-          logToDebugSystem: false, // We'll handle logging manually
-        }
-      );
-
-      const logEntry = createHealthLogEntry(healthMetrics);
-      globalDebugState.logs = [
-        ...globalDebugState.logs.slice(-(MAX_STORED_LOGS - 1)),
-        logEntry,
-      ];
-
-      // Notify subscribers
-      notifySubscribers();
-
-      return healthMetrics;
-    },
-
-    help: () => {
-      console.log(`
-🎯 Surface Debug System - Available Commands:
-
-📊 Main Debug Controls:
-  surfaceDebug.enable("point")     Enable debug point
-  surfaceDebug.disable("point")    Disable debug point
-  surfaceDebug.toggle("point")     Toggle debug point
-  surfaceDebug.enableAll()         Enable all debug points
-  surfaceDebug.disableAll()        Disable all debug points
-
-🧠 Dependency Tracking:
-  surfaceDebug.deps.off()          Turn off dependency tracking
-  surfaceDebug.deps.quiet()        Quiet mode (minimal output)
-  surfaceDebug.deps.normal()       Normal tracking mode
-  surfaceDebug.deps.verbose()      Verbose tracking mode
-  surfaceDebug.deps.functionsOnly() Track only function changes
-  surfaceDebug.deps.objectsOnly()  Track only object changes
-  surfaceDebug.deps.unstableOnly() Track only unstable dependencies
-
-🔍 Dependency Filtering:
-  surfaceDebug.filterDependencies(["hook1", "hook2"])
-  surfaceDebug.excludeDependencies(["hook1", "hook2"])
-  surfaceDebug.resetDependencyFilters()
-  surfaceDebug.setDependencyFilter("functions-only")
-
-📋 Status & Information:
-  surfaceDebug.getDependencyStatus() Get dependency tracking status
-  surfaceDebug.getDebugState()     Get full debug state
-  surfaceDebug.captureHealthSnapshot() Capture comprehensive app health metrics
-  surfaceDebug.help()              Show this help
-
-⚙️ Configuration:
-  surfaceDebug.setConsoleEnabled(true/false)
-  surfaceDebug.setVisualEnabled(true/false)
-  surfaceDebug.setPerformanceEnabled(true/false)
-
-🏥 Health Monitoring:
-  surfaceDebug.captureHealthSnapshot() - Always enabled, logs to both console and debug panel
-
-🎯 Available Debug Points:
-  dispatcher, hit-testing, routing, surface-interaction, frame-interaction,
-  selection-interaction, handler-registry, performance, visual-debug,
-  surface-interactions, surface-dock, frame-metrics, dependencies, health
-
-📚 Usage Examples:
-  surfaceDebug.enable("dispatcher")     // Enable mouse dispatcher logs
-  surfaceDebug.deps.functionsOnly()     // Track only function recreation
-  surfaceDebug.captureHealthSnapshot()  // Get comprehensive app metrics
-      `);
-    },
-  };
-}
-
-/**
  * Unified dependency state hook - replaces the old useDependencyState from debug-deps.ts
  * Now properly integrated with the main debug system
  */
@@ -505,17 +351,49 @@ export const useDependencyState = () => {
   // Subscribe to debug state changes
   useDebugSubscription();
 
-  // Always provide a valid interface since we're now unified
-  const globalDebug = (globalThis as any).surfaceDebug;
-  const isInitialized =
-    typeof globalDebug !== "undefined" &&
-    typeof globalDebug.deps !== "undefined";
+  const globalDebugState = getGlobalDebugState();
+
+  const getDependencyLogs = useCallback(() => {
+    return globalDebugState.logs.filter(
+      (log) => log.point === "dependencies"
+    ) as Array<DebugLogEntry & { point: "dependencies" }>;
+  }, [globalDebugState.logs]);
+
+  const setFilter = useCallback((filter: DependencyFilter) => {
+    dependencyStateControls.setFilter(filter);
+    notifySubscribers();
+  }, []);
+
+  const setLogLevel = useCallback((level: DependencyLogLevel) => {
+    dependencyStateControls.setLevel(level);
+    notifySubscribers();
+  }, []);
+
+  const enable = useCallback(() => {
+    dependencyStateControls.setEnabled(true);
+    notifySubscribers();
+  }, []);
+
+  const disable = useCallback(() => {
+    dependencyStateControls.setEnabled(false);
+    notifySubscribers();
+  }, []);
 
   return {
-    state: getGlobalDebugState().dependencies, // Direct access to unified state
-    methods: globalDebug,
-    isInitialized, // true when surfaceDebug.deps exists
-    isAvailable: typeof globalDebug !== "undefined", // true when surfaceDebug object exists
+    // State
+    enabled: globalDebugState.dependencies.enabled,
+    filter: globalDebugState.dependencies.filter,
+    logLevel: globalDebugState.dependencies.level,
+
+    // Control functions
+    setFilter,
+    setLogLevel,
+    enable,
+    disable,
+
+    // Data access
+    getDependencyLogs,
+    logs: getDependencyLogs(),
   };
 };
 

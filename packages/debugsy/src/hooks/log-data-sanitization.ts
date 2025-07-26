@@ -31,6 +31,48 @@ const DEFAULT_CONFIG: SanitizationConfig = {
 };
 
 /**
+ * Performance monitoring for sanitization operations
+ */
+interface PerformanceStats {
+  needsSanitizationCalls: number;
+  needsSanitizationTime: number;
+  sanitizeDataCalls: number;
+  sanitizeDataTime: number;
+  cacheHits: number;
+  cacheMisses: number;
+}
+
+/**
+ * Global performance statistics
+ */
+const performanceStats: PerformanceStats = {
+  needsSanitizationCalls: 0,
+  needsSanitizationTime: 0,
+  sanitizeDataCalls: 0,
+  sanitizeDataTime: 0,
+  cacheHits: 0,
+  cacheMisses: 0,
+};
+
+/**
+ * Fast memoization cache for needsSanitization results
+ * Using WeakMap for automatic garbage collection
+ */
+const needsSanitizationCache = new WeakMap<object, boolean>();
+
+/**
+ * Performance budget constants
+ */
+const PERFORMANCE_BUDGET = {
+  /** Maximum time allowed for needsSanitization check (microseconds) */
+  MAX_NEEDS_SANITIZATION_TIME: 100, // 0.1ms
+  /** Maximum time allowed for full sanitization (milliseconds) */
+  MAX_SANITIZATION_TIME: 10, // 10ms
+  /** Cache size limit for performance monitoring */
+  MAX_CACHE_SIZE: 1000,
+};
+
+/**
  * Tracks objects being processed to prevent infinite recursion
  */
 class CircularReferenceTracker {
@@ -61,15 +103,82 @@ class CircularReferenceTracker {
 }
 
 /**
- * Safely detect if an object is a React element
+ * OPTIMIZED: Cached regex patterns for compiled code detection
  */
-function isReactElement(obj: any): boolean {
+const COMPILED_CODE_PATTERNS = {
+  turbopack: /__TURBOPACK__/,
+  webpack: /__webpack_require__/,
+  interop: /_interop_require_default/,
+  compiled: /compiled\$2f/,
+  nodeModules: /node_modules/,
+  chunks: /chunks\$2f/,
+  functionPattern: /function[^{]*\{[^}]*__[A-Z_]+__/,
+  minifiedVars: /[a-zA-Z]\$[a-zA-Z0-9]{10,}/,
+  modulePaths: /\$5b[a-zA-Z0-9_$]+\$5d/,
+};
+
+/**
+ * OPTIMIZED: Cached React internal keys for faster lookup
+ */
+const REACT_INTERNAL_KEYS = new Set([
+  "_owner",
+  "ref",
+  "key",
+  "$$typeof",
+  "type",
+  "props",
+  "_store",
+  "_self",
+  "_source",
+  "memoizedState",
+  "memoizedProps",
+  "stateNode",
+  "child",
+  "sibling",
+  "return",
+  "alternate",
+]);
+
+/**
+ * ENHANCED: Check if an object is a DOM element with React Fiber attached
+ */
+function isDOMElementWithReactFiber(obj: any): boolean {
+  if (!obj || typeof obj !== "object") return false;
+
   try {
+    // Check if it's a DOM element
+    if (typeof HTMLElement !== "undefined" && obj instanceof HTMLElement) {
+      // Check for React Fiber properties (these create circular references)
+      for (const key in obj) {
+        if (
+          key.includes("__reactFiber") ||
+          key.includes("__reactInternalInstance")
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * ENHANCED: Check if an object is a React Fiber node
+ */
+function isReactFiberNode(obj: any): boolean {
+  if (!obj || typeof obj !== "object") return false;
+
+  try {
+    // React Fiber nodes have these characteristic properties
     return (
-      obj !== null &&
-      typeof obj === "object" &&
-      typeof obj.$$typeof === "symbol" &&
-      obj.$$typeof.toString().includes("react.element")
+      obj.tag !== undefined &&
+      obj.type !== undefined &&
+      obj.stateNode !== undefined &&
+      (obj.child !== undefined ||
+        obj.return !== undefined ||
+        obj.sibling !== undefined)
     );
   } catch {
     return false;
@@ -77,23 +186,65 @@ function isReactElement(obj: any): boolean {
 }
 
 /**
- * Safely detect if an object is a React component
+ * ULTRA-FAST: Check if an object is a React element (optimized for speed)
+ */
+function isReactElement(obj: any): boolean {
+  // Fast primitive checks
+  if (!obj || typeof obj !== "object") return false;
+
+  try {
+    // Direct property checks (faster than $$typeof.toString())
+    return (
+      obj.$$typeof !== undefined &&
+      typeof obj.$$typeof === "symbol" &&
+      (obj.type !== undefined || obj.props !== undefined)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * ULTRA-FAST: Check if an object contains React internals (optimized for speed)
+ */
+function containsReactInternals(obj: any): boolean {
+  // Fast primitive checks
+  if (!obj || typeof obj !== "object") return false;
+
+  try {
+    // Check only the most common React internal keys first (performance optimization)
+    return (
+      "_owner" in obj ||
+      "$$typeof" in obj ||
+      "memoizedState" in obj ||
+      "_store" in obj
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * OPTIMIZED: Safely detect if an object is a React component (reduced overhead)
  */
 function isReactComponent(obj: any): boolean {
-  try {
-    if (typeof obj !== "function") return false;
+  if (typeof obj !== "function") return false;
 
-    // Check for React component patterns
+  try {
+    // Fast checks before expensive toString()
+    if (obj.prototype?.isReactComponent === true) return true;
+    if (obj.defaultProps !== undefined || obj.propTypes !== undefined)
+      return true;
+
+    // Only do expensive string analysis if necessary
     const str = obj.toString();
+    if (str.length > 5000) return true; // Likely compiled if very long
+
     return (
       str.includes("createElement") ||
       str.includes("jsx") ||
-      str.includes("React") ||
       str.includes("useState") ||
-      str.includes("useEffect") ||
-      obj.prototype?.isReactComponent === true ||
-      obj.defaultProps !== undefined ||
-      obj.propTypes !== undefined
+      str.includes("useEffect")
     );
   } catch {
     return false;
@@ -101,62 +252,103 @@ function isReactComponent(obj: any): boolean {
 }
 
 /**
- * Check if an object contains potentially problematic React structures
- */
-function containsReactInternals(obj: any): boolean {
-  try {
-    if (!obj || typeof obj !== "object") return false;
-
-    // Check for React Fiber node properties
-    const reactInternalKeys = [
-      "_owner",
-      "ref",
-      "key",
-      "$$typeof",
-      "type",
-      "props",
-      "_store",
-      "_self",
-      "_source",
-      "memoizedState",
-      "memoizedProps",
-      "stateNode",
-      "child",
-      "sibling",
-      "return",
-      "alternate",
-    ];
-
-    return reactInternalKeys.some((key) => key in obj);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check if a string looks like compiled code (Turbopack, Webpack, etc.)
+ * OPTIMIZED: Check if a string looks like compiled code (cached patterns)
  */
 function isCompiledCode(str: string): boolean {
   if (typeof str !== "string" || str.length < 1000) return false;
 
-  const compiledPatterns = [
-    "__TURBOPACK__",
-    "__webpack_require__",
-    "_interop_require_default",
-    "compiled$2f",
-    "node_modules",
-    "chunks$2f",
-    // Function pattern for compiled code
-    /function[^{]*\{[^}]*__[A-Z_]+__/,
-    // Long minified variable names
-    /[a-zA-Z]\$[a-zA-Z0-9]{10,}/,
-    // Webpack/Turbopack module paths
-    /\$5b[a-zA-Z0-9_$]+\$5d/,
-  ];
-
-  return compiledPatterns.some((pattern) =>
-    typeof pattern === "string" ? str.includes(pattern) : pattern.test(str)
+  // Use cached regex patterns for better performance
+  return (
+    COMPILED_CODE_PATTERNS.turbopack.test(str) ||
+    COMPILED_CODE_PATTERNS.webpack.test(str) ||
+    COMPILED_CODE_PATTERNS.interop.test(str) ||
+    COMPILED_CODE_PATTERNS.compiled.test(str) ||
+    COMPILED_CODE_PATTERNS.nodeModules.test(str) ||
+    COMPILED_CODE_PATTERNS.chunks.test(str) ||
+    COMPILED_CODE_PATTERNS.functionPattern.test(str) ||
+    COMPILED_CODE_PATTERNS.minifiedVars.test(str) ||
+    COMPILED_CODE_PATTERNS.modulePaths.test(str)
   );
+}
+
+/**
+ * ENHANCED: Create a summary for DOM elements with React Fiber nodes
+ */
+function summarizeDOMElementWithFiber(element: any): any {
+  try {
+    const summary: any = {
+      __type: "DOMElementWithReactFiber",
+      tagName: element.tagName || "Unknown",
+      id: element.id || null,
+      className: element.className || null,
+      __warning: "Contains React Fiber nodes with circular references",
+    };
+
+    // Count React Fiber properties
+    let fiberPropCount = 0;
+    for (const key in element) {
+      if (
+        key.includes("__reactFiber") ||
+        key.includes("__reactInternalInstance")
+      ) {
+        fiberPropCount++;
+      }
+    }
+
+    summary.reactFiberProperties = fiberPropCount;
+
+    // Add safe attributes without diving into Fiber nodes
+    if (element.attributes && element.attributes.length > 0) {
+      const attrs: any = {};
+      for (let i = 0; i < Math.min(element.attributes.length, 5); i++) {
+        const attr = element.attributes[i];
+        attrs[attr.name] = attr.value;
+      }
+      summary.attributes = attrs;
+    }
+
+    return summary;
+  } catch {
+    return {
+      __type: "DOMElementWithReactFiber",
+      __error: "Failed to summarize",
+    };
+  }
+}
+
+/**
+ * ENHANCED: Create a summary for React Fiber nodes
+ */
+function summarizeReactFiberNode(node: any): any {
+  try {
+    const summary: any = {
+      __type: "ReactFiberNode",
+      tag: node.tag,
+      type:
+        typeof node.type === "string"
+          ? node.type
+          : node.type?.name || "Component",
+      __warning: "React Fiber node with potential circular references",
+    };
+
+    // Add safe properties without circular references
+    if (node.key !== null && node.key !== undefined) {
+      summary.key = node.key;
+    }
+
+    if (node.index !== undefined) {
+      summary.index = node.index;
+    }
+
+    // Count child/sibling relationships without traversing them
+    summary.hasChild = node.child !== null && node.child !== undefined;
+    summary.hasSibling = node.sibling !== null && node.sibling !== undefined;
+    summary.hasReturn = node.return !== null && node.return !== undefined;
+
+    return summary;
+  } catch {
+    return { __type: "ReactFiberNode", __error: "Failed to summarize" };
+  }
 }
 
 /**
@@ -322,7 +514,13 @@ function sanitizeValue(
     };
   }
 
-  // Handle DOM elements
+  // ENHANCED: Handle DOM elements with React Fiber nodes (PRIORITY CHECK)
+  if (isDOMElementWithReactFiber(value)) {
+    const summary = summarizeDOMElementWithFiber(value);
+    return summary;
+  }
+
+  // Handle regular DOM elements
   if (typeof HTMLElement !== "undefined" && value instanceof HTMLElement) {
     return {
       __type: "HTMLElement",
@@ -348,6 +546,13 @@ function sanitizeValue(
     tracker.add(value, path);
 
     try {
+      // ENHANCED: Handle React Fiber nodes (PRIORITY CHECK)
+      if (isReactFiberNode(value)) {
+        const summary = summarizeReactFiberNode(value);
+        tracker.remove(value);
+        return summary;
+      }
+
       // Handle React elements
       if (config.detectReactComponents && isReactElement(value)) {
         const summary = summarizeReactElement(value);
@@ -440,27 +645,46 @@ function sanitizeValue(
  * - Functions and compiled code
  * - DOM elements
  * - Errors and special objects
+ * - DOM elements with React Fiber nodes (NEW)
+ * - React Fiber nodes directly (NEW)
  */
 export function sanitizeLogData(
   data: any,
   config: Partial<SanitizationConfig> = {}
 ): any {
+  const startTime = performance.now();
+  performanceStats.sanitizeDataCalls++;
+
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   const tracker = new CircularReferenceTracker();
 
   try {
-    const startTime = performance.now();
     const result = sanitizeValue(data, "root", 0, finalConfig, tracker);
     const endTime = performance.now();
+    const sanitizationTime = Math.round((endTime - startTime) * 100) / 100;
+
+    // Update performance statistics
+    performanceStats.sanitizeDataTime += endTime - startTime;
+
+    // Performance warning if sanitization is too slow
+    if (sanitizationTime > PERFORMANCE_BUDGET.MAX_SANITIZATION_TIME) {
+      console.warn(
+        `⚠️ [Sanitization] Slow sanitization detected: ${sanitizationTime}ms (budget: ${PERFORMANCE_BUDGET.MAX_SANITIZATION_TIME}ms)`,
+        { config: finalConfig, dataType: typeof data }
+      );
+    }
 
     // Add sanitization metadata
     return {
       __sanitized: true,
-      __sanitizationTime: Math.round((endTime - startTime) * 100) / 100,
+      __sanitizationTime: sanitizationTime,
       __config: finalConfig,
       data: result,
     };
   } catch (error) {
+    const endTime = performance.now();
+    performanceStats.sanitizeDataTime += endTime - startTime;
+
     return {
       __sanitized: true,
       __error: `Sanitization failed: ${error instanceof Error ? error.message : "unknown"}`,
@@ -470,36 +694,165 @@ export function sanitizeLogData(
 }
 
 /**
- * Fast check if data needs sanitization
- * Returns true if data likely contains problematic structures
+ * ULTRA-FAST: Check if data needs sanitization with memoization and performance monitoring
+ * This function is called for EVERY debug log entry, so it must be extremely fast
  */
 export function needsSanitization(data: any): boolean {
+  const startTime = performance.now();
+  performanceStats.needsSanitizationCalls++;
+
+  // FAST PATH 1: Primitives and null/undefined (most common case)
   if (!data || typeof data !== "object") {
+    const endTime = performance.now();
+    performanceStats.needsSanitizationTime += (endTime - startTime) * 1000; // Convert to microseconds
     return false;
   }
+
+  // FAST PATH 2: Check memoization cache
+  if (needsSanitizationCache.has(data)) {
+    const endTime = performance.now();
+    performanceStats.needsSanitizationTime += (endTime - startTime) * 1000;
+    performanceStats.cacheHits++;
+    return needsSanitizationCache.get(data)!;
+  }
+
+  performanceStats.cacheMisses++;
 
   try {
-    // Quick checks for problematic structures
-    if (isReactElement(data)) return true;
-    if (containsReactInternals(data)) return true;
-    if (Array.isArray(data) && data.length > 50) return true;
+    let needsSanitization = false;
 
-    // Check object size and complexity
-    const keys = Object.keys(data);
-    if (keys.length > 20) return true;
+    // FAST PATH 3: DOM element with React Fiber check (high priority for circular refs)
+    if (isDOMElementWithReactFiber(data)) {
+      needsSanitization = true;
+    } else if (isReactFiberNode(data)) {
+      needsSanitization = true;
+    } else if (Array.isArray(data)) {
+      // FAST PATH 4: Array length check (very fast)
+      if (data.length > 50) {
+        needsSanitization = true;
+      }
+    } else {
+      // FAST PATH 5: React element check (optimized)
+      if (isReactElement(data)) {
+        needsSanitization = true;
+      } else if (containsReactInternals(data)) {
+        needsSanitization = true;
+      } else {
+        // FAST PATH 6: Property count estimation (avoid Object.keys if possible)
+        // Use for...in loop with early exit for better performance
+        let propertyCount = 0;
+        let hasFunctions = false;
 
-    // Check for functions or React components
-    for (const key of keys.slice(0, 10)) {
-      const value = data[key];
-      if (typeof value === "function") return true;
-      if (isReactElement(value)) return true;
-      if (containsReactInternals(value)) return true;
+        for (const key in data) {
+          if (data.hasOwnProperty(key)) {
+            propertyCount++;
+
+            // Early exit if too many properties
+            if (propertyCount > 20) {
+              needsSanitization = true;
+              break;
+            }
+
+            // Check first few properties for functions/React elements (limit to 5 for performance)
+            if (propertyCount <= 5 && !hasFunctions) {
+              const value = data[key];
+              if (typeof value === "function") {
+                hasFunctions = true;
+                needsSanitization = true;
+                break;
+              }
+              if (isReactElement(value) || containsReactInternals(value)) {
+                needsSanitization = true;
+                break;
+              }
+            }
+          }
+        }
+
+        if (!needsSanitization && hasFunctions) {
+          needsSanitization = true;
+        }
+      }
     }
 
-    return false;
-  } catch {
-    return true; // If we can't analyze it, it's probably problematic
+    // Cache the result for future lookups
+    needsSanitizationCache.set(data, needsSanitization);
+
+    const endTime = performance.now();
+    const checkTime = (endTime - startTime) * 1000; // Convert to microseconds
+    performanceStats.needsSanitizationTime += checkTime;
+
+    // Performance warning if check is too slow
+    if (checkTime > PERFORMANCE_BUDGET.MAX_NEEDS_SANITIZATION_TIME) {
+      console.warn(
+        `⚠️ [Sanitization] Slow needsSanitization check: ${checkTime.toFixed(2)}μs (budget: ${PERFORMANCE_BUDGET.MAX_NEEDS_SANITIZATION_TIME}μs)`,
+        {
+          dataType: typeof data,
+          arrayLength: Array.isArray(data) ? data.length : "N/A",
+        }
+      );
+    }
+
+    return needsSanitization;
+  } catch (error) {
+    const endTime = performance.now();
+    performanceStats.needsSanitizationTime += (endTime - startTime) * 1000;
+
+    // If we can't analyze it safely, assume it needs sanitization
+    const result = true;
+    needsSanitizationCache.set(data, result);
+    return result;
   }
+}
+
+/**
+ * Get performance statistics for monitoring and optimization
+ */
+export function getSanitizationPerformanceStats() {
+  const avgNeedsTime =
+    performanceStats.needsSanitizationCalls > 0
+      ? performanceStats.needsSanitizationTime /
+        performanceStats.needsSanitizationCalls
+      : 0;
+
+  const avgSanitizeTime =
+    performanceStats.sanitizeDataCalls > 0
+      ? performanceStats.sanitizeDataTime / performanceStats.sanitizeDataCalls
+      : 0;
+
+  const cacheHitRate =
+    performanceStats.cacheHits + performanceStats.cacheMisses > 0
+      ? (performanceStats.cacheHits /
+          (performanceStats.cacheHits + performanceStats.cacheMisses)) *
+        100
+      : 0;
+
+  return {
+    needsSanitizationCalls: performanceStats.needsSanitizationCalls,
+    avgNeedsSanitizationTime: Math.round(avgNeedsTime * 100) / 100, // microseconds
+    sanitizeDataCalls: performanceStats.sanitizeDataCalls,
+    avgSanitizeDataTime: Math.round(avgSanitizeTime * 100) / 100, // milliseconds
+    cacheHitRate: Math.round(cacheHitRate * 100) / 100, // percentage
+    totalCacheOperations:
+      performanceStats.cacheHits + performanceStats.cacheMisses,
+    performanceBudget: PERFORMANCE_BUDGET,
+    isPerformant:
+      avgNeedsTime <= PERFORMANCE_BUDGET.MAX_NEEDS_SANITIZATION_TIME &&
+      avgSanitizeTime <= PERFORMANCE_BUDGET.MAX_SANITIZATION_TIME,
+  };
+}
+
+/**
+ * Reset performance statistics (for testing/monitoring)
+ */
+export function resetSanitizationPerformanceStats() {
+  performanceStats.needsSanitizationCalls = 0;
+  performanceStats.needsSanitizationTime = 0;
+  performanceStats.sanitizeDataCalls = 0;
+  performanceStats.sanitizeDataTime = 0;
+  performanceStats.cacheHits = 0;
+  performanceStats.cacheMisses = 0;
+  // Note: WeakMap doesn't support clear() - cache will be garbage collected automatically
 }
 
 /**

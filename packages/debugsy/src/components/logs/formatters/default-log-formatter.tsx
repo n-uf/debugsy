@@ -13,8 +13,11 @@ import {
   isLikelyLargeObject,
   memoizedJsonStringify,
 } from "../utils/log-utilities";
-import { getExpansionContent, getLogTypeMeta } from "./formatter-routing";
 import { formatTime } from "./health-expansion-formatter";
+import {
+  getHotExpansionContent,
+  getHotLogTypeMeta,
+} from "./hot-formatter-registry";
 
 /**
  * Severity levels for log entries
@@ -100,6 +103,7 @@ const getSeverityEmoji = (severity: LogSeverity): string => {
 /**
  * Optimized default formatter for debug log entries with performance enhancements
  * ENHANCED: Now supports automatic expansion routing to specialized formatters
+ * PERFORMANCE: Uses hot registry for zero-overhead lookups
  * Memoized to prevent unnecessary re-renders of expensive JSON operations
  */
 export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
@@ -116,9 +120,10 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
       const [internalExpanded, setInternalExpanded] = useState(false);
 
       // OPTIMIZATION: Combined memoization with log-type-aware enhancements
+      // PERFORMANCE: Uses hot registry for zero-overhead metadata lookup
       const computedProps = useMemo(() => {
-        // Get specialized log type metadata
-        const logTypeMeta = getLogTypeMeta(log);
+        // Get specialized log type metadata (ZERO-OVERHEAD with hot registry)
+        const logTypeMeta = getHotLogTypeMeta(log);
 
         // Use specialized severity if available, otherwise use provided severity
         const effectiveSeverity =
@@ -171,7 +176,8 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         onToggleExpand || (() => setInternalExpanded(!internalExpanded));
 
       // OPTIMIZED: Route to appropriate expansion content based on log type
-      const contentToShow = expandedContent || getExpansionContent(log);
+      // PERFORMANCE: Uses hot registry for zero-overhead component lookup
+      const contentToShow = expandedContent || getHotExpansionContent(log);
 
       return (
         <div>

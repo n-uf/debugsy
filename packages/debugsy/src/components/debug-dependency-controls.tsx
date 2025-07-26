@@ -22,9 +22,50 @@ export interface DebugDependencyControlsProps {
 export const DebugDependencyControls: React.FC<
   DebugDependencyControlsProps
 > = ({ className = "" }) => {
-  const { state, methods, isInitialized } = useDependencyState();
+  const dependencyState = useDependencyState();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [customHooks, setCustomHooks] = useState("");
+
+  // Adapt new interface to old interface for compatibility
+  const state = {
+    enabled: dependencyState.enabled,
+    level: dependencyState.logLevel,
+    filter: dependencyState.filter,
+    allowedHooks: null as string[] | null, // Not available in new interface
+    excludedHooks: [] as string[], // Not available in new interface
+  };
+
+  const methods: any = {
+    deps: {
+      off: dependencyState.disable,
+      normal: dependencyState.enable,
+      quiet: () => {
+        dependencyState.enable();
+        dependencyState.setLogLevel("quiet");
+      },
+      functionsOnly: () => {
+        dependencyState.enable();
+        dependencyState.setFilter("functions-only");
+      },
+      unstableOnly: () => {
+        dependencyState.enable();
+        dependencyState.setFilter("unstable-only");
+      },
+      verbose: () => {
+        dependencyState.enable();
+        dependencyState.setLogLevel("verbose");
+      },
+      objectsOnly: () => {
+        dependencyState.enable();
+        dependencyState.setFilter("objects-only");
+      },
+    },
+    setDependencyFilter: dependencyState.setFilter,
+    filterDependencies: () => {}, // Not implemented in new interface
+    resetDependencyFilters: () => {}, // Not implemented in new interface
+  };
+
+  const isInitialized = true; // Always true with new interface
 
   // Safe method caller - handles uninitialized state
   const safeCall = (methodPath: string, fallback: () => void) => {
@@ -263,7 +304,7 @@ export const DebugDependencyControls: React.FC<
             <div>
               Filter: <span className="text-purple-600">{state.filter}</span>
             </div>
-            {state.allowedHooks && (
+            {state.allowedHooks && Array.isArray(state.allowedHooks) && (
               <div>
                 Allowed Hooks:{" "}
                 <span className="text-orange-600">
@@ -271,7 +312,7 @@ export const DebugDependencyControls: React.FC<
                 </span>
               </div>
             )}
-            {state.excludedHooks.length > 0 && (
+            {state.excludedHooks && state.excludedHooks.length > 0 && (
               <div>
                 Excluded:{" "}
                 <span className="text-red-600">
@@ -371,5 +412,4 @@ export const DebugDependencyControls: React.FC<
     </div>
   );
 };
-
 DebugDependencyControls.displayName = "DebugDependencyControls";

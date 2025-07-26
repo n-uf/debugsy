@@ -1,3 +1,7 @@
+// Performance Optimization: Auto-initialize hot formatter registry
+// Disabled for SSR compatibility - will be loaded on client-side as needed
+// import "./src/components/logs/formatters/hot-formatter-auto-init";
+
 // Debug Components
 export * from "./src/components";
 
@@ -19,3 +23,19 @@ export type {
 
 // Debug Utils
 export * from "./src/debug-deps/debug-deps";
+
+// Heavy Object Protection System
+export {
+  SANITIZATION_PRESETS,
+  getSanitizationPerformanceStats,
+  needsSanitization,
+  resetSanitizationPerformanceStats,
+  sanitizeLogData,
+} from "./src/hooks/log-data-sanitization";
+
+// Performance Optimization Utils
+export {
+  ensurePerformanceOptimization,
+  getPerformanceStats,
+  isPerformanceOptimized,
+} from "./src/components/logs/formatters/hot-formatter-auto-init";

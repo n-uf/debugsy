@@ -1,4 +1,4 @@
-// ENHANCED: Primary formatter that routes to specialized expansion content
+// OPTIMIZED DEFAULT: Main default log formatter (now with hot registry performance)
 export {
   DefaultLogFormatter,
   type DefaultLogFormatterProps,
@@ -19,15 +19,38 @@ export {
   type FormatterMeta,
 } from "./formatter-routing";
 
+// ZERO-OVERHEAD: Hot formatter registry for maximum performance
+export {
+  getHotExpansionContent,
+  getHotLogTypeMeta,
+  getHotRegistryStats,
+  initializeHotRegistry,
+  isHotRegistryReady,
+  reinitializeHotRegistry,
+} from "./hot-formatter-registry";
+
+// AUTO-OPTIMIZATION: Performance monitoring and control
+// Disabled for SSR compatibility - import manually if needed
+// export {
+//   ensurePerformanceOptimization,
+//   getPerformanceStats,
+//   isPerformanceOptimized,
+// } from "./hot-formatter-auto-init";
+
 // DEFAULT EXPANSION: Default expansion content component
 export { DefaultExpandedContent } from "./default-expansion-content";
+
+// SANITIZED DATA: Heavy object protection system
+export {
+  SanitizedDataExpansionContent,
+  getSanitizedDataLogMeta,
+} from "./sanitized-data-expansion-formatter";
 
 // OPTIMIZED: Expansion-focused formatters (new architecture)
 export {
   CategorySection,
   HealthExpansionContent,
-  // Legacy export for backward compatibility
-  HealthLogFormatter as LegacyHealthLogFormatter,
+  HealthLogFormatter as LegacyHealthLogFormatter, // Legacy export
   formatTime,
   formatValue,
   getHealthLogMeta,
@@ -35,13 +58,11 @@ export {
 
 export {
   DependencyExpansionContent,
-  // Legacy export for backward compatibility
-  DependencyLogFormatter as LegacyDependencyLogFormatter,
+  DependencyLogFormatter as LegacyDependencyLogFormatter, // Legacy export
   getDependencyLogMeta,
 } from "./dependency-expansion-formatter";
 
 // BACKWARD COMPATIBILITY: Re-export legacy formatters with original names
-// These now internally use the optimized expansion system
 export { DependencyLogFormatter } from "./dependency-expansion-formatter";
 export { HealthLogFormatter } from "./health-expansion-formatter";
 
