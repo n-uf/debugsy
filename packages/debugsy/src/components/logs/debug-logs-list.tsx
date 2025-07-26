@@ -40,7 +40,6 @@ import {
 
 export interface DebugLogsListProps {
   logs: DebugLogEntry[];
-  onClearLogs?: () => void;
 }
 
 /**
@@ -262,10 +261,7 @@ VirtualizedLogContainer.displayName = "VirtualizedLogContainer";
  */
 // Timing constants moved to ../config/copy-config.ts for centralized configuration
 
-export const DebugLogsList: React.FC<DebugLogsListProps> = ({
-  logs,
-  onClearLogs,
-}) => {
+export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
   const [copyState, setCopyState] = useState<CopyState>(0);
   const [isPaused, setIsPaused] = useState(false);
   const [pausedLogs, setPausedLogs] = useState<DebugLogEntry[]>([]);
@@ -400,31 +396,6 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
       });
     }
   }, [activeLogs, copyState]);
-
-  // Copy all logs function
-  const handleCopyAllLogs = useCallback(async () => {
-    try {
-      await copyLogsToClipboard(activeLogs);
-
-      // Show feedback on display panels
-      setDebugDisplayContent({
-        message: `Copied all ${activeLogs.length} logs to clipboard`,
-        type: "success",
-        duration: 3000,
-      });
-
-      console.log(`📋 Copied all ${activeLogs.length} logs to clipboard`);
-    } catch (error) {
-      console.error("Failed to copy all logs:", error);
-
-      // Show error on display panels
-      setDebugDisplayContent({
-        message: "Failed to copy all logs",
-        type: "error",
-        duration: 3000,
-      });
-    }
-  }, [activeLogs]);
 
   const handleHealthSnapshot = useCallback(() => {
     // Call the framework's health snapshot function
@@ -660,12 +631,37 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
               marginBottom: "8px",
               position: "relative",
               zIndex: 1,
+              backgroundColor: "#78350f33", // More visible background
+              border: "2px solid #fbbf24", // More visible border
+              fontWeight: "bold",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.3)", // Add shadow for visibility
             }}
           >
             ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
             {logs.length} logs (performance limit)
+            {/* Debug info */}
+            <div style={{ fontSize: "8px", marginTop: "2px", opacity: 0.7 }}>
+              [DEBUG: {reversedLogs.length} rendered,{" "}
+              {truncationInfo.hiddenLogsCount} hidden]
+            </div>
           </div>
         )}
+
+        {/* Always show debug info for testing */}
+        <div
+          style={{
+            fontSize: "8px",
+            color: "#666",
+            padding: "4px",
+            marginTop: "4px",
+            fontFamily: "monospace",
+            backgroundColor: "#111",
+            border: "1px solid #333",
+          }}
+        >
+          DEBUG: Total logs: {logs.length}, Rendered: {reversedLogs.length},
+          Truncated: {truncationInfo.isLogsTruncated ? "YES" : "NO"}
+        </div>
 
         {/* Hidden logs indicator - keep at very bottom */}
         {truncationInfo.isLogsTruncated && (
@@ -877,107 +873,6 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
           title="Capture health snapshot to debug logs"
         >
           🏥
-        </button>
-
-        {/* Utility Separator */}
-        <div
-          style={{
-            width: "16px",
-            height: "1px",
-            backgroundColor: "#334155",
-            margin: "4px 0",
-            opacity: 0.6,
-          }}
-        />
-
-        {/* Clear Logs Button */}
-        <button
-          onClick={() => onClearLogs?.()}
-          style={{
-            width: "24px",
-            height: "24px",
-            backgroundColor: "#2d3748",
-            color: "#e2e8f0",
-            border: "none",
-            borderRadius: "4px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "12px",
-            cursor: "pointer",
-            opacity: 0.9,
-            transition: `all ${getButtonTransitionDuration()}ms ease`,
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform =
-              "scale(1.08)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow =
-              "0 2px 4px rgba(0, 0, 0, 0.4)";
-
-            // Show descriptive hover message
-            setDebugDisplayContent({
-              message: "Clear all debug logs",
-              type: "info",
-              duration: 0, // Don't auto-clear
-            });
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow =
-              "0 1px 2px rgba(0, 0, 0, 0.3)";
-
-            // Clear hover message
-            clearDebugDisplayContent();
-          }}
-          title="Clear all debug logs"
-        >
-          🗑️
-        </button>
-
-        {/* Copy All Logs Button */}
-        <button
-          onClick={handleCopyAllLogs}
-          style={{
-            width: "24px",
-            height: "24px",
-            backgroundColor: "#2d3748",
-            color: "#e2e8f0",
-            border: "none",
-            borderRadius: "4px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "12px",
-            cursor: "pointer",
-            opacity: 0.9,
-            transition: `all ${getButtonTransitionDuration()}ms ease`,
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform =
-              "scale(1.08)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow =
-              "0 2px 4px rgba(0, 0, 0, 0.4)";
-
-            // Show descriptive hover message
-            setDebugDisplayContent({
-              message: "Copy all debug logs",
-              type: "info",
-              duration: 0, // Don't auto-clear
-            });
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow =
-              "0 1px 2px rgba(0, 0, 0, 0.3)";
-
-            // Clear hover message
-            clearDebugDisplayContent();
-          }}
-          title="Copy all debug logs"
-        >
-          📋
         </button>
 
         {/* Bottom Separator */}
