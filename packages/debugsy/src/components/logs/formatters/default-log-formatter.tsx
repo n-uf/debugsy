@@ -15,7 +15,7 @@ import {
   memoizedJsonStringify,
   smartJsonStringify,
 } from "../utils/log-utilities";
-import { formatTime } from "./health-log-formatter";
+import { formatTime } from "./health-expansion-formatter";
 
 /**
  * Severity levels for log entries
@@ -323,7 +323,60 @@ JsonLoadingSkeleton.displayName = "JsonLoadingSkeleton";
 DefaultExpandedContent.displayName = "DefaultExpandedContent";
 
 /**
+ * OPTIMIZED: Expansion content router - routes logs to appropriate expansion formatters
+ * Supports both default=>custom expansion flow and maintains performance
+ */
+const getExpansionContent = (log: DebugLogEntry): React.ReactNode => {
+  // Route to specialized expansion content based on log type
+  switch (log.point) {
+    case "dependencies": {
+      // Dynamically import to avoid circular dependencies
+      const {
+        DependencyExpansionContent,
+      } = require("./dependency-expansion-formatter");
+      return <DependencyExpansionContent log={log} />;
+    }
+
+    case "health": {
+      // Dynamically import to avoid circular dependencies
+      const {
+        HealthExpansionContent,
+      } = require("./health-expansion-formatter");
+      return <HealthExpansionContent log={log} />;
+    }
+
+    default:
+      // Default JSON expansion for all other log types
+      return <DefaultExpandedContent log={log} />;
+  }
+};
+
+/**
+ * OPTIMIZED: Get specialized formatter metadata for severity and expansion control
+ * Used to enhance default formatter behavior with log-type-specific logic
+ */
+const getLogTypeMeta = (log: DebugLogEntry) => {
+  switch (log.point) {
+    case "dependencies": {
+      const {
+        getDependencyLogMeta,
+      } = require("./dependency-expansion-formatter");
+      return getDependencyLogMeta(log);
+    }
+
+    case "health": {
+      const { getHealthLogMeta } = require("./health-expansion-formatter");
+      return getHealthLogMeta(log);
+    }
+
+    default:
+      return null;
+  }
+};
+
+/**
  * Optimized default formatter for debug log entries with performance enhancements
+ * ENHANCED: Now supports automatic expansion routing to specialized formatters
  * Memoized to prevent unnecessary re-renders of expensive JSON operations
  */
 export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
@@ -339,17 +392,30 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
     }) => {
       const [internalExpanded, setInternalExpanded] = useState(false);
 
-      // OPTIMIZATION: Combined memoization for all computed values
+      // OPTIMIZATION: Combined memoization with log-type-aware enhancements
       const computedProps = useMemo(() => {
+        // Get specialized log type metadata
+        const logTypeMeta = getLogTypeMeta(log);
+
+        // Use specialized severity if available, otherwise use provided severity
+        const effectiveSeverity =
+          logTypeMeta?.severity || (severity as LogSeverity);
+
         // Severity-related computations
-        const severityStyle = getSeverityStyle(severity as LogSeverity);
-        const severityEmoji = getSeverityEmoji(severity as LogSeverity);
+        const severityStyle = getSeverityStyle(effectiveSeverity);
+        const severityEmoji = getSeverityEmoji(effectiveSeverity);
 
         // Data-related computations (single pass)
         let formattedDataDisplay = null;
         let tooltipJsonString = "";
+
+        // Use specialized expand behavior if available
         const shouldShowExpand =
-          showExpandButton !== undefined ? showExpandButton : !!log.data;
+          showExpandButton !== undefined
+            ? showExpandButton
+            : logTypeMeta?.shouldExpand !== undefined
+              ? logTypeMeta.shouldExpand
+              : !!log.data;
 
         if (log.data) {
           // Single large object detection
@@ -370,8 +436,9 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
           formattedDataDisplay,
           tooltipJsonString,
           shouldShowExpand,
+          effectiveSeverity,
         };
-      }, [severity, log.data, showExpandButton]);
+      }, [severity, log.data, log.point, showExpandButton]);
 
       // Use internal state if no external control provided
       const isCurrentlyExpanded = onToggleExpand
@@ -380,10 +447,8 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
       const handleToggle =
         onToggleExpand || (() => setInternalExpanded(!internalExpanded));
 
-      // Use provided expanded content or default optimized component
-      const contentToShow = expandedContent || (
-        <DefaultExpandedContent log={log} />
-      );
+      // OPTIMIZED: Route to appropriate expansion content based on log type
+      const contentToShow = expandedContent || getExpansionContent(log);
 
       return (
         <div>

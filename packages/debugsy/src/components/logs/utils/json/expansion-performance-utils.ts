@@ -112,8 +112,8 @@ const checkReactComponent = (data: any): boolean => {
     data._owner !== undefined ||
     data.elementType !== undefined ||
     data.type !== undefined ||
-    data.key !== undefined ||
-    data.ref !== undefined ||
+    "key" in data ||
+    "ref" in data ||
     data.props !== undefined
   );
 };

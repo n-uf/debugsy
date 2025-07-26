@@ -95,13 +95,13 @@ export const isLikelyLargeObject = (obj: any): boolean => {
  * OPTIMIZED: Fast React component structure detection without full enumeration
  */
 const hasReactComponentStructure = (obj: any): boolean => {
-  // Fast property existence checks (faster than Object.keys)
+  // Fast property existence checks (safer than direct access for React elements)
   return !!(
     obj._owner !== undefined ||
     obj.elementType !== undefined ||
     obj.type !== undefined ||
-    obj.key !== undefined ||
-    obj.ref !== undefined ||
+    "key" in obj ||
+    "ref" in obj ||
     obj.props !== undefined
   );
 };
@@ -214,13 +214,14 @@ export const smartJsonStringify = (
  */
 const isReactComponentWithCompiledCode = (obj: any): boolean => {
   try {
-    // Check for React component-like structure
+    // Check for React component-like structure using safer property detection
+    // Use 'in' operator to avoid React's key/ref access warnings
     const hasReactStructure =
       obj._owner !== undefined ||
       obj.elementType !== undefined ||
       obj.type !== undefined ||
-      obj.key !== undefined ||
-      obj.ref !== undefined ||
+      "key" in obj ||
+      "ref" in obj ||
       obj.props !== undefined;
 
     if (!hasReactStructure) return false;
@@ -277,8 +278,16 @@ const formatReactComponentSummary = (obj: any): string => {
 
     // Basic component info
     if (obj.tag !== undefined) parts.push(`Tag: ${obj.tag}`);
-    if (obj.key !== null && obj.key !== undefined)
-      parts.push(`Key: ${obj.key}`);
+
+    // Safely check for key without triggering React warnings
+    try {
+      if ("key" in obj && obj.key !== null && obj.key !== undefined) {
+        parts.push(`Key: ${obj.key}`);
+      }
+    } catch {
+      // If accessing key fails (React element), skip it
+      parts.push(`Key: [protected]`);
+    }
 
     // Type information (the problematic part)
     if (obj.type) {

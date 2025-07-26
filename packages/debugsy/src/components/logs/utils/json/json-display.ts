@@ -23,8 +23,8 @@ const isReactComponentForDisplay = (data: any): boolean => {
       data._owner !== undefined ||
       data.elementType !== undefined ||
       data.type !== undefined ||
-      data.key !== undefined ||
-      data.ref !== undefined ||
+      "key" in data ||
+      "ref" in data ||
       data.props !== undefined;
 
     if (!hasReactStructure) return false;
@@ -54,8 +54,16 @@ const formatReactComponentForDisplay = (data: any): string => {
     const parts = [];
 
     if (data.tag !== undefined) parts.push(`Tag: ${data.tag}`);
-    if (data.key !== null && data.key !== undefined)
-      parts.push(`Key: ${data.key}`);
+
+    // Safely check for key without triggering React warnings
+    try {
+      if ("key" in data && data.key !== null && data.key !== undefined) {
+        parts.push(`Key: ${data.key}`);
+      }
+    } catch {
+      // If accessing key fails (React element), skip it
+      parts.push(`Key: [protected]`);
+    }
 
     if (data.type && typeof data.type === "string" && data.type.length > 1000) {
       const nameMatch = data.type.match(

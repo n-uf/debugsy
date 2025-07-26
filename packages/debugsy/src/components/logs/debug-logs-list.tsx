@@ -21,11 +21,7 @@ import {
   getDisplayDuration,
   getProgressBarDuration,
 } from "./config/copy-config";
-import {
-  DefaultLogFormatter,
-  DependencyLogFormatter,
-  HealthLogFormatter,
-} from "./formatters";
+import { DefaultLogFormatter } from "./formatters";
 import {
   type CopyState,
   copyLogsToClipboard,
@@ -56,14 +52,10 @@ const MemoizedLogEntry: React.FC<{
   uniqueKey: string;
 }> = React.memo(
   ({ log, index, uniqueKey }) => {
-    // Determine which formatter to use based on log type
-    if (log.point === "health") {
-      return <HealthLogFormatter log={log} />;
-    } else if (log.point === "dependencies") {
-      return <DependencyLogFormatter log={log} />;
-    } else {
-      return <DefaultLogFormatter log={log} index={index} />;
-    }
+    // OPTIMIZED: All logs flow through DefaultLogFormatter with automatic expansion routing
+    // DefaultLogFormatter now automatically detects log type and routes to appropriate expansion content
+    // This provides consistent behavior while allowing specialized expansion content
+    return <DefaultLogFormatter log={log} index={index} />;
   },
   (prevProps, nextProps) => {
     // Custom comparison function - only re-render if the actual log content changed
