@@ -18,8 +18,8 @@ const isReactComponentWithCompiledCode = (value: any, key: string): boolean => {
       value._owner !== undefined ||
       value.elementType !== undefined ||
       value.type !== undefined ||
-      value.key !== undefined ||
-      value.ref !== undefined ||
+      "key" in value ||
+      "ref" in value ||
       value.props !== undefined;
 
     if (!hasReactStructure) return false;
@@ -134,8 +134,10 @@ export const safeJsonStringify = (obj: any, space?: number): string => {
             // Try to extract meaningful info without serializing huge strings
             const componentInfo = [];
             if (value.tag !== undefined) componentInfo.push(`tag:${value.tag}`);
-            if (value.key !== null && value.key !== undefined)
-              componentInfo.push(`key:${value.key}`);
+            // Skip key property entirely for React elements to avoid warnings
+            if ("key" in value) {
+              componentInfo.push(`key:[protected]`);
+            }
 
             if (
               value.type &&

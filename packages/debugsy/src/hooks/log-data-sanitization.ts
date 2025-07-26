@@ -186,42 +186,46 @@ function isReactFiberNode(obj: any): boolean {
 }
 
 /**
- * ULTRA-FAST: Check if an object is a React element (optimized for speed)
+ * ULTRA-FAST: Simple React element check (optimized for speed)
  */
 function isReactElement(obj: any): boolean {
-  // Fast primitive checks
-  if (!obj || typeof obj !== "object") return false;
-
-  try {
-    // Direct property checks (faster than $$typeof.toString())
-    return (
-      obj.$$typeof !== undefined &&
-      typeof obj.$$typeof === "symbol" &&
-      (obj.type !== undefined || obj.props !== undefined)
-    );
-  } catch {
-    return false;
-  }
+  return !!(obj && obj.$$typeof && obj.type);
 }
 
 /**
- * ULTRA-FAST: Check if an object contains React internals (optimized for speed)
+ * ULTRA-FAST: Simple check for React internals (optimized for speed)
  */
 function containsReactInternals(obj: any): boolean {
-  // Fast primitive checks
-  if (!obj || typeof obj !== "object") return false;
+  return !!(obj && (obj._owner || obj.$$typeof || obj.memoizedState));
+}
 
-  try {
-    // Check only the most common React internal keys first (performance optimization)
-    return (
-      "_owner" in obj ||
-      "$$typeof" in obj ||
-      "memoizedState" in obj ||
-      "_store" in obj
-    );
-  } catch {
-    return false;
+/**
+ * SIMPLIFIED: Fast check for objects that likely need sanitization
+ */
+function quickSanitizationCheck(data: any): boolean {
+  // Fast primitive check
+  if (!data || typeof data !== "object") return false;
+
+  // Fast array check
+  if (Array.isArray(data)) {
+    return data.length > 20; // Simple length check
   }
+
+  // Fast React checks (only the most common patterns)
+  if (data.$$typeof || data._owner || data.type) return true;
+
+  // Fast DOM element check
+  if (data.nodeType && data.tagName) return true;
+
+  // Simple property count check (much faster)
+  let count = 0;
+  for (const key in data) {
+    if (++count > 15) return true; // Early exit
+    // Quick function check on first few properties
+    if (count <= 3 && typeof data[key] === "function") return true;
+  }
+
+  return false;
 }
 
 /**
@@ -694,7 +698,7 @@ export function sanitizeLogData(
 }
 
 /**
- * ULTRA-FAST: Check if data needs sanitization with memoization and performance monitoring
+ * ULTRA-FAST: Check if data needs sanitization with simplified logic
  * This function is called for EVERY debug log entry, so it must be extremely fast
  */
 export function needsSanitization(data: any): boolean {
@@ -704,7 +708,7 @@ export function needsSanitization(data: any): boolean {
   // FAST PATH 1: Primitives and null/undefined (most common case)
   if (!data || typeof data !== "object") {
     const endTime = performance.now();
-    performanceStats.needsSanitizationTime += (endTime - startTime) * 1000; // Convert to microseconds
+    performanceStats.needsSanitizationTime += (endTime - startTime) * 1000;
     return false;
   }
 
@@ -719,63 +723,10 @@ export function needsSanitization(data: any): boolean {
   performanceStats.cacheMisses++;
 
   try {
-    let needsSanitization = false;
+    // SIMPLIFIED: Use single fast check instead of multiple expensive ones
+    const needsSanitization = quickSanitizationCheck(data);
 
-    // FAST PATH 3: DOM element with React Fiber check (high priority for circular refs)
-    if (isDOMElementWithReactFiber(data)) {
-      needsSanitization = true;
-    } else if (isReactFiberNode(data)) {
-      needsSanitization = true;
-    } else if (Array.isArray(data)) {
-      // FAST PATH 4: Array length check (very fast)
-      if (data.length > 50) {
-        needsSanitization = true;
-      }
-    } else {
-      // FAST PATH 5: React element check (optimized)
-      if (isReactElement(data)) {
-        needsSanitization = true;
-      } else if (containsReactInternals(data)) {
-        needsSanitization = true;
-      } else {
-        // FAST PATH 6: Property count estimation (avoid Object.keys if possible)
-        // Use for...in loop with early exit for better performance
-        let propertyCount = 0;
-        let hasFunctions = false;
-
-        for (const key in data) {
-          if (data.hasOwnProperty(key)) {
-            propertyCount++;
-
-            // Early exit if too many properties
-            if (propertyCount > 20) {
-              needsSanitization = true;
-              break;
-            }
-
-            // Check first few properties for functions/React elements (limit to 5 for performance)
-            if (propertyCount <= 5 && !hasFunctions) {
-              const value = data[key];
-              if (typeof value === "function") {
-                hasFunctions = true;
-                needsSanitization = true;
-                break;
-              }
-              if (isReactElement(value) || containsReactInternals(value)) {
-                needsSanitization = true;
-                break;
-              }
-            }
-          }
-        }
-
-        if (!needsSanitization && hasFunctions) {
-          needsSanitization = true;
-        }
-      }
-    }
-
-    // Cache the result for future lookups
+    // Cache the result
     needsSanitizationCache.set(data, needsSanitization);
 
     const endTime = performance.now();
