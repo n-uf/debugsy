@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+// Add import for react18-json-view
+import JsonView from "react18-json-view";
+import "react18-json-view/src/style.css";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import {
   LOG_STYLES,
@@ -90,7 +93,7 @@ const getSeverityEmoji = (severity: LogSeverity): string => {
 };
 
 /**
- * Default pretty JSON content renderer
+ * Default pretty JSON content renderer with efficient large JSON handling
  */
 const DefaultExpandedContent: React.FC<{ log: DebugLogEntry }> = ({ log }) => {
   const [copyState, setCopyState] = useState<"idle" | "copying" | "copied">(
@@ -167,23 +170,33 @@ const DefaultExpandedContent: React.FC<{ log: DebugLogEntry }> = ({ log }) => {
         </button>
       </div>
 
-      {/* Pretty JSON */}
+      {/* Efficient JSON Viewer for Large Data */}
       <div
         style={{
-          color: "#d1d5db",
-          fontSize: "10px", // Increased from 8px (25% larger)
           backgroundColor: "#0f172a22",
           padding: "6px 8px",
           borderRadius: "3px",
-          fontFamily: "monospace",
           overflow: "auto",
-          maxHeight: "200px",
+          maxHeight: "300px", // Increased height for better viewing
           border: "1px solid #374151",
         }}
       >
-        <pre style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: "1.4" }}>
-          {safeJsonStringify(log.data, 2)}
-        </pre>
+        <JsonView
+          src={log.data}
+          collapsed={2} // Collapse at depth 2 for performance
+          collapseObjectsAfterLength={20} // Collapse large objects automatically
+          collapseStringsAfterLength={100} // Truncate long strings
+          ignoreLargeArray={false} // Handle large arrays efficiently
+          enableClipboard={false} // Disable internal clipboard (we have our own)
+          displayArrayIndex={true}
+          displaySize={true}
+          style={{
+            fontSize: "10px",
+            fontFamily: "monospace",
+            backgroundColor: "transparent",
+          }}
+          theme="default" // You can use "dark" theme if preferred
+        />
       </div>
     </div>
   );
@@ -304,8 +317,8 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> = ({
           {/* Log Data (if present) - show preview in collapsed state */}
           {log.data && (
             <span style={LOG_STYLES.data} title={safeJsonStringify(log.data)}>
-              {formatDataForDisplay(log.data, Infinity)}{" "}
-              {/* Remove max width limit */}
+              {formatDataForDisplay(log.data, 1000)}{" "}
+              {/* Constrain collapsed JSON to 1000 chars */}
             </span>
           )}
         </div>
