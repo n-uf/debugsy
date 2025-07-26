@@ -6,22 +6,41 @@ import { useDependencyState } from "../hooks/use-debug";
 
 export interface DebugDependencyAdvancedControlsProps {
   className?: string;
+  /** Whether to show the advanced toggle button */
+  showToggle?: boolean;
+  /** External control of advanced panel visibility */
+  isVisible?: boolean;
+  /** Callback when visibility changes */
+  onVisibilityChange?: (visible: boolean) => void;
 }
 
 /**
- * UI controls for dependency debugging configuration
- * Provides buttons to control dependency tracking behavior
+ * Advanced dependency debugging controls with dark theme styling
+ * Provides comprehensive control over dependency tracking behavior
  */
 export const DebugDependencyAdvancedControls: React.FC<
   DebugDependencyAdvancedControlsProps
-> = ({ className = "" }) => {
+> = ({ className = "", showToggle = true, isVisible, onVisibilityChange }) => {
   const dependencyState = useDependencyState();
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [internalShowAdvanced, setInternalShowAdvanced] = useState(false);
 
-  // Button handlers using direct dependency state methods
+  // Use external visibility control if provided, otherwise use internal state
+  const showAdvanced =
+    isVisible !== undefined ? isVisible : internalShowAdvanced;
+
+  const toggleAdvanced = () => {
+    const newValue = !showAdvanced;
+    if (onVisibilityChange) {
+      onVisibilityChange(newValue);
+    } else {
+      setInternalShowAdvanced(newValue);
+    }
+  };
+
+  // Enhanced button handlers with better logging and state management
   const handleDependenciesToggle = () => {
     console.log(
-      "🔵 Dependencies toggle, current enabled:",
+      "🔵 [AdvancedControls] Dependencies toggle, current enabled:",
       dependencyState.enabled
     );
     if (dependencyState.enabled) {
@@ -32,52 +51,59 @@ export const DebugDependencyAdvancedControls: React.FC<
   };
 
   const handleQuietMode = () => {
-    console.log("🔇 Setting dependencies to quiet mode");
+    console.log("🔇 [AdvancedControls] Setting dependencies to quiet mode");
     dependencyState.enable();
     dependencyState.setLogLevel("quiet");
   };
 
   const handleNormalMode = () => {
-    console.log("📊 Setting dependencies to normal mode");
+    console.log("📊 [AdvancedControls] Setting dependencies to normal mode");
     dependencyState.enable();
     dependencyState.setLogLevel("normal");
   };
 
   const handleVerboseMode = () => {
-    console.log("📢 Setting dependencies to verbose mode");
+    console.log("📢 [AdvancedControls] Setting dependencies to verbose mode");
     dependencyState.enable();
     dependencyState.setLogLevel("verbose");
   };
 
   const handleFilterChange = (filter: DependencyFilter) => {
-    console.log(`🔧 Setting dependency filter to: ${filter}`);
+    console.log(
+      `🔧 [AdvancedControls] Setting dependency filter to: ${filter}`
+    );
+    if (filter !== "all") {
+      dependencyState.enable(); // Auto-enable when setting a specific filter
+    }
     dependencyState.setFilter(filter);
   };
 
   const controlsStyle: React.CSSProperties = {
-    padding: "8px",
+    padding: "12px",
     backgroundColor: "#1a1a1a",
-    borderRadius: "4px",
+    borderRadius: "6px",
     border: "1px solid #333",
     fontFamily: "monospace",
     fontSize: "11px",
     color: "#e5e7eb",
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
-    minWidth: "200px",
+    gap: "10px",
+    minWidth: "240px",
+    maxWidth: "100%",
   };
 
   const buttonStyle: React.CSSProperties = {
-    padding: "4px 8px",
+    padding: "6px 10px",
     backgroundColor: "#2d2d2d",
     border: "1px solid #404040",
-    borderRadius: "3px",
+    borderRadius: "4px",
     color: "#e5e7eb",
     cursor: "pointer",
     fontSize: "10px",
     fontFamily: "monospace",
     transition: "all 0.2s ease",
+    whiteSpace: "nowrap",
   };
 
   const activeButtonStyle: React.CSSProperties = {
@@ -85,162 +111,260 @@ export const DebugDependencyAdvancedControls: React.FC<
     backgroundColor: "#3b82f6",
     borderColor: "#2563eb",
     color: "white",
+    boxShadow: "0 0 0 1px rgba(59, 130, 246, 0.3)",
   };
 
   const sectionStyle: React.CSSProperties = {
     borderTop: "1px solid #333",
-    paddingTop: "8px",
-    marginTop: "4px",
+    paddingTop: "10px",
+    marginTop: "6px",
+  };
+
+  const headerStyle: React.CSSProperties = {
+    fontWeight: "bold",
+    color: "#fbbf24",
+    fontSize: "12px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
   };
 
   return (
-    <div className={className} style={controlsStyle}>
-      {/* Header */}
-      <div style={{ fontWeight: "bold", color: "#fbbf24" }}>
-        🔍 Dependencies Debug
-      </div>
-
-      {/* Status */}
-      <div style={{ fontSize: "10px", color: "#9ca3af" }}>
-        Status: {dependencyState.enabled ? "🟢 Enabled" : "🔴 Disabled"}
-        {dependencyState.enabled && (
-          <>
-            <br />
-            Level: {dependencyState.logLevel}
-            <br />
-            Filter: {dependencyState.filter}
-          </>
-        )}
-      </div>
-
-      {/* Main Toggle */}
-      <button
-        style={dependencyState.enabled ? activeButtonStyle : buttonStyle}
-        onClick={handleDependenciesToggle}
-      >
-        {dependencyState.enabled ? "🔴 Disable" : "🟢 Enable"} Dependencies
-      </button>
-
-      {/* Level Controls - Only show when enabled */}
-      {dependencyState.enabled && (
-        <div style={sectionStyle}>
-          <div
-            style={{ marginBottom: "4px", fontSize: "10px", color: "#9ca3af" }}
-          >
-            Tracking Level:
-          </div>
-
-          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-            <button
-              style={
-                dependencyState.logLevel === "quiet"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={handleQuietMode}
-            >
-              🔇 Quiet
-            </button>
-            <button
-              style={
-                dependencyState.logLevel === "normal"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={handleNormalMode}
-            >
-              📊 Normal
-            </button>
-            <button
-              style={
-                dependencyState.logLevel === "verbose"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={handleVerboseMode}
-            >
-              📢 Verbose
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Filter Controls - Only show when enabled */}
-      {dependencyState.enabled && (
-        <div style={sectionStyle}>
-          <div
-            style={{ marginBottom: "4px", fontSize: "10px", color: "#9ca3af" }}
-          >
-            Dependency Filter:
-          </div>
-
-          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-            <button
-              style={
-                dependencyState.filter === "all"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={() => handleFilterChange("all")}
-            >
-              📋 All
-            </button>
-            <button
-              style={
-                dependencyState.filter === "functions-only"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={() => handleFilterChange("functions-only")}
-            >
-              📝 Functions
-            </button>
-            <button
-              style={
-                dependencyState.filter === "objects-only"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={() => handleFilterChange("objects-only")}
-            >
-              📦 Objects
-            </button>
-            <button
-              style={
-                dependencyState.filter === "unstable-only"
-                  ? activeButtonStyle
-                  : buttonStyle
-              }
-              onClick={() => handleFilterChange("unstable-only")}
-            >
-              ⚠️ Unstable
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Advanced Controls Toggle */}
-      <div style={sectionStyle}>
+    <div className={className}>
+      {/* Toggle Button */}
+      {showToggle && (
         <button
-          style={buttonStyle}
-          onClick={() => setShowAdvanced(!showAdvanced)}
+          onClick={toggleAdvanced}
+          className="px-1.5 py-0.5 rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50 mb-2"
+          style={{ fontSize: "10px", lineHeight: "12px" }}
         >
           {showAdvanced ? "🔼" : "🔽"} Advanced
         </button>
-      </div>
+      )}
 
-      {/* Advanced Controls */}
-      {showAdvanced && dependencyState.enabled && (
-        <div style={sectionStyle}>
+      {/* Advanced Controls Panel */}
+      {showAdvanced && (
+        <div style={controlsStyle}>
+          {/* Header */}
+          <div style={headerStyle}>🔍 Advanced Dependency Controls</div>
+
+          {/* Status Overview */}
           <div
-            style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "4px" }}
+            style={{ fontSize: "10px", color: "#9ca3af", lineHeight: "1.4" }}
           >
-            Log Count: {dependencyState.logs.length}
+            <div>
+              <strong>Status:</strong>{" "}
+              {dependencyState.enabled ? "🟢 Enabled" : "🔴 Disabled"}
+            </div>
+            {dependencyState.enabled && (
+              <>
+                <div>
+                  <strong>Level:</strong> {dependencyState.logLevel}
+                </div>
+                <div>
+                  <strong>Filter:</strong> {dependencyState.filter}
+                </div>
+                <div>
+                  <strong>Log Count:</strong> {dependencyState.logs.length}
+                </div>
+              </>
+            )}
           </div>
 
-          <div style={{ fontSize: "9px", color: "#6b7280" }}>
-            Recent logs will appear in the debug panel when dependency tracking
-            is active.
+          {/* Main Toggle */}
+          <button
+            style={dependencyState.enabled ? activeButtonStyle : buttonStyle}
+            onClick={handleDependenciesToggle}
+          >
+            {dependencyState.enabled ? "🔴 Disable All" : "🟢 Enable"}{" "}
+            Dependencies
+          </button>
+
+          {/* Level Controls - Enhanced with better UX */}
+          {dependencyState.enabled && (
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  marginBottom: "6px",
+                  fontSize: "10px",
+                  color: "#9ca3af",
+                  fontWeight: "bold",
+                }}
+              >
+                📊 Tracking Level:
+              </div>
+
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                <button
+                  style={
+                    dependencyState.logLevel === "quiet"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={handleQuietMode}
+                  title="Minimal logging - only critical changes"
+                >
+                  🔇 Quiet
+                </button>
+                <button
+                  style={
+                    dependencyState.logLevel === "normal"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={handleNormalMode}
+                  title="Standard logging - balanced detail"
+                >
+                  📊 Normal
+                </button>
+                <button
+                  style={
+                    dependencyState.logLevel === "verbose"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={handleVerboseMode}
+                  title="Detailed logging - all changes"
+                >
+                  📢 Verbose
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Filter Controls - Enhanced with better organization */}
+          {dependencyState.enabled && (
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  marginBottom: "6px",
+                  fontSize: "10px",
+                  color: "#9ca3af",
+                  fontWeight: "bold",
+                }}
+              >
+                🔧 Content Filter:
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "6px",
+                }}
+              >
+                <button
+                  style={
+                    dependencyState.filter === "all"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={() => handleFilterChange("all")}
+                  title="Show all dependencies"
+                >
+                  📋 All
+                </button>
+                <button
+                  style={
+                    dependencyState.filter === "functions-only"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={() => handleFilterChange("functions-only")}
+                  title="Only function dependencies"
+                >
+                  📝 Functions
+                </button>
+                <button
+                  style={
+                    dependencyState.filter === "objects-only"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={() => handleFilterChange("objects-only")}
+                  title="Only object dependencies"
+                >
+                  📦 Objects
+                </button>
+                <button
+                  style={
+                    dependencyState.filter === "unstable-only"
+                      ? activeButtonStyle
+                      : buttonStyle
+                  }
+                  onClick={() => handleFilterChange("unstable-only")}
+                  title="Only unstable/changing dependencies"
+                >
+                  ⚠️ Unstable
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Performance & Stats */}
+          {dependencyState.enabled && (
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  marginBottom: "6px",
+                  fontSize: "10px",
+                  color: "#9ca3af",
+                  fontWeight: "bold",
+                }}
+              >
+                📈 Performance:
+              </div>
+
+              <div
+                style={{ fontSize: "9px", color: "#6b7280", lineHeight: "1.4" }}
+              >
+                <div>
+                  Total Logs:{" "}
+                  <span style={{ color: "#10b981" }}>
+                    {dependencyState.logs.length}
+                  </span>
+                </div>
+                {dependencyState.logs.length > 0 && (
+                  <div>
+                    Latest:{" "}
+                    <span style={{ color: "#8b5cf6" }}>
+                      {new Date(
+                        dependencyState.logs[dependencyState.logs.length - 1]
+                          ?.timestamp || Date.now()
+                      ).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                {dependencyState.logs.length === 0 && (
+                  <div style={{ color: "#f59e0b", marginTop: "4px" }}>
+                    💡 Interact with components to see dependency tracking
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Console Commands Quick Reference */}
+          <div style={sectionStyle}>
+            <div
+              style={{
+                marginBottom: "6px",
+                fontSize: "10px",
+                color: "#9ca3af",
+                fontWeight: "bold",
+              }}
+            >
+              📟 Console Commands:
+            </div>
+            <div
+              style={{ fontSize: "8px", color: "#6b7280", lineHeight: "1.3" }}
+            >
+              <div>surfaceDebug.deps.off()</div>
+              <div>surfaceDebug.deps.{dependencyState.logLevel}()</div>
+              <div>
+                surfaceDebug.deps.{dependencyState.filter.replace("-", "")}()
+              </div>
+            </div>
           </div>
         </div>
       )}
