@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import type { DebugDisplayContent, DebugDisplayState } from "./debug-constants";
 
 // Subscribers for state changes
@@ -9,11 +9,23 @@ let pendingNotification = false;
 let lastNotificationTime = 0;
 const THROTTLE_MS = 16; // ~60fps max update rate
 
+// Re-entrancy guard to prevent infinite feedback loops
+let isNotifying = false;
+
 /**
  * Notify all subscribers of state changes
  * Use queueMicrotask for immediate but deferred execution with throttling
+ * FIXED: Added re-entrancy guard to prevent infinite loops
  */
 export function notifySubscribers(): void {
+  // Prevent re-entrant calls that cause infinite loops
+  if (isNotifying) {
+    console.warn(
+      "🔄 Blocked re-entrant notifySubscribers() call to prevent infinite loop"
+    );
+    return;
+  }
+
   if (pendingNotification) return; // Already scheduled
 
   const now = Date.now();
@@ -25,13 +37,19 @@ export function notifySubscribers(): void {
     setTimeout(() => {
       pendingNotification = false;
       lastNotificationTime = Date.now();
-      subscribers.forEach((callback) => {
-        try {
-          callback();
-        } catch (error) {
-          console.error("Debug subscriber error:", error);
-        }
-      });
+
+      isNotifying = true;
+      try {
+        subscribers.forEach((callback) => {
+          try {
+            callback();
+          } catch (error) {
+            console.error("Debug subscriber error:", error);
+          }
+        });
+      } finally {
+        isNotifying = false;
+      }
     }, THROTTLE_MS - timeSinceLastNotification);
     return;
   }
@@ -42,13 +60,19 @@ export function notifySubscribers(): void {
   // Use queueMicrotask for immediate execution after current call stack
   queueMicrotask(() => {
     pendingNotification = false;
-    subscribers.forEach((callback) => {
-      try {
-        callback();
-      } catch (error) {
-        console.error("Debug subscriber error:", error);
-      }
-    });
+
+    isNotifying = true;
+    try {
+      subscribers.forEach((callback) => {
+        try {
+          callback();
+        } catch (error) {
+          console.error("Debug subscriber error:", error);
+        }
+      });
+    } finally {
+      isNotifying = false;
+    }
   });
 }
 
@@ -64,12 +88,14 @@ export function subscribeToDebugChanges(callback: () => void): () => void {
 
 /**
  * Hook to subscribe to debug state changes
+ * FIXED: Use useReducer instead of forceUpdate({}) to prevent infinite loops
  */
 export function useDebugSubscription(): void {
-  const [, forceUpdate] = useState({});
+  // Use useReducer for stable forceUpdate - no new objects created
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
   useEffect(() => {
-    const unsubscribe = subscribeToDebugChanges(() => forceUpdate({}));
+    const unsubscribe = subscribeToDebugChanges(() => forceUpdate());
     return unsubscribe;
   }, []);
 }
