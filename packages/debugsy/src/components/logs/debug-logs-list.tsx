@@ -90,7 +90,7 @@ const LogContainer: React.FC<{
   );
 });
 
-VirtualizedLogContainer.displayName = "VirtualizedLogContainer";
+LogContainer.displayName = "LogContainer";
 
 /**
  * Debug Logs List - Displays the scrollable list of debug log entries
@@ -134,7 +134,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [pausedLogs, setPausedLogs] = useState<DebugLogEntry[]>([]);
   const logsContainerRef = useRef<HTMLDivElement>(null);
-  const logsDisplayAreaRef = useRef<HTMLDivElement>(null); // For measuring actual display area
+
   const stateResetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Memoize active logs to prevent unnecessary recalculations
@@ -341,92 +341,70 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
         tabIndex={0}
         style={{
           flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflowY: "auto", // Restored scrolling - parent handles scroll, child fills space
+          overflowY: "auto", // Natural scrolling behavior restored
           padding: "4px 8px",
           outline: "none", // Remove focus outline
         }}
       >
-        {/* Status messages area */}
-        <div
-          ref={logsDisplayAreaRef}
-          style={{ flex: 1, display: "flex", flexDirection: "column" }}
-        >
-          {truncationInfo.isLogsTruncated && (
-            <div style={LOG_STYLES.truncationWarning}>
-              ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
-              {logs.length} logs (performance limit)
-            </div>
-          )}
+        {truncationInfo.isLogsTruncated && (
+          <div style={LOG_STYLES.truncationWarning}>
+            ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
+            {logs.length} logs (performance limit)
+          </div>
+        )}
 
-          {isPaused && (
-            <div
-              style={{
-                ...LOG_STYLES.truncationWarning,
-                backgroundColor: "#fbbf2422",
-                borderColor: "#f59e0b44",
-                color: "#f59e0b",
-                fontWeight: "bold",
-              }}
-            >
-              ⏸️ Log rendering paused - {pausedLogs.length} logs frozen
-            </div>
-          )}
+        {isPaused && (
+          <div
+            style={{
+              ...LOG_STYLES.truncationWarning,
+              backgroundColor: "#fbbf2422",
+              borderColor: "#f59e0b44",
+              color: "#f59e0b",
+              fontWeight: "bold",
+            }}
+          >
+            ⏸️ Log rendering paused - {pausedLogs.length} logs frozen
+          </div>
+        )}
 
-          {reversedLogs.length === 0 ? (
-            <div
-              style={{
-                ...LOG_STYLES.emptyState,
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              No debug logs yet.
-              <br />
-              Enable debug points and interact with the surface to see logs
-              here.
-            </div>
-          ) : (
-            <>
-              {/* Use virtualized container for better performance - now fills available space */}
-              <VirtualizedLogContainer
-                logs={reversedLogs}
-                parentRef={logsDisplayAreaRef}
-                itemHeight={25} // Approximate height of each log entry
-              />
+        {reversedLogs.length === 0 ? (
+          <div style={LOG_STYLES.emptyState}>
+            No debug logs yet.
+            <br />
+            Enable debug points and interact with the surface to see logs here.
+          </div>
+        ) : (
+          <>
+            {/* Simple log container that allows natural scrolling */}
+            <LogContainer logs={reversedLogs} />
 
-              {truncationInfo.isLogsTruncated && (
-                <div
-                  key="hidden-logs-indicator"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    marginTop: "8px",
-                    padding: "6px 8px",
-                    backgroundColor: "#78350f22",
-                    borderRadius: "4px",
-                    fontSize: "10px",
-                    fontFamily: "monospace",
-                    lineHeight: "1.2",
-                    justifyContent: "center",
-                    border: "1px dashed #78350f44",
-                    flexShrink: 0, // Don't shrink this element
-                  }}
-                >
-                  <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
-                  <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
-                    ... and {truncationInfo.hiddenLogsCount.toLocaleString()}{" "}
-                    more logs hidden for performance
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            {truncationInfo.isLogsTruncated && (
+              <div
+                key="hidden-logs-indicator"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginTop: "8px",
+                  padding: "6px 8px",
+                  backgroundColor: "#78350f22",
+                  borderRadius: "4px",
+                  fontSize: "10px",
+                  fontFamily: "monospace",
+                  lineHeight: "1.2",
+                  justifyContent: "center",
+                  border: "1px dashed #78350f44",
+                }}
+              >
+                <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
+                <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
+                  ... and {truncationInfo.hiddenLogsCount.toLocaleString()} more
+                  logs hidden for performance
+                </span>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Actions Panel - Vertical button panel on the right of logs */}
