@@ -1,4 +1,4 @@
-import type { DebugLogEntry, DebugPoint } from "./debug-constants";
+import type { DebugLogEntry, DebugPoint } from "../../shared/debug-constants";
 
 // Health metrics structure
 export interface HealthMetrics {

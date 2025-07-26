@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
+import { useDebugDisplayContent } from "../hooks/debug-notifications";
 import type { DebugLogEntry } from "../hooks/use-debug";
-import { useDebugDisplayContent } from "../hooks/use-debug";
 
 export interface DebugDisplayPanelProps {
   logs: DebugLogEntry[];

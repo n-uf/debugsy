@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { type DebugPoint } from "../hooks/debug-constants";
+import { type DebugPoint } from "../../shared/debug-constants";
 
 export interface DebugPointConfig {
   key: DebugPoint;

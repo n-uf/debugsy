@@ -47,7 +47,7 @@ const initializeDebugLogger = () => {
   if (!debugLogger) {
     try {
       // Dynamically import to avoid circular dependencies
-      const { useDebug } = require("../hooks/use-debug");
+      const { useDebug } = require("../debug-logs/hooks/use-debug");
 
       // Create a logger instance that uses the main debug system
       // Note: This will be a singleton to avoid hook issues

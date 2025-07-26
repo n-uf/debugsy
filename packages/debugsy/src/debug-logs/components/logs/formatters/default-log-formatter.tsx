@@ -3,7 +3,10 @@
 import React, { useMemo, useState } from "react";
 // Add import for react18-json-view
 import "react18-json-view/src/style.css";
-import type { DebugLogEntry, LogLevel } from "../../../hooks/debug-constants";
+import type {
+  DebugLogEntry,
+  LogLevel,
+} from "../../../../shared/debug-constants";
 import {
   LOG_STYLES,
   formatDataForDisplay,

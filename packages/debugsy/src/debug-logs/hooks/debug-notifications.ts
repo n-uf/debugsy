@@ -1,5 +1,8 @@
 import { useEffect, useReducer, useState } from "react";
-import type { DebugDisplayContent, DebugDisplayState } from "./debug-constants";
+import type {
+  DebugDisplayContent,
+  DebugDisplayState,
+} from "../../shared/debug-constants";
 
 // Subscribers for state changes
 const subscribers = new Set<() => void>();
