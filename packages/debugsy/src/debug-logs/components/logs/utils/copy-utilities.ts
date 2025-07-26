@@ -1,11 +1,154 @@
 import {
-  type DepthSetting,
+  createObjectDiff,
+  getDiffSummary,
   processObjectForDisplay,
+  type DepthSetting,
+  type DiffEntry,
 } from "../../../../shared/object-depth-utils";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import { DEFAULT_COPY_CONFIG } from "../config/copy-config";
 import { formatTime } from "../formatters";
 import { safeSuperjsonStringify } from "./json/json-core";
+
+/**
+ * Simple object display for copying (without emojis)
+ */
+const getSimpleObjectDisplay = (value: any): string => {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+
+  if (typeof value === "object") {
+    try {
+      if (Array.isArray(value)) {
+        return `Array(${value.length})`;
+      }
+
+      const constructorName = value.constructor?.name;
+      if (constructorName && constructorName !== "Object") {
+        return `${constructorName}{}`;
+      }
+
+      const keys = Object.keys(value);
+      if (keys.length === 0) {
+        return "{}";
+      } else if (keys.length <= 3) {
+        return `{${keys.join(", ")}}`;
+      } else {
+        return `{${keys.slice(0, 3).join(", ")}, +${keys.length - 3}}`;
+      }
+    } catch (error) {
+      return "[Object]";
+    }
+  }
+
+  return String(value);
+};
+
+/**
+ * Extract component name from log message
+ */
+const COMPONENT_NAME_REGEX = /\[([^\]]+)\]/;
+const extractComponentName = (message: string): string => {
+  const match = message.match(COMPONENT_NAME_REGEX);
+  return match?.[1] ?? "Unknown";
+};
+
+/**
+ * Parse dependency log type from message
+ */
+const parseDependencyLogType = (message: string): string => {
+  if (message.includes("Dependencies changed:")) return "dependency-change";
+  if (message.includes("function changed")) return "function-recreation";
+  if (message.includes("object changed")) return "object-recreation";
+  if (message.includes("High render count detected")) return "render-warning";
+  if (message.includes("CIRCUIT BREAKER")) return "circuit-breaker";
+  if (message.includes("EMERGENCY STOP")) return "emergency-stop";
+  if (message.includes("Hook execution")) return "hook-execution";
+  if (message.includes("→")) return "primitive-change";
+  return "unknown";
+};
+
+/**
+ * Format dependency change data for copying
+ */
+const formatDependencyDataForCopy = (data: any, logType: string) => {
+  if (!data || logType !== "dependency-change" || typeof data !== "object") {
+    return [];
+  }
+
+  return Object.entries(data)
+    .map(([key, change]: [string, any]) => {
+      if (
+        change &&
+        typeof change === "object" &&
+        "from" in change &&
+        "to" in change
+      ) {
+        return {
+          property: key,
+          from: change.from,
+          to: change.to,
+          type:
+            typeof change.from === "function"
+              ? "function"
+              : typeof change.from === "object"
+                ? "object"
+                : "primitive",
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+};
+
+/**
+ * Format diff information for copying
+ */
+const formatDiffForCopy = (from: any, to: any, property: string): string => {
+  try {
+    const diffs = createObjectDiff(from, to);
+    if (diffs.length === 0) {
+      const fromDisplay = getSimpleObjectDisplay(from);
+      const toDisplay = getSimpleObjectDisplay(to);
+      return `  ${property}: ${fromDisplay} → ${toDisplay}`;
+    }
+
+    const summary = getDiffSummary(diffs);
+    let diffText = `  ${property}: ${summary}\n`;
+
+    // Add detailed diff entries
+    diffs.slice(0, 5).forEach((diffEntry: DiffEntry) => {
+      const symbol =
+        diffEntry.type === "added"
+          ? "+"
+          : diffEntry.type === "removed"
+            ? "-"
+            : "~";
+      if (diffEntry.type === "removed") {
+        const fromEnhanced = getSimpleObjectDisplay(diffEntry.from);
+        diffText += `    ${symbol} ${diffEntry.key}: ${fromEnhanced}\n`;
+      } else if (diffEntry.type === "added") {
+        const toEnhanced = getSimpleObjectDisplay(diffEntry.to);
+        diffText += `    ${symbol} ${diffEntry.key}: ${toEnhanced}\n`;
+      } else {
+        const fromEnhanced = getSimpleObjectDisplay(diffEntry.from);
+        const toEnhanced = getSimpleObjectDisplay(diffEntry.to);
+        diffText += `    ${symbol} ${diffEntry.key}: ${fromEnhanced} → ${toEnhanced}\n`;
+      }
+    });
+
+    if (diffs.length > 5) {
+      diffText += `    ... +${diffs.length - 5} more changes\n`;
+    }
+
+    return diffText.trim();
+  } catch (error) {
+    // Fallback to simple display
+    const fromDisplay = getSimpleObjectDisplay(from);
+    const toDisplay = getSimpleObjectDisplay(to);
+    return `  ${property}: ${fromDisplay} → ${toDisplay}`;
+  }
+};
 
 /**
  * Copy state - number representing current step (0 = idle, 1+ = steps completed)
@@ -389,6 +532,37 @@ export const formatLogForCopy = (
 ---
 Full Metrics (Safe JSON):
 ${safeSuperjsonStringify(processObjectForDisplay(metrics, depthSetting))}`;
+  }
+
+  // Special formatting for dependency logs with diff information
+  if (log.point === "dependencies") {
+    const componentName = extractComponentName(log.message);
+    const logType = parseDependencyLogType(log.message);
+
+    if (logType === "dependency-change" && log.data) {
+      const dependencyChanges = formatDependencyDataForCopy(log.data, logType);
+
+      if (dependencyChanges.length > 0) {
+        let output = `[${time}] DEPENDENCY CHANGE - ${componentName}:\n`;
+
+        dependencyChanges.forEach((change: any) => {
+          const diffInfo = formatDiffForCopy(
+            change.from,
+            change.to,
+            change.property
+          );
+          output += `${diffInfo}\n`;
+        });
+
+        return output.trim();
+      }
+    }
+
+    // Fallback for other dependency log types
+    const data = log.data
+      ? ` | ${safeSuperjsonStringify(processObjectForDisplay(log.data, depthSetting))}`
+      : "";
+    return `[${time}] DEPENDENCY - ${componentName}: ${log.message}${data}`;
   }
 
   // For regular logs, use safe superjson to handle any complex objects

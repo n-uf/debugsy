@@ -1,8 +1,35 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import { type LogSeverity } from "./default-log-formatter";
+import {
+  CompactHeader,
+  DashboardGrid,
+  MetricCard,
+  SectionContainer,
+  StatusIndicator,
+} from "./shared-components";
+import { SHARED_TOKENS } from "./shared-tokens";
+
+// CSS animation styles
+const pulseAnimation = `
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+  }
+`;
+
+// Inject styles if not already present
+if (
+  typeof document !== "undefined" &&
+  !document.getElementById("health-animation-styles")
+) {
+  const style = document.createElement("style");
+  style.id = "health-animation-styles";
+  style.textContent = pulseAnimation;
+  document.head.appendChild(style);
+}
 
 /**
  * Formats a timestamp for display in log entries
@@ -13,119 +40,240 @@ export const formatTime = (timestamp: number): string => {
 };
 
 /**
- * OPTIMIZED: Formats values for display - handles different data types appropriately
+ * Formats values for display in metric cards
  */
-export const formatValue = (value: any): string => {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (typeof value === "boolean") return value.toString();
-  if (typeof value === "number") return value.toLocaleString();
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return `[${value.length} items]`;
-  if (typeof value === "object") return `{${Object.keys(value).length} props}`;
-  return String(value);
+export const formatMetricValue = (
+  value: any
+): { display: string; type: string } => {
+  if (value === null) return { display: "null", type: "null" };
+  if (value === undefined) return { display: "N/A", type: "undefined" };
+  if (typeof value === "boolean")
+    return { display: value ? "Yes" : "No", type: "boolean" };
+  if (typeof value === "number") {
+    if (value > 1024 * 1024)
+      return {
+        display: `${(value / (1024 * 1024)).toFixed(1)}MB`,
+        type: "bytes",
+      };
+    if (value > 1024)
+      return { display: `${(value / 1024).toFixed(1)}KB`, type: "bytes" };
+    return { display: value.toLocaleString(), type: "number" };
+  }
+  if (typeof value === "string") return { display: value, type: "string" };
+  if (Array.isArray(value))
+    return { display: `${value.length} items`, type: "array" };
+  if (typeof value === "object")
+    return { display: `${Object.keys(value).length} props`, type: "object" };
+  return { display: String(value), type: "unknown" };
 };
 
 /**
- * OPTIMIZED: Memoized category section for better performance
+ * Enhanced health dashboard component
  */
-export const CategorySection: React.FC<{
-  title: string;
-  emoji: string;
-  data: Record<string, any>;
-  defaultExpanded?: boolean;
-}> = React.memo(({ title, emoji, data, defaultExpanded = false }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+export const HealthDashboard: React.FC<{ metrics: any }> = React.memo(
+  ({ metrics }) => {
+    // Extract key performance metrics
+    const performanceMetrics = metrics.performance || {};
+    const debugMetrics = metrics.debugActivity || {};
+    const systemMetrics = metrics.system || {};
 
-  // Memoize category entries to prevent recalculation
-  const categoryEntries = useMemo(() => {
-    return Object.entries(data);
-  }, [data]);
+    // Create dashboard cards for key metrics
+    const dashboardCards = useMemo(() => {
+      const cards = [];
 
-  return (
-    <div style={{ marginBottom: "8px" }}>
-      {/* Category Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          cursor: "pointer",
-          padding: "4px 6px",
-          backgroundColor: "#1f292922",
-          borderRadius: "3px",
-          border: "1px solid #1f292944",
-          marginBottom: isExpanded ? "6px" : "0px",
-          transition: "all 0.2s ease",
-        }}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <span style={{ fontSize: "10px" }}>{emoji}</span>
-        <span
-          style={{
-            color: "#60a5fa",
-            fontWeight: "bold",
-            fontSize: "9px",
-            flex: 1,
-          }}
-        >
-          {title}
-        </span>
-        <span style={{ color: "#9ca3af", fontSize: "8px" }}>
-          {isExpanded ? "▼" : "▶"}
-        </span>
+      // Memory Usage Card
+      if (performanceMetrics.memoryUsage) {
+        const memory = performanceMetrics.memoryUsage;
+        const used = memory.used || 0;
+        const total = memory.total || 0;
+        const percentage = memory.percentage || 0;
+
+        cards.push(
+          <MetricCard
+            key="memory"
+            label="Memory Usage"
+            value={percentage}
+            type="percentage"
+            icon="💾"
+            color={SHARED_TOKENS.colors.memory}
+            isImportant={percentage > 80}
+            subMetrics={[
+              { label: "Used", value: formatMetricValue(used).display },
+              { label: "Total", value: formatMetricValue(total).display },
+            ]}
+          />
+        );
+      }
+
+      // Debug Activity Card
+      if (debugMetrics.totalLogs !== undefined) {
+        cards.push(
+          <MetricCard
+            key="debug"
+            label="Debug Activity"
+            value={debugMetrics.totalLogs}
+            type="count"
+            icon="🎯"
+            color={SHARED_TOKENS.colors.debug}
+            isImportant={debugMetrics.totalLogs > 1000}
+            subMetrics={[
+              {
+                label: "Enabled Points",
+                value: debugMetrics.enabledPoints || 0,
+              },
+              {
+                label: "Memory Usage",
+                value: debugMetrics.memoryUsage || "N/A",
+              },
+            ]}
+          />
+        );
+      }
+
+      // Connection Status Card
+      if (performanceMetrics.connectionType) {
+        const isOnline = performanceMetrics.connectionType !== "offline";
+        cards.push(
+          <MetricCard
+            key="connection"
+            label="Connection"
+            value={performanceMetrics.connectionType}
+            type="count"
+            icon="🌐"
+            color={
+              isOnline
+                ? SHARED_TOKENS.colors.success
+                : SHARED_TOKENS.colors.error
+            }
+            isImportant={!isOnline}
+            subMetrics={[
+              {
+                label: "Cores",
+                value: performanceMetrics.hardwareConcurrency || "N/A",
+              },
+              {
+                label: "Device RAM",
+                value: performanceMetrics.deviceMemory || "N/A",
+              },
+            ]}
+          />
+        );
+      }
+
+      // System Health Card
+      if (systemMetrics || debugMetrics.systemStatus) {
+        const isHealthy = debugMetrics.systemStatus === "healthy";
+        cards.push(
+          <MetricCard
+            key="system"
+            label="System Health"
+            value={debugMetrics.systemStatus || "Unknown"}
+            type="count"
+            icon="🏥"
+            color={
+              isHealthy
+                ? SHARED_TOKENS.colors.success
+                : SHARED_TOKENS.colors.warning
+            }
+            isImportant={!isHealthy}
+          />
+        );
+      }
+
+      // Circuit Breakers Card
+      if (metrics.circuitBreakers && metrics.circuitBreakers.length > 0) {
+        const openBreakers = metrics.circuitBreakers.filter(
+          (cb: any) => cb.isOpen
+        ).length;
+        const total = metrics.circuitBreakers.length;
+
+        cards.push(
+          <MetricCard
+            key="circuit"
+            label="Circuit Breakers"
+            value={`${total - openBreakers}/${total}`}
+            type="count"
+            icon="🚨"
+            color={
+              openBreakers > 0
+                ? SHARED_TOKENS.colors.error
+                : SHARED_TOKENS.colors.success
+            }
+            isImportant={openBreakers > 0}
+            subMetrics={[
+              { label: "Open", value: openBreakers },
+              { label: "Closed", value: total - openBreakers },
+            ]}
+          />
+        );
+      }
+
+      // Component Metrics Card
+      if (metrics.componentMetrics) {
+        const compMetrics = metrics.componentMetrics;
+        cards.push(
+          <MetricCard
+            key="components"
+            label="Components"
+            value={compMetrics.surfaceComponents || 0}
+            type="count"
+            icon="⚛️"
+            color={SHARED_TOKENS.colors.accent}
+            subMetrics={[
+              {
+                label: "Frame Elements",
+                value: compMetrics.frameElements || 0,
+              },
+              {
+                label: "Selection",
+                value: compMetrics.selectionActive ? "Active" : "Inactive",
+              },
+            ]}
+          />
+        );
+      }
+
+      return cards;
+    }, [metrics, performanceMetrics, debugMetrics, systemMetrics]);
+
+    return (
+      <div>
+        {/* Main Dashboard Grid */}
+        <DashboardGrid columns={3}>{dashboardCards}</DashboardGrid>
+
+        {/* Additional Sections for Detailed Data */}
+        {metrics.dependencyTracking && (
+          <SectionContainer
+            title="Dependencies"
+            icon="🔄"
+            color={SHARED_TOKENS.colors.dependencies}
+            collapsible={true}
+            defaultExpanded={false}
+          >
+            <DashboardGrid columns={2}>
+              {Object.entries(metrics.dependencyTracking).map(
+                ([key, value]) => {
+                  const formatted = formatMetricValue(value);
+                  return (
+                    <MetricCard
+                      key={key}
+                      label={key}
+                      value={formatted.display}
+                      type="count"
+                      color={SHARED_TOKENS.colors.dependencies}
+                    />
+                  );
+                }
+              )}
+            </DashboardGrid>
+          </SectionContainer>
+        )}
       </div>
+    );
+  }
+);
 
-      {/* Category Content */}
-      {isExpanded && (
-        <div
-          style={{
-            paddingLeft: "12px",
-            borderLeft: "2px solid #374151",
-            backgroundColor: "#0f172a11",
-            borderRadius: "0 3px 3px 0",
-            padding: "6px 8px",
-          }}
-        >
-          <div style={{ display: "grid", gap: "3px" }}>
-            {categoryEntries.map(([key, value]) => (
-              <div
-                key={key}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  fontSize: "8px",
-                  lineHeight: "1.3",
-                }}
-              >
-                <span style={{ color: "#9ca3af", fontWeight: "normal" }}>
-                  {key}:
-                </span>
-                <span
-                  style={{
-                    color: "#e5e7eb",
-                    fontWeight: "bold",
-                    textAlign: "right",
-                    maxWidth: "120px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={String(value)}
-                >
-                  {formatValue(value)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
-
-CategorySection.displayName = "CategorySection";
+HealthDashboard.displayName = "HealthDashboard";
 
 /**
  * OPTIMIZED: Get health log severity with memoization-friendly logic
@@ -153,8 +301,7 @@ const getHealthSeverity = (data: any): LogSeverity => {
 };
 
 /**
- * OPTIMIZED: Health expansion content with memoized metrics processing
- * This component provides the expansion content for health logs
+ * Enhanced health expansion content with dashboard-style metrics
  */
 export const HealthExpansionContent: React.FC<{ log: DebugLogEntry }> =
   React.memo(({ log }) => {
@@ -173,136 +320,94 @@ export const HealthExpansionContent: React.FC<{ log: DebugLogEntry }> =
       };
     }, [log.data, log.timestamp]);
 
-    // FIXED: Show basic health info even without detailed metrics
+    // Show basic health info if no data
     if (!healthMeta.hasMetrics && !log.data) {
       return (
-        <div style={{ color: "#9ca3af", fontSize: "9px", fontStyle: "italic" }}>
-          No health data available
+        <div
+          style={{
+            fontFamily: SHARED_TOKENS.fonts.mono,
+            padding: SHARED_TOKENS.spacing.lg,
+            background: SHARED_TOKENS.colors.bgSecondary,
+            border: `1px solid ${SHARED_TOKENS.colors.border}`,
+            borderRadius: SHARED_TOKENS.borderRadius.lg,
+            textAlign: "center" as const,
+          }}
+        >
+          <StatusIndicator status="warning" label="No health data available" />
         </div>
       );
     }
 
-    // FIXED: Show data summary if no detailed metrics
+    // Show basic health mode if no detailed metrics
     if (!healthMeta.hasMetrics) {
       return (
-        <div style={{ fontFamily: "monospace" }}>
-          {/* Basic Health Info */}
-          <div
-            style={{
-              marginBottom: "8px",
-              padding: "4px 6px",
-              backgroundColor: "#065f4611",
-              borderRadius: "3px",
-              border: "1px solid #065f4622",
-            }}
-          >
-            <div
-              style={{ color: "#6ee7b7", fontSize: "9px", fontWeight: "bold" }}
-            >
-              🏥 Health Snapshot (Basic)
-            </div>
-            <div
-              style={{ color: "#10b981", fontSize: "8px", marginTop: "2px" }}
-            >
-              Captured at {formatTime(log.timestamp)}
-            </div>
-          </div>
+        <div
+          style={{
+            fontFamily: SHARED_TOKENS.fonts.mono,
+            background: SHARED_TOKENS.colors.bg,
+            borderRadius: SHARED_TOKENS.borderRadius.lg,
+            overflow: "hidden",
+          }}
+        >
+          <CompactHeader
+            title="Health Snapshot (Basic)"
+            subtitle="Limited health data available"
+            icon="🏥"
+            timestamp={formatTime(log.timestamp)}
+            color={SHARED_TOKENS.colors.info}
+          />
 
-          {/* Show available data */}
           {log.data && (
-            <div style={{ fontSize: "8px", color: "#e5e7eb" }}>
-              <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+            <SectionContainer
+              title="Raw Data"
+              icon="📊"
+              color={SHARED_TOKENS.colors.info}
+            >
+              <pre
+                style={{
+                  margin: 0,
+                  whiteSpace: "pre-wrap" as const,
+                  color: SHARED_TOKENS.colors.text,
+                  fontSize: "9px",
+                  fontFamily: SHARED_TOKENS.fonts.mono,
+                  lineHeight: "1.4",
+                  background: SHARED_TOKENS.colors.bgTertiary,
+                  padding: SHARED_TOKENS.spacing.lg,
+                  borderRadius: SHARED_TOKENS.borderRadius.md,
+                  maxHeight: "200px",
+                  overflow: "auto",
+                }}
+              >
                 {JSON.stringify(log.data, null, 2)}
               </pre>
-            </div>
+            </SectionContainer>
           )}
         </div>
       );
     }
 
+    // Full dashboard mode with detailed metrics
     const metrics = healthMeta.fullMetrics;
 
     return (
-      <div style={{ fontFamily: "monospace" }}>
-        {/* Summary */}
-        {healthMeta.summary && (
-          <div
-            style={{
-              marginBottom: "8px",
-              padding: "4px 6px",
-              backgroundColor: "#065f4611",
-              borderRadius: "3px",
-              border: "1px solid #065f4622",
-            }}
-          >
-            <div
-              style={{ color: "#6ee7b7", fontSize: "9px", fontWeight: "bold" }}
-            >
-              📊 {healthMeta.summary}
-            </div>
-            <div
-              style={{ color: "#10b981", fontSize: "8px", marginTop: "2px" }}
-            >
-              Captured at {formatTime(healthMeta.timestamp)}
-            </div>
-          </div>
-        )}
+      <div
+        style={{
+          fontFamily: SHARED_TOKENS.fonts.mono,
+          fontSize: "10px",
+          background: SHARED_TOKENS.colors.bg,
+          borderRadius: SHARED_TOKENS.borderRadius.lg,
+          overflow: "hidden",
+        }}
+      >
+        <CompactHeader
+          title={healthMeta.summary || "Health Snapshot"}
+          subtitle="System health and performance metrics"
+          icon="🏥"
+          timestamp={formatTime(healthMeta.timestamp)}
+          color={SHARED_TOKENS.colors.success}
+        />
 
-        {/* Performance Metrics */}
-        {metrics.performance && (
-          <CategorySection
-            title="Performance"
-            emoji="⚡"
-            data={metrics.performance}
-            defaultExpanded={true}
-          />
-        )}
-
-        {/* Debug Activity */}
-        {metrics.debugActivity && (
-          <CategorySection
-            title="Debug Activity"
-            emoji="🎯"
-            data={metrics.debugActivity}
-            defaultExpanded={false}
-          />
-        )}
-
-        {/* Dependencies */}
-        {metrics.dependencyTracking && (
-          <CategorySection
-            title="Dependencies"
-            emoji="🔄"
-            data={metrics.dependencyTracking}
-            defaultExpanded={false}
-          />
-        )}
-
-        {/* Circuit Breakers */}
-        {metrics.circuitBreakers && metrics.circuitBreakers.length > 0 && (
-          <CategorySection
-            title="Circuit Breakers"
-            emoji="🚨"
-            data={{
-              total: metrics.circuitBreakers.length,
-              open: metrics.circuitBreakers.filter((cb: any) => cb.isOpen)
-                .length,
-              closed: metrics.circuitBreakers.filter((cb: any) => !cb.isOpen)
-                .length,
-            }}
-            defaultExpanded={false}
-          />
-        )}
-
-        {/* System Info */}
-        {metrics.system && (
-          <CategorySection
-            title="System"
-            emoji="💻"
-            data={metrics.system}
-            defaultExpanded={false}
-          />
-        )}
+        <HealthDashboard metrics={metrics} />
       </div>
     );
   });
