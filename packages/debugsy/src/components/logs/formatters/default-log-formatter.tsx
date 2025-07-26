@@ -152,7 +152,6 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
             severityStyle,
             severityEmoji,
             formattedDataDisplay: null,
-            tooltipJsonString: "",
             shouldShowExpand: false,
             effectiveSeverity,
             isLarge: false,
@@ -170,7 +169,6 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
             formattedDataDisplay: Array.isArray(log.data)
               ? `[Large Array: ${log.data.length} items]`
               : `[Large Object: ${Object.keys(log.data).length} keys]`,
-            tooltipJsonString: "[Large Object: Click to expand for details]",
             shouldShowExpand,
             effectiveSeverity,
             isLarge: true,
@@ -178,33 +176,12 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         }
 
         // PERFORMANCE OPTIMIZATION: For small/medium objects OR when expanded, do full processing
-        let formattedDataDisplay = null;
-        let tooltipJsonString = "";
-
-        // Format display data (only for non-large objects or when expanded)
-        formattedDataDisplay = formatDataForDisplay(log.data, 1000);
-
-        // Generate tooltip string (optimized path)
-        if (isLarge) {
-          tooltipJsonString = "[Large Object: Click to expand for details]";
-        } else {
-          // For smaller objects, use memoized stringify but with shorter length for tooltips
-          try {
-            const preview = formatDataForDisplay(log.data, 500);
-            tooltipJsonString =
-              preview.length > 500
-                ? preview.substring(0, 500) + "..."
-                : preview;
-          } catch {
-            tooltipJsonString = "[Object: Click to expand for details]";
-          }
-        }
+        const formattedDataDisplay = formatDataForDisplay(log.data, 1000);
 
         return {
           severityStyle,
           severityEmoji,
           formattedDataDisplay,
-          tooltipJsonString,
           shouldShowExpand,
           effectiveSeverity,
           isLarge,
@@ -310,12 +287,8 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
 
               {/* Log Data (if present) - show preview in collapsed state */}
               {log.data && (
-                <span
-                  style={LOG_STYLES.data}
-                  title={computedProps.tooltipJsonString}
-                >
-                  {computedProps.formattedDataDisplay}{" "}
-                  {/* Constrain collapsed JSON to 1000 chars */}
+                <span style={LOG_STYLES.data}>
+                  {computedProps.formattedDataDisplay}
                 </span>
               )}
             </div>

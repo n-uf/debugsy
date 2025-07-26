@@ -170,7 +170,6 @@ export {
   JsonUtils as default,
   // Display formatting
   formatDataForDisplay,
-  formatJsonTooltip,
   // Performance optimizations
   isLikelyLargeObject,
   memoizedJsonStringify,

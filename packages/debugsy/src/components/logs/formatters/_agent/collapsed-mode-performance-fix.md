@@ -17,10 +17,7 @@ const computedProps = useMemo(() => {
     // 🔴 EXPENSIVE: Always called formatDataForDisplay() for large objects
     formattedDataDisplay = formatDataForDisplay(log.data, 1000);
 
-    // 🔴 EXPENSIVE: memoizedJsonStringify() called for small/medium objects
-    tooltipJsonString = isLarge
-      ? `[Large Object: Click to expand for details]`
-      : memoizedJsonStringify(log.data);
+    // 🔴 EXPENSIVE: memoizedJsonStringify() called for small/medium objects (removed)
   }
 }, [severity, log.data, log.point, showExpandButton]);
 ```
@@ -61,7 +58,6 @@ const computedProps = useMemo(() => {
       formattedDataDisplay: Array.isArray(log.data)
         ? `[Large Array: ${log.data.length} items]`
         : `[Large Object: ${Object.keys(log.data).length} keys]`,
-      tooltipJsonString: "[Large Object: Click to expand for details]",
       shouldShowExpand,
       effectiveSeverity,
       isLarge: true,
@@ -69,8 +65,7 @@ const computedProps = useMemo(() => {
   }
 
   // Only do expensive formatting for small objects OR when expanded
-  formattedDataDisplay = formatDataForDisplay(log.data, 1000);
-  // ... rest of processing ...
+  const formattedDataDisplay = formatDataForDisplay(log.data, 1000);
 }, [severity, log.data, log.point, showExpandButton, isCurrentlyExpanded]);
 ```
 
@@ -92,6 +87,7 @@ const computedProps = useMemo(() => {
 2. **🎯 Smart Detection**: `isLikelyLargeObject()` provides O(1) fast-path detection
 3. **📊 Lightweight Summaries**: Show meaningful info (`[Large Array: 1500 items]`) without processing
 4. **⚡ Dependency Optimization**: Added `isCurrentlyExpanded` to trigger processing only on expansion
+5. **🗑️ Tooltip Removal**: Eliminated tooltip generation for cleaner, faster rendering
 
 ## 🧪 **Testing the Fix**
 
