@@ -1,19 +1,19 @@
+import { notifySubscribers } from "../debug-logs/hooks/debug-notifications";
+import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debug-logs/hooks/health-snapshot";
+import {
+  needsSanitization,
+  SANITIZATION_PRESETS,
+  sanitizeLogData,
+} from "../debug-logs/utils/log-data-sanitization";
 import type {
   DebugLogEntry,
   DebugPoint,
   DependencyFilter,
   DependencyLogLevel,
   LogLevel,
-} from "../hooks/debug-constants";
-import { getDebugEmoji, MAX_STORED_LOGS } from "../hooks/debug-constants";
-import { notifySubscribers } from "../hooks/debug-notifications";
-import { debugStateControls, getGlobalDebugState } from "../hooks/debug-state";
-import { captureHealthSnapshot as captureHealthSnapshotCore } from "../hooks/health-snapshot";
-import {
-  needsSanitization,
-  SANITIZATION_PRESETS,
-  sanitizeLogData,
-} from "../hooks/log-data-sanitization";
+} from "./debug-constants";
+import { getDebugEmoji, MAX_STORED_LOGS } from "./debug-constants";
+import { debugStateControls, getGlobalDebugState } from "./debug-state";
 
 /**
  * Unified Global Debug Manager Interface

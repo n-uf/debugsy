@@ -4,7 +4,11 @@ import {
   type DebugPoint,
   type DependencyFilter,
   type DependencyLogLevel,
-} from "./debug-constants";
+} from "../../shared/debug-constants";
+import {
+  dependencyStateControls,
+  getGlobalDebugState,
+} from "../../shared/debug-state";
 import {
   clearDebugDisplayContent,
   notifySubscribers,
@@ -12,7 +16,6 @@ import {
   useDebugDisplayContent,
   useDebugSubscription,
 } from "./debug-notifications";
-import { dependencyStateControls, getGlobalDebugState } from "./debug-state";
 import {
   type HealthMetrics,
   type HealthSnapshotConfig,
@@ -22,7 +25,7 @@ import {
 import {
   initializeUnifiedDebugSystem,
   type UnifiedSurfaceDebug,
-} from "../shared/global-debug-manager";
+} from "../../shared/global-debug-manager";
 
 // Re-export types for backward compatibility
 export type { DebugLogEntry, DebugPoint, DependencyFilter, DependencyLogLevel };

@@ -1,17 +1,14 @@
-// Main exports
-export { DebugControlPanel } from "./src/components/debug-control-panel";
-export { DebugDependencyAdvancedControls } from "./src/components/debug-dependency-advanced-controls";
-export { DebugDependencyControls } from "./src/components/debug-dependency-controls";
-export { DebugDisplayPanel } from "./src/components/debug-display-panel";
-export { DebugExternalPanel } from "./src/components/debug-external-panel";
-export { DebugPanelHeader } from "./src/components/debug-panel-header";
-export { DebugPointButtons } from "./src/components/debug-point-buttons";
-export { DebugResizePresets } from "./src/components/debug-resize-presets";
-export { DebugStatsPanel } from "./src/components/debug-stats-panel";
-export { DebugStatus } from "./src/components/debug-status";
-export { DebugLogsList } from "./src/components/logs/debug-logs-list";
+// === SHARED CORE SYSTEM ===
+export {
+  initializeUnifiedDebugSystem,
+  type DebugPoint,
+  type DependencyFilter,
+  type DependencyLogLevel,
+  type LogLevel,
+  type UnifiedSurfaceDebug,
+} from "./src/shared";
 
-// Hook exports (via index files for cleaner structure)
+// === DEBUG DEPENDENCY TRACKING ===
 export {
   circuitBreakerControl,
   emergencyStop,
@@ -21,43 +18,31 @@ export {
   useSafeHook,
   useWhyDidYouUpdate,
 } from "./src/debug-deps";
+
+// === DEBUG LOGGING SYSTEM ===
 export {
+  captureHealthSnapshot,
+  DebugControlPanel,
+  DebugDependencyAdvancedControls,
+  DebugDependencyControls,
+  DebugDisplayPanel,
+  DebugExternalPanel,
+  DebugLogsList,
+  DebugPanelHeader,
+  DebugPointButtons,
+  DebugResizePresets,
+  DebugStatsPanel,
+  DebugStatus,
+  getSanitizationPerformanceStats,
+  needsSanitization,
+  resetSanitizationPerformanceStats,
+  SANITIZATION_PRESETS,
+  sanitizeLogData,
   useDebug,
   useDebugSubscription,
-  useDependencyState,
-} from "./src/hooks";
+} from "./src/debug-logs";
 
-// Unified debug system exports
-export {
-  initializeUnifiedDebugSystem,
-  type UnifiedSurfaceDebug,
-} from "./src/shared/global-debug-manager";
-
-// Type exports
-export type {
-  DebugPoint,
-  DependencyFilter,
-  DependencyLogLevel,
-} from "./src/hooks/debug-constants";
-export type { DebugLogEntry, GlobalDebugManager } from "./src/hooks/use-debug";
-
-// Component prop types
-export type { DebugControlPanelProps } from "./src/components/debug-control-panel";
-export type { DebugDependencyControlsProps } from "./src/components/debug-dependency-controls";
-export type { DebugDisplayPanelProps } from "./src/components/debug-display-panel";
-export type { DebugExternalPanelProps } from "./src/components/debug-external-panel";
-export type { DebugPanelHeaderProps } from "./src/components/debug-panel-header";
-export type { DebugPanelResizeHandleProps } from "./src/components/debug-panel-resize-handle";
-export type {
-  DebugPointButtonsProps,
-  DebugPointConfig,
-} from "./src/components/debug-point-buttons";
-export type { DebugResizePresetsProps } from "./src/components/debug-resize-presets";
-export type { DebugStatsPanelProps } from "./src/components/debug-stats-panel";
-export type { DebugStatusProps } from "./src/components/debug-status";
-export type { DebugLogsListProps } from "./src/components/logs/debug-logs-list";
-
-// Formatter exports (via index files)
+// === LOG FORMATTERS ===
 export {
   DefaultLogFormatter,
   DependencyExpansionContent,
@@ -74,13 +59,26 @@ export {
   type FormatterConfig,
   type FormatterMeta,
   type LogSeverity,
-} from "./src/components/logs/formatters";
+} from "./src/debug-logs";
 
-// Sanitization utilities (via hooks index)
-export {
-  getSanitizationPerformanceStats,
-  needsSanitization,
-  resetSanitizationPerformanceStats,
-  SANITIZATION_PRESETS,
-  sanitizeLogData,
-} from "./src/hooks";
+// === TYPE EXPORTS ===
+export type {
+  DebugLogEntry,
+  HealthMetrics,
+  HealthSnapshotConfig,
+} from "./src/debug-logs";
+
+// === COMPONENT PROP TYPES ===
+export type {
+  DebugControlPanelProps,
+  DebugDependencyControlsProps,
+  DebugDisplayPanelProps,
+  DebugExternalPanelProps,
+  DebugLogsListProps,
+  DebugPanelHeaderProps,
+  DebugPointButtonsProps,
+  DebugPointConfig,
+  DebugResizePresetsProps,
+  DebugStatsPanelProps,
+  DebugStatusProps,
+} from "./src/debug-logs";

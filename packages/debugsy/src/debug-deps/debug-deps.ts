@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { LogLevel } from "../hooks/debug-constants";
+import type { LogLevel } from "../shared/debug-constants";
 
 interface ChangedProps {
   [key: string]: {
@@ -19,7 +19,7 @@ const initializeNotificationSystem = () => {
   if (!notifySubscribers) {
     try {
       // Dynamically import to avoid circular dependencies
-      import("../hooks/debug-notifications")
+      import("../debug-logs/hooks/debug-notifications")
         .then((module) => {
           notifySubscribers = module.notifySubscribers;
         })
@@ -186,7 +186,7 @@ const getDependencyState = () => {
   // Fallback: Try to get state from local debug state system
   try {
     // Dynamically import to avoid circular dependencies
-    const { getGlobalDebugState } = require("../hooks/debug-state");
+    const { getGlobalDebugState } = require("../shared/debug-state");
     const debugState = getGlobalDebugState();
     return (
       debugState.dependencies || {
