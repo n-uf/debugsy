@@ -21,6 +21,9 @@ import {
   VirtualizedLogContainer,
 } from "./components";
 
+// Import object depth utilities
+import { type DepthSetting } from "../../../shared/object-depth-utils";
+
 // Import extracted utilities and formatters
 import {
   DEFAULT_COPY_CONFIG,
@@ -123,6 +126,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
   const [pausedLogs, setPausedLogs] = useState<DebugLogEntry[]>([]);
   const [isFollowing, setIsFollowing] = useState(true);
   const [snapshotLogs, setSnapshotLogs] = useState<DebugLogEntry[]>([]);
+  const [depthSetting, setDepthSetting] = useState<DepthSetting>("all");
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
   const stateResetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -230,7 +234,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         message,
       } = getLogsToCopy(activeLogs, copyState, DEFAULT_COPY_CONFIG);
 
-      await copyLogsToClipboard(logsToCopy);
+      await copyLogsToClipboard(logsToCopy, depthSetting);
       setCopyState(newState);
 
       // Show feedback on display panels
@@ -251,7 +255,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         duration: 3000,
       });
     }
-  }, [activeLogs, copyState]);
+  }, [activeLogs, copyState, depthSetting]);
 
   const handleHealthSnapshot = useCallback(() => {
     // Call the framework's health snapshot function
@@ -317,7 +321,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
   // Function to copy all logs (enhanced version of existing functionality)
   const handleCopyAllLogs = useCallback(async () => {
     try {
-      await copyLogsToClipboard(logs); // Copy ALL logs, not just active ones
+      await copyLogsToClipboard(logs, depthSetting); // Copy ALL logs, not just active ones
 
       setDebugDisplayContent({
         message: `Copied all ${logs.length} logs to clipboard`,
@@ -335,7 +339,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         duration: 3000,
       });
     }
-  }, [logs]);
+  }, [logs, depthSetting]);
 
   // Function to clear all logs
   const handleClearAllLogs = useCallback(() => {
@@ -466,6 +470,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
             {/* Virtualized container that only renders visible logs */}
             <VirtualizedLogContainer
               logs={reversedLogs}
+              depthSetting={depthSetting}
               containerRef={logsContainerRef}
               onScrollFollowing={handleScrollFollowing}
             />
@@ -519,9 +524,11 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         activeLogs={activeLogs}
         copyState={copyState}
         isPaused={isPaused}
+        depthSetting={depthSetting}
         onCopyLogs={handleCopyLogs}
         onPauseResume={handlePauseResume}
         onHealthSnapshot={handleHealthSnapshot}
+        onDepthChange={setDepthSetting}
         onButtonMouseEnter={handleButtonMouseEnter}
         onButtonMouseLeave={handleButtonMouseLeave}
       />

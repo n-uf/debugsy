@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { type DepthSetting } from "../../../../shared/object-depth-utils";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import {
   clearDebugDisplayContent,
@@ -19,15 +20,17 @@ import {
 } from "../utils/copy-utilities";
 
 /**
- * Actions Panel Component - right sidebar with copy, pause, and health buttons
+ * Actions Panel Component - right sidebar with copy, pause, health buttons and depth switcher
  */
 export interface ActionsPanelProps {
   activeLogs: DebugLogEntry[];
   copyState: CopyState;
   isPaused: boolean;
+  depthSetting: DepthSetting;
   onCopyLogs: () => void;
   onPauseResume: () => void;
   onHealthSnapshot: () => void;
+  onDepthChange: (setting: DepthSetting) => void;
   onButtonMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onButtonMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
@@ -37,9 +40,11 @@ export const ActionsPanel: React.FC<ActionsPanelProps> = React.memo(
     activeLogs,
     copyState,
     isPaused,
+    depthSetting,
     onCopyLogs,
     onPauseResume,
     onHealthSnapshot,
+    onDepthChange,
     onButtonMouseEnter,
     onButtonMouseLeave,
   }) => {
@@ -216,6 +221,169 @@ export const ActionsPanel: React.FC<ActionsPanelProps> = React.memo(
         >
           🏥
         </button>
+
+        {/* Depth Switcher - Horizontal Progress Bar Style */}
+        <div
+          onClick={() => {
+            const depths: DepthSetting[] = ["str", "1", "3", "5", "10", "all"];
+            const currentIndex = depths.indexOf(depthSetting);
+            const nextIndex = (currentIndex + 1) % depths.length;
+            const nextDepth = depths[nextIndex];
+            if (nextDepth) {
+              onDepthChange(nextDepth);
+            }
+          }}
+          style={{
+            width: "24px",
+            height: "8px", // Thin horizontal bar
+            backgroundColor: "#1f2937",
+            border: "1px solid #374151",
+            borderRadius: "4px",
+            cursor: "pointer",
+            position: "relative",
+            overflow: "hidden",
+            transition: `all ${getButtonTransitionDuration()}ms ease`,
+            marginTop: "2px",
+            marginBottom: "2px",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.transform = "scaleY(1.5)";
+            (e.currentTarget as HTMLDivElement).style.height = "10px";
+
+            const description = (() => {
+              switch (depthSetting) {
+                case "all":
+                  return "Full depth (no limits)";
+                case "10":
+                  return "10 levels deep";
+                case "5":
+                  return "5 levels deep";
+                case "3":
+                  return "3 levels deep";
+                case "1":
+                  return "1 level only";
+                case "str":
+                  return "String format (1000 chars)";
+                default:
+                  return "Unknown setting";
+              }
+            })();
+
+            setDebugDisplayContent({
+              message: `Object depth: ${description}`,
+              type: "info",
+              duration: 0,
+            });
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.transform = "scaleY(1)";
+            (e.currentTarget as HTMLDivElement).style.height = "8px";
+
+            clearDebugDisplayContent();
+          }}
+          title={`Object depth: ${(() => {
+            switch (depthSetting) {
+              case "all":
+                return "Full depth (no limits)";
+              case "10":
+                return "10 levels deep";
+              case "5":
+                return "5 levels deep";
+              case "3":
+                return "3 levels deep";
+              case "1":
+                return "1 level only";
+              case "str":
+                return "String format (1000 chars)";
+              default:
+                return "Unknown setting";
+            }
+          })()} (click to increase)`}
+        >
+          {/* Progress Fill */}
+          <div
+            style={{
+              position: "absolute",
+              top: "0",
+              left: "0",
+              height: "100%",
+              backgroundColor: (() => {
+                switch (depthSetting) {
+                  case "all":
+                    return "#10b981"; // Green - full depth
+                  case "10":
+                    return "#3b82f6"; // Blue - high depth
+                  case "5":
+                    return "#8b5cf6"; // Purple - medium depth
+                  case "3":
+                    return "#f59e0b"; // Orange - low depth
+                  case "1":
+                    return "#ef4444"; // Red - minimal depth
+                  case "str":
+                    return "transparent"; // String mode - border only, no fill
+                  default:
+                    return "#6b7280";
+                }
+              })(),
+              width: (() => {
+                const depths: DepthSetting[] = [
+                  "str",
+                  "1",
+                  "3",
+                  "5",
+                  "10",
+                  "all",
+                ];
+                const currentIndex = depths.indexOf(depthSetting);
+                return `${((currentIndex + 1) / depths.length) * 100}%`;
+              })(),
+              borderRadius: "3px",
+              transition: `all ${getButtonTransitionDuration()}ms ease`,
+              boxShadow:
+                depthSetting !== "str"
+                  ? `0 0 4px ${(() => {
+                      switch (depthSetting) {
+                        case "all":
+                          return "#10b98140";
+                        case "10":
+                          return "#3b82f640";
+                        case "5":
+                          return "#8b5cf640";
+                        case "3":
+                          return "#f59e0b40";
+                        case "1":
+                          return "#ef444440";
+                        default:
+                          return "#6b728040";
+                      }
+                    })()}`
+                  : "none",
+              // String mode gets a colored border instead of fill
+              border: depthSetting === "str" ? "1px solid #ec4899" : "none",
+            }}
+          />
+
+          {/* Depth Indicator Text - only show for non-infinity modes */}
+          {depthSetting !== "all" && (
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                fontSize: "6px",
+                fontWeight: "bold",
+                color: depthSetting === "str" ? "#ec4899" : "#ffffff",
+                textShadow:
+                  depthSetting === "str" ? "none" : "0 0 2px rgba(0,0,0,0.8)",
+                fontFamily: "monospace",
+                zIndex: 2,
+              }}
+            >
+              {depthSetting === "str" ? "S" : depthSetting}
+            </div>
+          )}
+        </div>
 
         {/* Bottom Separator */}
         <div

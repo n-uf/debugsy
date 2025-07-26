@@ -173,10 +173,49 @@ export const HealthExpansionContent: React.FC<{ log: DebugLogEntry }> =
       };
     }, [log.data, log.timestamp]);
 
-    if (!healthMeta.hasMetrics) {
+    // FIXED: Show basic health info even without detailed metrics
+    if (!healthMeta.hasMetrics && !log.data) {
       return (
         <div style={{ color: "#9ca3af", fontSize: "9px", fontStyle: "italic" }}>
-          No detailed health metrics available
+          No health data available
+        </div>
+      );
+    }
+
+    // FIXED: Show data summary if no detailed metrics
+    if (!healthMeta.hasMetrics) {
+      return (
+        <div style={{ fontFamily: "monospace" }}>
+          {/* Basic Health Info */}
+          <div
+            style={{
+              marginBottom: "8px",
+              padding: "4px 6px",
+              backgroundColor: "#065f4611",
+              borderRadius: "3px",
+              border: "1px solid #065f4622",
+            }}
+          >
+            <div
+              style={{ color: "#6ee7b7", fontSize: "9px", fontWeight: "bold" }}
+            >
+              🏥 Health Snapshot (Basic)
+            </div>
+            <div
+              style={{ color: "#10b981", fontSize: "8px", marginTop: "2px" }}
+            >
+              Captured at {formatTime(log.timestamp)}
+            </div>
+          </div>
+
+          {/* Show available data */}
+          {log.data && (
+            <div style={{ fontSize: "8px", color: "#e5e7eb" }}>
+              <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                {JSON.stringify(log.data, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       );
     }
@@ -282,9 +321,12 @@ export const getHealthLogMeta = (log: DebugLogEntry) => {
   const severity = getHealthSeverity(log.data);
   const hasDetailedMetrics = !!log.data?.fullMetrics;
 
+  // FIXED: Always allow expansion for health logs if they have any data
+  const shouldExpand = hasDetailedMetrics || !!log.data;
+
   return {
     severity,
-    shouldExpand: hasDetailedMetrics, // Only expand if we have detailed metrics
+    shouldExpand,
     expansionContent: HealthExpansionContent,
   };
 };

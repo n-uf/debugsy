@@ -1,9 +1,18 @@
 // === SHARED CORE SYSTEM ===
 export {
+  cutObjectDepth,
+  estimateProcessingCost,
+  getDepthSettingDescription,
   initializeUnifiedDebugSystem,
+  objectToString,
+  // Object depth processing utilities
+  processObjectForDisplay,
+  processObjectsBatch,
+  testStringMode,
   type DebugPoint,
   type DependencyFilter,
   type DependencyLogLevel,
+  type DepthSetting,
   type LogLevel,
   type UnifiedSurfaceDebug,
 } from "./src/shared";

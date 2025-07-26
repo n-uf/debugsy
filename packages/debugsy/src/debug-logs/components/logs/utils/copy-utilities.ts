@@ -1,3 +1,7 @@
+import {
+  type DepthSetting,
+  processObjectForDisplay,
+} from "../../../../shared/object-depth-utils";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import { DEFAULT_COPY_CONFIG } from "../config/copy-config";
 import { formatTime } from "../formatters";
@@ -348,7 +352,10 @@ const formatStepDescription = (
  * Formats a log entry for copying - provides detailed multiline format for health logs
  * UNIFIED: Uses safeSuperjsonStringify to handle all problematic objects consistently
  */
-export const formatLogForCopy = (log: DebugLogEntry): string => {
+export const formatLogForCopy = (
+  log: DebugLogEntry,
+  depthSetting: DepthSetting = "all"
+): string => {
   const time = formatTime(log.timestamp);
 
   // Special formatting for health logs
@@ -381,11 +388,13 @@ export const formatLogForCopy = (log: DebugLogEntry): string => {
 
 ---
 Full Metrics (Safe JSON):
-${safeSuperjsonStringify(metrics)}`;
+${safeSuperjsonStringify(processObjectForDisplay(metrics, depthSetting))}`;
   }
 
   // For regular logs, use safe superjson to handle any complex objects
-  const data = log.data ? ` | ${safeSuperjsonStringify(log.data)}` : "";
+  const data = log.data
+    ? ` | ${safeSuperjsonStringify(processObjectForDisplay(log.data, depthSetting))}`
+    : "";
   return `[${time}] ${log.point}: ${log.message}${data}`;
 };
 
@@ -504,9 +513,12 @@ export const getLogsToCopy = (
  * Performs the actual copy operation to clipboard
  */
 export const copyLogsToClipboard = async (
-  logs: DebugLogEntry[]
+  logs: DebugLogEntry[],
+  depthSetting: DepthSetting = "all"
 ): Promise<void> => {
-  const copyText = logs.map(formatLogForCopy).join("\n");
+  const copyText = logs
+    .map((log) => formatLogForCopy(log, depthSetting))
+    .join("\n");
   await navigator.clipboard.writeText(copyText);
 };
 

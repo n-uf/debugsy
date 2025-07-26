@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { type DepthSetting } from "../../../../shared/object-depth-utils";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import { MemoizedLogEntry } from "./memoized-log-entry";
 
@@ -11,13 +12,14 @@ import { MemoizedLogEntry } from "./memoized-log-entry";
  */
 export const VirtualizedLogContainer: React.FC<{
   logs: DebugLogEntry[];
+  depthSetting: DepthSetting;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onScrollFollowing?: (
     scrollTop: number,
     containerHeight: number,
     contentHeight: number
   ) => void;
-}> = React.memo(({ logs, containerRef, onScrollFollowing }) => {
+}> = React.memo(({ logs, depthSetting, containerRef, onScrollFollowing }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(600);
 
@@ -113,6 +115,7 @@ export const VirtualizedLogContainer: React.FC<{
             log={log}
             index={index}
             uniqueKey={`${log.timestamp}-${log.point}-${index}`}
+            depthSetting={depthSetting}
           />
         ))}
       </>
@@ -141,6 +144,7 @@ export const VirtualizedLogContainer: React.FC<{
             log={log}
             index={actualIndex}
             uniqueKey={`${log.timestamp}-${log.point}-${actualIndex}`}
+            depthSetting={depthSetting}
           />
         );
       })}

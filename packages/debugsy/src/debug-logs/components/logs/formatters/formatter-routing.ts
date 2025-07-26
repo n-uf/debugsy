@@ -63,7 +63,7 @@ export const FORMATTER_REGISTRY: Record<string, FormatterConfig> = {
     expansionComponent: HealthExpansionContent,
     metaFunction: getHealthLogMeta,
     displayName: "Health Formatter",
-    alwaysExpand: false,
+    alwaysExpand: true, // FIXED: Always expand health logs
     defaultSeverity: "info",
   },
 

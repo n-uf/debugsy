@@ -7,6 +7,10 @@ import type {
   DebugLogEntry,
   LogLevel,
 } from "../../../../shared/debug-constants";
+import {
+  type DepthSetting,
+  processObjectForDisplay,
+} from "../../../../shared/object-depth-utils";
 import { JsonUtils } from "../utils/json/json-utilities";
 import {
   LOG_STYLES,
@@ -34,6 +38,7 @@ export interface DefaultLogFormatterProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   expandedContent?: React.ReactNode;
+  depthSetting?: DepthSetting;
 }
 
 /**
@@ -116,6 +121,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
       isExpanded = false,
       onToggleExpand,
       expandedContent,
+      depthSetting = "all", // Default to no depth limits
     }) => {
       const [internalExpanded, setInternalExpanded] = useState(false);
 
@@ -163,8 +169,11 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
           };
         }
 
+        // DEPTH PROCESSING: Apply depth setting to log data before display
+        const processedData = processObjectForDisplay(log.data, depthSetting);
+
         // OPTIMIZATION: MIGRATED: Uses JsonUtils.isComplex instead of isLikelyLargeObject
-        const isComplex = JsonUtils.isComplex(log.data);
+        const isComplex = JsonUtils.isComplex(processedData);
         const isLarge = isComplex; // Assuming isComplex implies large for now
 
         // PERFORMANCE FIX: For large objects in collapsed mode, skip expensive operations
@@ -172,9 +181,9 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
           return {
             severityStyle,
             severityEmoji,
-            formattedDataDisplay: Array.isArray(log.data)
-              ? `[Large Array: ${log.data.length} items]`
-              : `[Large Object: ${Object.keys(log.data).length} keys]`,
+            formattedDataDisplay: Array.isArray(processedData)
+              ? `[Large Array: ${processedData.length} items]`
+              : `[Large Object: ${Object.keys(processedData).length} keys]`,
             shouldShowExpand,
             effectiveSeverity: finalSeverity,
             isLarge: true,
@@ -182,7 +191,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         }
 
         // PERFORMANCE OPTIMIZATION: For small/medium objects OR when expanded, do full processing
-        const formattedDataDisplay = formatDataForDisplay(log.data, 1000);
+        const formattedDataDisplay = formatDataForDisplay(processedData, 1000);
 
         return {
           severityStyle,
@@ -198,6 +207,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         log.point,
         showExpandButton,
         isCurrentlyExpanded,
+        depthSetting,
       ]);
 
       // Get severity-based styling
