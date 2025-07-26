@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
-import { safeJsonStringify } from "../utils/log-utilities";
+import {
+  isLikelyLargeObject,
+  safeJsonStringify,
+  smartJsonStringify,
+} from "../utils/log-utilities";
 import { DefaultLogFormatter, type LogSeverity } from "./default-log-formatter";
 import { formatTime, formatValue } from "./health-log-formatter";
 
@@ -216,7 +220,9 @@ const DependencyDetailsContent: React.FC<{
             }}
           >
             <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-              {safeJsonStringify(log.data, 2)}
+              {isLikelyLargeObject(log.data)
+                ? smartJsonStringify(log.data, 3, 15)
+                : safeJsonStringify(log.data, 2)}
             </pre>
           </div>
         </div>
