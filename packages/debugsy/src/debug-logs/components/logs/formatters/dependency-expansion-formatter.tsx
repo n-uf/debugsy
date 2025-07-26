@@ -3,50 +3,496 @@
 import React, { useMemo } from "react";
 import JsonView from "react18-json-view";
 import "react18-json-view/src/style.css";
+import {
+  createObjectDiff,
+  getDiffSummary,
+  type DiffEntry,
+} from "../../../../shared/object-depth-utils";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import { safeJsonStringify } from "../utils/json/json-utilities";
 import { type LogSeverity } from "./default-log-formatter";
-import { formatTime, formatValue } from "./health-expansion-formatter";
+import { formatTime } from "./health-expansion-formatter";
 
-// OPTIMIZATION: Stable style object for JsonView components
-const JSON_VIEW_STYLE = {
-  fontFamily: "ui-monospace, SFMono-Regular, Monaco, Consolas, monospace",
-  fontSize: "11px",
+// Modern design system constants
+const DESIGN_TOKENS = {
+  colors: {
+    primary: "#3b82f6",
+    secondary: "#8b5cf6",
+    success: "#10b981",
+    warning: "#f59e0b",
+    error: "#ef4444",
+    info: "#06b6d4",
+
+    // Semantic colors
+    added: "#22c55e",
+    removed: "#ef4444",
+    changed: "#f59e0b",
+
+    // Surface colors
+    surface: {
+      primary: "#0f172a",
+      secondary: "#1e293b",
+      tertiary: "#334155",
+      elevated: "#475569",
+    },
+
+    // Text colors
+    text: {
+      primary: "#f8fafc",
+      secondary: "#cbd5e1",
+      tertiary: "#94a3b8",
+      accent: "#60a5fa",
+    },
+
+    // Border colors
+    border: {
+      subtle: "#334155",
+      default: "#475569",
+      emphasis: "#64748b",
+    },
+  },
+
+  spacing: {
+    xs: "2px",
+    sm: "4px",
+    md: "8px",
+    lg: "12px",
+    xl: "16px",
+    "2xl": "20px",
+    "3xl": "24px",
+  },
+
+  borderRadius: {
+    sm: "4px",
+    md: "6px",
+    lg: "8px",
+    xl: "12px",
+  },
+
+  shadows: {
+    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+  },
+} as const;
+
+// High-end JsonView styling
+const MODERN_JSON_VIEW_STYLE = {
+  fontFamily:
+    "'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+  fontSize: "12px",
   backgroundColor: "transparent",
+  borderRadius: DESIGN_TOKENS.borderRadius.md,
 } as const;
 
 /**
- * Dependency log types based on the integrated debug-deps.ts system
+ * Enhanced trackable object display with modern formatting
  */
-type DependencyLogType =
-  | "dependency-change" // 🔄 Dependencies changed
-  | "function-recreation" // 📝 function changed
-  | "object-recreation" // 📦 object changed
-  | "primitive-change" // 🔧 primitive changes
-  | "render-warning" // ⚠️ High render count
-  | "circuit-breaker" // 🚨 Circuit breaker events
-  | "emergency-stop" // 🚨 Emergency stop events
-  | "hook-execution" // 🛑 Hook execution events
-  | "unknown";
+const getEnhancedObjectDisplay = (
+  value: any
+): { display: string; type: string; badge?: string } => {
+  if (value === null) return { display: "null", type: "null" };
+  if (value === undefined) return { display: "undefined", type: "undefined" };
 
-/**
- * OPTIMIZED: Parse dependency log type with memoization-friendly logic
- */
-const parseDependencyLogType = (message: string): DependencyLogType => {
-  // Use includes for faster string matching
-  if (message.includes("Dependencies changed:")) return "dependency-change";
-  if (message.includes("function changed")) return "function-recreation";
-  if (message.includes("object changed")) return "object-recreation";
-  if (message.includes("High render count detected")) return "render-warning";
-  if (message.includes("CIRCUIT BREAKER")) return "circuit-breaker";
-  if (message.includes("EMERGENCY STOP")) return "emergency-stop";
-  if (message.includes("Hook execution")) return "hook-execution";
-  if (message.includes("→")) return "primitive-change";
-  return "unknown";
+  if (typeof value === "object") {
+    try {
+      // Arrays with enhanced display
+      if (Array.isArray(value)) {
+        const badge = value.length > 10 ? "🔢" : value.length > 0 ? "📋" : "📄";
+        return {
+          display: `Array(${value.length})`,
+          type: "array",
+          badge,
+        };
+      }
+
+      // Constructor-based objects with type badges
+      const constructorName = value.constructor?.name;
+      if (constructorName && constructorName !== "Object") {
+        const badge =
+          constructorName === "HTMLElement"
+            ? "🌐"
+            : constructorName.includes("Fiber")
+              ? "⚛️"
+              : constructorName === "Date"
+                ? "📅"
+                : constructorName === "Map"
+                  ? "🗺️"
+                  : constructorName === "Set"
+                    ? "📦"
+                    : "🏗️";
+        return {
+          display: `${constructorName}{}`,
+          type: "constructor",
+          badge,
+        };
+      }
+
+      // Enhanced plain objects
+      const keys = Object.keys(value);
+      if (keys.length === 0) {
+        return { display: "{}", type: "object", badge: "📄" };
+      } else if (keys.length <= 3) {
+        return {
+          display: `{${keys.join(", ")}}`,
+          type: "object",
+          badge: "📋",
+        };
+      } else {
+        return {
+          display: `{${keys.slice(0, 3).join(", ")}, +${keys.length - 3}}`,
+          type: "object",
+          badge: "📊",
+        };
+      }
+    } catch (error) {
+      return { display: "[Object]", type: "unknown", badge: "❓" };
+    }
+  }
+
+  // Primitive values with type detection
+  const type = typeof value;
+  const badge =
+    type === "string"
+      ? "📝"
+      : type === "number"
+        ? "🔢"
+        : type === "boolean"
+          ? "✓"
+          : "❓";
+
+  return {
+    display: String(value),
+    type,
+    badge,
+  };
 };
 
 /**
- * OPTIMIZED: Extract component name with cached regex
+ * Modern dependency log type parsing with enhanced categorization
+ */
+type EnhancedDependencyLogType =
+  | "dependency-change"
+  | "function-recreation"
+  | "object-recreation"
+  | "primitive-change"
+  | "render-warning"
+  | "circuit-breaker"
+  | "emergency-stop"
+  | "hook-execution"
+  | "unknown";
+
+const parseEnhancedLogType = (
+  message: string
+): {
+  type: EnhancedDependencyLogType;
+  icon: string;
+  severity: "low" | "medium" | "high" | "critical";
+} => {
+  if (message.includes("Dependencies changed:"))
+    return { type: "dependency-change", icon: "🔄", severity: "medium" };
+  if (message.includes("function changed"))
+    return { type: "function-recreation", icon: "📝", severity: "low" };
+  if (message.includes("object changed"))
+    return { type: "object-recreation", icon: "📦", severity: "low" };
+  if (message.includes("High render count detected"))
+    return { type: "render-warning", icon: "⚠️", severity: "high" };
+  if (message.includes("CIRCUIT BREAKER"))
+    return { type: "circuit-breaker", icon: "🚨", severity: "critical" };
+  if (message.includes("EMERGENCY STOP"))
+    return { type: "emergency-stop", icon: "🛑", severity: "critical" };
+  if (message.includes("Hook execution"))
+    return { type: "hook-execution", icon: "🪝", severity: "medium" };
+  if (message.includes("→"))
+    return { type: "primitive-change", icon: "🔧", severity: "low" };
+
+  return { type: "unknown", icon: "❓", severity: "low" };
+};
+
+/**
+ * Enhanced diff component with modern design
+ */
+const ModernDiffDisplay: React.FC<{
+  diffs: DiffEntry[];
+  summary: string;
+}> = React.memo(({ diffs, summary }) => {
+  if (diffs.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        background: `linear-gradient(135deg, ${DESIGN_TOKENS.colors.surface.secondary}22 0%, ${DESIGN_TOKENS.colors.surface.tertiary}11 100%)`,
+        border: `1px solid ${DESIGN_TOKENS.colors.border.default}`,
+        borderRadius: DESIGN_TOKENS.borderRadius.lg,
+        padding: DESIGN_TOKENS.spacing.lg,
+        marginTop: DESIGN_TOKENS.spacing.md,
+        boxShadow: DESIGN_TOKENS.shadows.md,
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      {/* Header with summary */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: DESIGN_TOKENS.spacing.md,
+          marginBottom: DESIGN_TOKENS.spacing.lg,
+          paddingBottom: DESIGN_TOKENS.spacing.md,
+          borderBottom: `1px solid ${DESIGN_TOKENS.colors.border.subtle}`,
+        }}
+      >
+        <div
+          style={{
+            background: `linear-gradient(135deg, ${DESIGN_TOKENS.colors.info} 0%, ${DESIGN_TOKENS.colors.secondary} 100%)`,
+            borderRadius: DESIGN_TOKENS.borderRadius.md,
+            padding: `${DESIGN_TOKENS.spacing.xs} ${DESIGN_TOKENS.spacing.sm}`,
+            fontSize: "10px",
+            fontWeight: "600",
+            color: DESIGN_TOKENS.colors.text.primary,
+            boxShadow: DESIGN_TOKENS.shadows.sm,
+          }}
+        >
+          📊 DIFF
+        </div>
+        <span
+          style={{
+            color: DESIGN_TOKENS.colors.text.secondary,
+            fontSize: "11px",
+            fontWeight: "500",
+          }}
+        >
+          {summary}
+        </span>
+      </div>
+
+      {/* Diff entries */}
+      <div
+        style={{
+          display: "grid",
+          gap: DESIGN_TOKENS.spacing.md,
+          maxHeight: "200px",
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
+        {diffs.slice(0, 12).map((diff, idx) => (
+          <ModernDiffEntry key={idx} diff={diff} />
+        ))}
+
+        {diffs.length > 12 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: DESIGN_TOKENS.spacing.md,
+              background: DESIGN_TOKENS.colors.surface.secondary,
+              borderRadius: DESIGN_TOKENS.borderRadius.md,
+              border: `1px dashed ${DESIGN_TOKENS.colors.border.subtle}`,
+              color: DESIGN_TOKENS.colors.text.tertiary,
+              fontSize: "10px",
+              fontStyle: "italic",
+            }}
+          >
+            +{diffs.length - 12} more changes (expand full view for complete
+            diff)
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+ModernDiffDisplay.displayName = "ModernDiffDisplay";
+
+/**
+ * Individual diff entry with enhanced styling
+ */
+const ModernDiffEntry: React.FC<{ diff: DiffEntry }> = React.memo(
+  ({ diff }) => {
+    const changeTypeConfig = {
+      added: { color: DESIGN_TOKENS.colors.added, icon: "➕", label: "ADD" },
+      removed: {
+        color: DESIGN_TOKENS.colors.removed,
+        icon: "➖",
+        label: "DEL",
+      },
+      changed: {
+        color: DESIGN_TOKENS.colors.changed,
+        icon: "🔄",
+        label: "MOD",
+      },
+    };
+
+    const config = changeTypeConfig[diff.type];
+
+    return (
+      <div
+        style={{
+          background: `${config.color}08`,
+          border: `1px solid ${config.color}30`,
+          borderRadius: DESIGN_TOKENS.borderRadius.md,
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: DESIGN_TOKENS.spacing.md,
+            padding: `${DESIGN_TOKENS.spacing.sm} ${DESIGN_TOKENS.spacing.md}`,
+            background: `${config.color}15`,
+            borderBottom: `1px solid ${config.color}20`,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: DESIGN_TOKENS.spacing.xs,
+              background: config.color,
+              borderRadius: DESIGN_TOKENS.borderRadius.sm,
+              padding: `${DESIGN_TOKENS.spacing.xs} ${DESIGN_TOKENS.spacing.sm}`,
+              fontSize: "8px",
+              fontWeight: "700",
+              color: "white",
+              boxShadow: DESIGN_TOKENS.shadows.sm,
+            }}
+          >
+            <span>{config.icon}</span>
+            <span>{config.label}</span>
+          </div>
+          <span
+            style={{
+              color: DESIGN_TOKENS.colors.text.accent,
+              fontSize: "11px",
+              fontWeight: "600",
+              fontFamily: "'SF Mono', Monaco, monospace",
+            }}
+          >
+            {diff.key}
+          </span>
+        </div>
+
+        {/* Values */}
+        <div style={{ padding: DESIGN_TOKENS.spacing.md }}>
+          {diff.type !== "added" && (
+            <ModernValueDisplay value={diff.from} label="Previous" type="old" />
+          )}
+          {diff.type !== "removed" && (
+            <ModernValueDisplay value={diff.to} label="Current" type="new" />
+          )}
+        </div>
+      </div>
+    );
+  }
+);
+
+ModernDiffEntry.displayName = "ModernDiffEntry";
+
+/**
+ * Modern value display component
+ */
+const ModernValueDisplay: React.FC<{
+  value: any;
+  label: string;
+  type: "old" | "new";
+}> = React.memo(({ value, label, type }) => {
+  const enhanced = getEnhancedObjectDisplay(value);
+  const isOld = type === "old";
+  const color = isOld
+    ? DESIGN_TOKENS.colors.removed
+    : DESIGN_TOKENS.colors.added;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: DESIGN_TOKENS.spacing.md,
+        marginBottom: type === "old" ? DESIGN_TOKENS.spacing.sm : 0,
+        padding: DESIGN_TOKENS.spacing.sm,
+        background: `${color}08`,
+        borderRadius: DESIGN_TOKENS.borderRadius.sm,
+        border: `1px solid ${color}20`,
+      }}
+    >
+      {/* Label */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: DESIGN_TOKENS.spacing.xs,
+          minWidth: "60px",
+        }}
+      >
+        <div
+          style={{
+            width: "6px",
+            height: "6px",
+            borderRadius: "50%",
+            background: color,
+            boxShadow: `0 0 0 2px ${color}30`,
+          }}
+        />
+        <span
+          style={{
+            color: color,
+            fontSize: "9px",
+            fontWeight: "600",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+          }}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* Value with badge */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: DESIGN_TOKENS.spacing.sm,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {enhanced.badge && (
+          <span style={{ fontSize: "12px" }}>{enhanced.badge}</span>
+        )}
+        <span
+          style={{
+            color: DESIGN_TOKENS.colors.text.secondary,
+            fontSize: "11px",
+            fontFamily: "'SF Mono', Monaco, monospace",
+            wordBreak: "break-all",
+            lineHeight: "1.4",
+          }}
+        >
+          {enhanced.display}
+        </span>
+        <div
+          style={{
+            background: DESIGN_TOKENS.colors.surface.tertiary,
+            color: DESIGN_TOKENS.colors.text.tertiary,
+            fontSize: "8px",
+            padding: `1px ${DESIGN_TOKENS.spacing.xs}`,
+            borderRadius: "2px",
+            textTransform: "uppercase",
+            fontWeight: "500",
+          }}
+        >
+          {enhanced.type}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ModernValueDisplay.displayName = "ModernValueDisplay";
+
+/**
+ * Component name extraction utility
  */
 const COMPONENT_NAME_REGEX = /\[([^\]]+)\]/;
 const extractComponentName = (message: string): string => {
@@ -55,20 +501,17 @@ const extractComponentName = (message: string): string => {
 };
 
 /**
- * Get dependency log severity directly from log record
- * The severity is already determined by debug-deps.ts when creating the log
+ * Get dependency log severity
  */
 const getDependencySeverity = (log: DebugLogEntry): LogSeverity => {
-  // Use the log's level as the severity - it's already been determined
-  // by the smart logic in debug-deps.ts
   return log.level as LogSeverity;
 };
 
 /**
- * OPTIMIZED: Format dependency change data with memoization
+ * Format dependency change data
  */
-const formatDependencyData = (data: any, type: DependencyLogType) => {
-  if (!data || type !== "dependency-change" || typeof data !== "object") {
+const formatDependencyData = (data: any, logType: string) => {
+  if (!data || logType !== "dependency-change" || typeof data !== "object") {
     return data;
   }
 
@@ -98,60 +541,77 @@ const formatDependencyData = (data: any, type: DependencyLogType) => {
 };
 
 /**
- * OPTIMIZED: Component for rendering from/to values with JsonView support
- * RELAXED: With superjson handling complexity, we can be more liberal with JsonView
+ * Enhanced dependency value renderer (simplified - no diff logic)
  */
-const DependencyValueRenderer: React.FC<{
+const EnhancedDependencyValueRenderer: React.FC<{
   value: any;
   label: string;
   labelColor: string;
+  showDiff?: boolean; // Kept for compatibility but not used
 }> = React.memo(({ value, label, labelColor }) => {
-  // Memoize value display strategy - more permissive with JsonView
-  const displayStrategy = useMemo(() => {
-    if (value === null || value === undefined) {
-      return { isComplex: false, displayValue: String(value) };
-    }
-
-    // With superjson, we can safely render most objects/arrays as JsonView
-    const shouldUseJsonView = typeof value === "object" && value !== null;
-
-    return {
-      isComplex: shouldUseJsonView,
-      displayValue: shouldUseJsonView ? value : formatValue(value),
-    };
-  }, [value]);
-
   // Memoize JsonView props for complex objects
   const jsonViewProps = useMemo(() => {
-    if (!displayStrategy.isComplex) return null;
+    const shouldUseJsonView = typeof value === "object" && value !== null;
+    if (!shouldUseJsonView) return null;
 
     return {
       src: value,
-      style: JSON_VIEW_STYLE,
-      collapsed: 1, // Collapse at depth 1 for compact display
+      style: MODERN_JSON_VIEW_STYLE,
+      collapsed: 1,
       displaySize: false,
       enableClipboard: false,
       theme: "default" as const,
     };
-  }, [value, displayStrategy.isComplex]);
+  }, [value]);
+
+  const isComplex = typeof value === "object" && value !== null;
 
   return (
-    <div style={{ color: "#9ca3af", marginLeft: "12px", marginTop: "2px" }}>
-      <span style={{ color: labelColor, fontWeight: "bold" }}>{label}:</span>{" "}
-      {displayStrategy.isComplex ? (
-        <div style={{ marginTop: "4px", marginLeft: "8px" }}>
-          <JsonView {...jsonViewProps!} />
-        </div>
-      ) : (
-        <span style={{ fontFamily: "monospace" }}>
-          {displayStrategy.displayValue}
-        </span>
-      )}
+    <div
+      style={{
+        marginLeft: DESIGN_TOKENS.spacing.lg,
+        marginTop: DESIGN_TOKENS.spacing.sm,
+      }}
+    >
+      <span
+        style={{
+          color: labelColor,
+          fontWeight: "bold",
+          fontSize: "10px",
+          textTransform: "uppercase",
+          letterSpacing: "0.5px",
+        }}
+      >
+        {label}:
+      </span>
+
+      {/* Value display only - no diff */}
+      <div style={{ marginTop: DESIGN_TOKENS.spacing.sm }}>
+        {isComplex ? (
+          <div
+            style={{
+              marginTop: DESIGN_TOKENS.spacing.sm,
+              background: DESIGN_TOKENS.colors.surface.secondary,
+              borderRadius: DESIGN_TOKENS.borderRadius.md,
+              padding: DESIGN_TOKENS.spacing.md,
+              border: `1px solid ${DESIGN_TOKENS.colors.border.subtle}`,
+            }}
+          >
+            <JsonView {...jsonViewProps!} />
+          </div>
+        ) : (
+          <ModernValueDisplay
+            value={value}
+            label="Value"
+            type={label === "from" ? "old" : "new"}
+          />
+        )}
+      </div>
     </div>
   );
 });
 
-DependencyValueRenderer.displayName = "DependencyValueRenderer";
+EnhancedDependencyValueRenderer.displayName = "EnhancedDependencyValueRenderer";
 
 /**
  * OPTIMIZED: Dependency expansion content with memoized computations
@@ -163,13 +623,15 @@ export const DependencyExpansionContent: React.FC<{
 }> = React.memo(({ log, maxHeight = 400 }) => {
   // Memoize parsed log data to prevent recomputation
   const dependencyMeta = useMemo(() => {
-    const logType = parseDependencyLogType(log.message);
+    const logTypeData = parseEnhancedLogType(log.message);
+    const logType = logTypeData.type;
     const componentName = extractComponentName(log.message);
     const severity = getDependencySeverity(log);
     const dependencyData = formatDependencyData(log.data, logType);
 
     return {
       logType,
+      logTypeData,
       componentName,
       severity,
       dependencyData,
@@ -226,38 +688,100 @@ export const DependencyExpansionContent: React.FC<{
               🔍 Changed Properties:
             </div>
             <div style={{ display: "grid", gap: "4px" }}>
-              {dependencyMeta.dependencyData.map((item: any, index: number) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: "4px 6px",
-                    backgroundColor: "#0f172a22",
-                    borderRadius: "2px",
-                    fontSize: "8px",
-                  }}
-                >
-                  <div style={{ color: "#60a5fa", fontWeight: "bold" }}>
-                    {item.type === "function"
-                      ? "📝"
-                      : item.type === "object"
-                        ? "📦"
-                        : "🔧"}{" "}
-                    {item.property}
-                  </div>
+              {dependencyMeta.dependencyData.map((item: any, index: number) => {
+                // Calculate diff for this property change (moved outside useMemo)
+                const calculateDiff = () => {
+                  if (
+                    typeof item.from === "object" &&
+                    item.from !== null &&
+                    typeof item.to === "object" &&
+                    item.to !== null
+                  ) {
+                    const diffs = createObjectDiff(item.from, item.to, 15);
+                    if (diffs.length > 0) {
+                      return {
+                        diffs,
+                        summary: getDiffSummary(diffs),
+                      };
+                    }
+                  }
+                  return null;
+                };
 
-                  {/* Enhanced from/to rendering with JsonView */}
-                  <DependencyValueRenderer
-                    value={item.from}
-                    label="from"
-                    labelColor="#f87171"
-                  />
-                  <DependencyValueRenderer
-                    value={item.to}
-                    label="to"
-                    labelColor="#34d399"
-                  />
-                </div>
-              ))}
+                const diffData = calculateDiff();
+
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      background: `linear-gradient(135deg, ${DESIGN_TOKENS.colors.surface.secondary}22 0%, ${DESIGN_TOKENS.colors.surface.tertiary}11 100%)`,
+                      border: `1px solid ${DESIGN_TOKENS.colors.border.default}`,
+                      borderRadius: DESIGN_TOKENS.borderRadius.lg,
+                      padding: DESIGN_TOKENS.spacing.md,
+                      boxShadow: DESIGN_TOKENS.shadows.sm,
+                    }}
+                  >
+                    {/* Property Header */}
+                    <div
+                      style={{
+                        color: DESIGN_TOKENS.colors.text.accent,
+                        fontWeight: "bold",
+                        marginBottom: DESIGN_TOKENS.spacing.sm,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: DESIGN_TOKENS.spacing.sm,
+                      }}
+                    >
+                      <span style={{ fontSize: "14px" }}>
+                        {item.type === "function"
+                          ? "📝"
+                          : item.type === "object"
+                            ? "📦"
+                            : "🔧"}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          fontFamily: "'SF Mono', Monaco, monospace",
+                          color: DESIGN_TOKENS.colors.text.primary,
+                        }}
+                      >
+                        {item.property}
+                      </span>
+                    </div>
+
+                    {/* Diff Display - Moved out of "from" section */}
+                    {diffData && (
+                      <ModernDiffDisplay
+                        diffs={diffData.diffs}
+                        summary={diffData.summary}
+                      />
+                    )}
+
+                    {/* From/To Values - Without diff embedded */}
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: DESIGN_TOKENS.spacing.sm,
+                        marginTop: diffData ? DESIGN_TOKENS.spacing.md : 0,
+                      }}
+                    >
+                      <EnhancedDependencyValueRenderer
+                        value={item.from}
+                        label="from"
+                        labelColor="#f87171"
+                        showDiff={false}
+                      />
+                      <EnhancedDependencyValueRenderer
+                        value={item.to}
+                        label="to"
+                        labelColor="#34d399"
+                        showDiff={false}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -288,7 +812,7 @@ export const DependencyExpansionContent: React.FC<{
             {displayStrategy.isComplex ? (
               <JsonView
                 src={log.data}
-                style={JSON_VIEW_STYLE}
+                style={MODERN_JSON_VIEW_STYLE}
                 collapsed={2}
                 displaySize={true}
                 enableClipboard={true}
@@ -329,7 +853,7 @@ DependencyExpansionContent.displayName = "DependencyExpansionContent";
 /**
  * OPTIMIZED: Memoized help message component
  */
-const DependencyHelpMessage: React.FC<{ logType: DependencyLogType }> =
+const DependencyHelpMessage: React.FC<{ logType: EnhancedDependencyLogType }> =
   React.memo(({ logType }) => {
     // Memoize help content based on log type
     const helpContent = useMemo(() => {
@@ -430,7 +954,8 @@ export const getDependencyLogMeta = (log: DebugLogEntry) => {
     return null;
   }
 
-  const logType = parseDependencyLogType(log.message);
+  const logTypeData = parseEnhancedLogType(log.message);
+  const logType = logTypeData.type;
   const componentName = extractComponentName(log.message);
   const severity = getDependencySeverity(log);
 

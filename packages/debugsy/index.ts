@@ -1,18 +1,9 @@
 // === SHARED CORE SYSTEM ===
 export {
-  cutObjectDepth,
-  estimateProcessingCost,
-  getDepthSettingDescription,
   initializeUnifiedDebugSystem,
-  objectToString,
-  // Object depth processing utilities
-  processObjectForDisplay,
-  processObjectsBatch,
-  testStringMode,
   type DebugPoint,
   type DependencyFilter,
   type DependencyLogLevel,
-  type DepthSetting,
   type LogLevel,
   type UnifiedSurfaceDebug,
 } from "./src/shared";
@@ -87,3 +78,19 @@ export type {
   DebugStatsPanelProps,
   DebugStatusProps,
 } from "./src/debug-logs";
+
+// Object depth utilities
+export {
+  createObjectDiff,
+  createValueDiff,
+  cutObjectDepth,
+  estimateProcessingCost,
+  getDepthSettingDescription,
+  getDiffSummary,
+  objectToString,
+  processObjectForDisplay,
+  processObjectsBatch,
+  testStringMode,
+  type DepthSetting,
+  type DiffEntry,
+} from "./src/shared/object-depth-utils";
