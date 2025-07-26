@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useDebugSubscription } from "../hooks/debug-notifications";
 import { useDebug } from "../hooks/use-debug";
 import { DebugDependencyControls } from "./debug-dependency-controls";
 import { DebugDisplayPanel } from "./debug-display-panel";
@@ -51,6 +52,9 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   onDisplayClick,
   showDependencyControls = true,
 }) => {
+  // SUBSCRIBE to debug state changes so button indicators update
+  useDebugSubscription();
+
   const debug = useDebug();
 
   // PERFORMANCE FIX: Memoize expensive operations to prevent cascade re-renders

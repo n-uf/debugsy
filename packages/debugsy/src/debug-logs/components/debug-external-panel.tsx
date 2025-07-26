@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import type { DebugLogEntry } from "../hooks/use-debug";
+import { useDebugSubscription } from "../hooks/debug-notifications";
+import { useDebug } from "../hooks/use-debug";
 import { DebugControlPanel } from "./debug-control-panel";
 import { DebugPanelHeader } from "./debug-panel-header";
 import { DebugPanelResizeHandle } from "./debug-panel-resize-handle";
@@ -10,20 +11,24 @@ import { DebugStatsPanel } from "./debug-stats-panel";
 import { DebugLogsList } from "./logs/debug-logs-list";
 
 export interface DebugExternalPanelProps {
-  logs: DebugLogEntry[];
-  onClearLogs: () => void;
   closeOnClickOutside?: boolean;
 }
 
 /**
  * External Debug Panel - Full-screen resizable debug console
- * Composed of granular, reusable components
+ * SELF-CONTAINED: Manages its own debug state, logs, and clearing internally
  */
 export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
-  logs,
-  onClearLogs,
   closeOnClickOutside = false,
 }) => {
+  // SELF-CONTAINED: Handle debug state internally
+  useDebugSubscription(); // Subscribe to debug state changes
+  const debug = useDebug();
+
+  // Get logs and clear function from debug system
+  const logs = debug.getLogs();
+  const onClearLogs = debug.clearLogs;
+
   const [isVisible, setIsVisible] = useState(false);
   const [panelHeight, setPanelHeight] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
@@ -36,15 +41,9 @@ export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
     setIsVisible(false);
   };
 
-  // Removed debug dependency to prevent circular re-renders
-  // The debug state is passed via props instead
-
   // Constraints for panel height
   const MIN_HEIGHT = 200;
   const MAX_HEIGHT = typeof window !== "undefined" ? window.innerHeight : 800;
-
-  // Removed console.log from render to prevent infinite loops
-  // Only log on state changes in useEffect hooks
 
   // Close external panel when clicking outside
   useEffect(() => {
@@ -63,7 +62,7 @@ export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
       return () =>
         document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isVisible, isResizing, onClose, closeOnClickOutside]);
+  }, [isVisible, isResizing, closeOnClickOutside]);
 
   // Keyboard shortcuts
   useEffect(() => {
