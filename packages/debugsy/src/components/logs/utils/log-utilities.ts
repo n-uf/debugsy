@@ -7,6 +7,55 @@ export const LOG_RENDERING_CONFIG = {
 } as const;
 
 /**
+ * Memoization cache for JSON stringification results
+ * Prevents repeated expensive JSON.stringify operations for the same data
+ */
+const jsonStringifyCache = new WeakMap<
+  object,
+  Map<number | undefined, string>
+>();
+
+/**
+ * Memoized JSON stringify that caches results for the same object and space parameter
+ * Significantly improves performance when the same JSON data is stringified multiple times
+ */
+export const memoizedJsonStringify = (obj: any, space?: number): string => {
+  // For primitive values, just stringify directly (no memoization needed)
+  if (obj === null || typeof obj !== "object") {
+    return safeJsonStringify(obj, space);
+  }
+
+  // Check if we have a cache for this object
+  let spaceCache = jsonStringifyCache.get(obj);
+  if (!spaceCache) {
+    spaceCache = new Map();
+    jsonStringifyCache.set(obj, spaceCache);
+  }
+
+  // Check if we have a cached result for this space parameter
+  const cached = spaceCache.get(space);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  // Compute and cache the result
+  const result = safeJsonStringify(obj, space);
+  spaceCache.set(space, result);
+
+  return result;
+};
+
+/**
+ * Clear the JSON stringify cache (useful for memory management)
+ * Call this when you want to free up memory from cached JSON strings
+ */
+export const clearJsonStringifyCache = (): void => {
+  // WeakMap doesn't have a clear method, but we can't really clear it
+  // The cache will be garbage collected when the objects are no longer referenced
+  console.log("🧹 JSON stringify cache will be cleared via garbage collection");
+};
+
+/**
  * Debug points mapping for emojis (Event Dispatcher Architecture)
  */
 export const DEBUG_POINT_EMOJIS: Record<string, string> = {

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { DebugLogEntry } from "../../hooks/use-debug";
 import {
   clearDebugDisplayContent,
@@ -41,6 +47,126 @@ export interface DebugLogsListProps {
 }
 
 /**
+ * Memoized log entry component to prevent unnecessary re-renders
+ * Each log entry is memoized based on its content, not array position
+ */
+const MemoizedLogEntry: React.FC<{
+  log: DebugLogEntry;
+  index: number;
+  uniqueKey: string;
+}> = React.memo(
+  ({ log, index, uniqueKey }) => {
+    // Determine which formatter to use based on log type
+    if (log.point === "health") {
+      return <HealthLogFormatter log={log} />;
+    } else if (log.point === "dependencies") {
+      return <DependencyLogFormatter log={log} />;
+    } else {
+      return <DefaultLogFormatter log={log} index={index} />;
+    }
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison function - only re-render if the actual log content changed
+    return (
+      prevProps.uniqueKey === nextProps.uniqueKey &&
+      prevProps.log === nextProps.log &&
+      prevProps.index === nextProps.index
+    );
+  }
+);
+
+MemoizedLogEntry.displayName = "MemoizedLogEntry";
+
+/**
+ * Virtual scrolling container for better performance with large log lists
+ * Renders only visible items plus a small buffer
+ */
+const VirtualizedLogContainer: React.FC<{
+  logs: DebugLogEntry[];
+  containerHeight: number;
+  itemHeight: number;
+}> = React.memo(({ logs, containerHeight, itemHeight }) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate visible range with buffer
+  const visibleRange = useMemo(() => {
+    const buffer = 5; // Render 5 extra items above/below visible area
+    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - buffer);
+    const visibleCount = Math.ceil(containerHeight / itemHeight) + buffer * 2;
+    const endIndex = Math.min(logs.length - 1, startIndex + visibleCount);
+
+    return { startIndex, endIndex };
+  }, [scrollTop, itemHeight, containerHeight, logs.length]);
+
+  // Handle scroll events
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
+
+  // Get visible logs with proper keys
+  const visibleLogs = useMemo(() => {
+    return logs
+      .slice(visibleRange.startIndex, visibleRange.endIndex + 1)
+      .map((log, relativeIndex) => ({
+        log,
+        index: visibleRange.startIndex + relativeIndex,
+        uniqueKey: `${log.timestamp}-${log.point}-${visibleRange.startIndex + relativeIndex}`,
+      }));
+  }, [logs, visibleRange]);
+
+  // Only use virtualization for large lists (>50 items)
+  if (logs.length <= 50) {
+    return (
+      <div ref={containerRef}>
+        {logs.map((log, index) => (
+          <MemoizedLogEntry
+            key={`${log.timestamp}-${index}`}
+            log={log}
+            index={index}
+            uniqueKey={`${log.timestamp}-${log.point}-${index}`}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ height: containerHeight, overflowY: "auto" }}
+      onScroll={handleScroll}
+    >
+      {/* Spacer for items before visible range */}
+      {visibleRange.startIndex > 0 && (
+        <div style={{ height: visibleRange.startIndex * itemHeight }} />
+      )}
+
+      {/* Visible items */}
+      {visibleLogs.map(({ log, index, uniqueKey }) => (
+        <MemoizedLogEntry
+          key={uniqueKey}
+          log={log}
+          index={index}
+          uniqueKey={uniqueKey}
+        />
+      ))}
+
+      {/* Spacer for items after visible range */}
+      {visibleRange.endIndex < logs.length - 1 && (
+        <div
+          style={{
+            height: (logs.length - 1 - visibleRange.endIndex) * itemHeight,
+          }}
+        />
+      )}
+    </div>
+  );
+});
+
+VirtualizedLogContainer.displayName = "VirtualizedLogContainer";
+
+/**
  * Debug Logs List - Displays the scrollable list of debug log entries
  *
  * RECENT IMPROVEMENTS:
@@ -69,6 +195,11 @@ export interface DebugLogsListProps {
  *    - Before: Step 2 of 4 = 50% progress (arbitrary step completion)
  *    - After: 200 logs of 1000 total = 20% progress (meaningful data metric)
  *    - Users see accurate feedback about how much data has been copied
+ *
+ * 6. 🚀 PERFORMANCE OPTIMIZATIONS: Memoization and virtualization
+ *    - Memoized log components prevent unnecessary re-renders
+ *    - Virtual scrolling for large lists (>50 items)
+ *    - Expensive computations cached with useMemo
  */
 // Timing constants moved to ../config/copy-config.ts for centralized configuration
 
@@ -79,8 +210,20 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const stateResetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Determine which logs to use - paused or live
-  const activeLogs = isPaused ? pausedLogs : logs;
+  // Memoize active logs to prevent unnecessary recalculations
+  const activeLogs = useMemo(() => {
+    return isPaused ? pausedLogs : logs;
+  }, [isPaused, pausedLogs, logs]);
+
+  // Memoize prepared logs for rendering to prevent repeated processing
+  const reversedLogs = useMemo(() => {
+    return prepareLogsForRendering(activeLogs);
+  }, [activeLogs]);
+
+  // Memoize truncation info
+  const truncationInfo = useMemo(() => {
+    return getLogsTruncationInfo(activeLogs.length);
+  }, [activeLogs.length]);
 
   // Auto-reset copy state after synchronized display duration
   useEffect(() => {
@@ -223,39 +366,39 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
     }
   }, []);
 
-  // Prepare logs for rendering
-  const reversedLogs = prepareLogsForRendering(activeLogs);
-  const { isLogsTruncated, hiddenLogsCount } = getLogsTruncationInfo(
-    activeLogs.length
+  const handleButtonMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (activeLogs.length > 0) {
+        (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.08)";
+        (e.currentTarget as HTMLButtonElement).style.boxShadow =
+          "0 2px 4px rgba(0, 0, 0, 0.4)";
+
+        // Show descriptive hover message in display
+        setDebugDisplayContent({
+          message: getHoverMessage(
+            copyState,
+            activeLogs.length,
+            DEFAULT_COPY_CONFIG
+          ),
+          type: "info",
+          duration: 0, // Don't auto-clear
+        });
+      }
+    },
+    [copyState, activeLogs.length]
   );
 
-  const handleButtonMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (activeLogs.length > 0) {
-      (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.08)";
+  const handleButtonMouseLeave = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
       (e.currentTarget as HTMLButtonElement).style.boxShadow =
-        "0 2px 4px rgba(0, 0, 0, 0.4)";
+        "0 1px 2px rgba(0, 0, 0, 0.3)";
 
-      // Show descriptive hover message in display
-      setDebugDisplayContent({
-        message: getHoverMessage(
-          copyState,
-          activeLogs.length,
-          DEFAULT_COPY_CONFIG
-        ),
-        type: "info",
-        duration: 0, // Don't auto-clear
-      });
-    }
-  };
-
-  const handleButtonMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-    (e.currentTarget as HTMLButtonElement).style.boxShadow =
-      "0 1px 2px rgba(0, 0, 0, 0.3)";
-
-    // Clear hover message from display
-    clearDebugDisplayContent();
-  };
+      // Clear hover message from display
+      clearDebugDisplayContent();
+    },
+    []
+  );
 
   return (
     <div
@@ -276,7 +419,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
           outline: "none", // Remove focus outline
         }}
       >
-        {isLogsTruncated && (
+        {truncationInfo.isLogsTruncated && (
           <div style={LOG_STYLES.truncationWarning}>
             ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
             {logs.length} logs (performance limit)
@@ -305,22 +448,14 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
           </div>
         ) : (
           <>
-            {reversedLogs.map((log, index) => (
-              <div key={`${log.timestamp}-${index}`}>
-                {/* Special handling for health logs */}
-                {log.point === "health" ? (
-                  <HealthLogFormatter log={log} />
-                ) : log.point === "dependencies" ? (
-                  /* Special handling for dependency tracking logs */
-                  <DependencyLogFormatter log={log} />
-                ) : (
-                  /* Regular log entry format */
-                  <DefaultLogFormatter log={log} index={index} />
-                )}
-              </div>
-            ))}
+            {/* Use virtualized container for better performance */}
+            <VirtualizedLogContainer
+              logs={reversedLogs}
+              containerHeight={400} // Adjust based on your container
+              itemHeight={25} // Approximate height of each log entry
+            />
 
-            {isLogsTruncated && (
+            {truncationInfo.isLogsTruncated && (
               <div
                 key="hidden-logs-indicator"
                 style={{
@@ -340,8 +475,8 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
               >
                 <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
                 <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
-                  ... and {hiddenLogsCount.toLocaleString()} more logs hidden
-                  for performance
+                  ... and {truncationInfo.hiddenLogsCount.toLocaleString()} more
+                  logs hidden for performance
                 </span>
               </div>
             )}
