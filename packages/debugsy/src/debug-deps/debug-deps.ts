@@ -1,0 +1,700 @@
+import { useEffect, useRef } from "react";
+
+interface ChangedProps {
+  [key: string]: {
+    from: any;
+    to: any;
+  };
+}
+
+// Import notification system for real-time UI updates
+let notifySubscribers: (() => void) | null = null;
+
+// Initialize notification system when available
+const initializeNotificationSystem = () => {
+  if (!notifySubscribers) {
+    try {
+      // Dynamically import to avoid circular dependencies
+      import("../hooks/debug-notifications")
+        .then((module) => {
+          notifySubscribers = module.notifySubscribers;
+        })
+        .catch(() => {
+          // Notification system not available - UI updates will be manual
+        });
+    } catch {
+      // Fallback - no real-time UI updates
+    }
+  }
+};
+
+// Helper to log to both console and debug panel using the unified debug system
+const logToDebugSystem = (message: string, data?: any) => {
+  console.log(message, data);
+
+  // Access the unified debug system directly
+  const globalDebug = (globalThis as any).surfaceDebug;
+  if (globalDebug && typeof globalDebug.getDebugState === "function") {
+    try {
+      const debugState = globalDebug.getDebugState();
+
+      // Add the log entry directly to the debug system
+      const logEntry = {
+        timestamp: Date.now(),
+        level: "info",
+        point: "dependencies",
+        message,
+        data,
+        sessionId: "default",
+      };
+
+      debugState.logs = [
+        ...debugState.logs.slice(-9999), // Keep last 9999 logs
+        logEntry,
+      ];
+
+      // Notify UI subscribers for real-time updates
+      if (notifySubscribers) {
+        notifySubscribers();
+      }
+    } catch (error) {
+      // Fallback to console only if debug system isn't available
+      console.debug("Debug system not available:", error);
+    }
+  }
+};
+
+const logWarnToDebugSystem = (message: string, data?: any) => {
+  console.warn(message, data);
+
+  const globalDebug = (globalThis as any).surfaceDebug;
+  if (globalDebug && typeof globalDebug.getDebugState === "function") {
+    try {
+      const debugState = globalDebug.getDebugState();
+
+      const logEntry = {
+        timestamp: Date.now(),
+        level: "warn",
+        point: "dependencies",
+        message: `⚠️ ${message}`,
+        data,
+        sessionId: "default",
+      };
+
+      debugState.logs = [...debugState.logs.slice(-9999), logEntry];
+
+      // Notify UI subscribers for real-time updates
+      if (notifySubscribers) {
+        notifySubscribers();
+      }
+    } catch (error) {
+      console.debug("Debug system not available:", error);
+    }
+  }
+};
+
+const logErrorToDebugSystem = (message: string, data?: any) => {
+  console.error(message, data);
+
+  const globalDebug = (globalThis as any).surfaceDebug;
+  if (globalDebug && typeof globalDebug.getDebugState === "function") {
+    try {
+      const debugState = globalDebug.getDebugState();
+
+      const logEntry = {
+        timestamp: Date.now(),
+        level: "error",
+        point: "dependencies",
+        message: `🚨 ${message}`,
+        data,
+        sessionId: "default",
+      };
+
+      debugState.logs = [...debugState.logs.slice(-9999), logEntry];
+
+      // Notify UI subscribers for real-time updates
+      if (notifySubscribers) {
+        notifySubscribers();
+      }
+    } catch (error) {
+      console.debug("Debug system not available:", error);
+    }
+  }
+};
+
+// Get dependency state from unified debug system
+const getDependencyState = () => {
+  const globalDebug = (globalThis as any).surfaceDebug;
+  return (
+    globalDebug?.getDependencyStatus?.() || {
+      enabled: false,
+      level: "normal",
+      filter: "all",
+      allowedHooks: null,
+      excludedHooks: [],
+      throttleMs: 100,
+    }
+  );
+};
+
+// Enhanced dependency change tracking
+const dependencyChangeTracking = new Map<
+  string,
+  { count: number; lastChange: number; isFrequent: boolean }
+>();
+
+function trackDependencyChange(
+  hookName: string,
+  propName: string,
+  changeType: "function" | "object" | "primitive"
+) {
+  const key = `${hookName}.${propName}`;
+  const now = Date.now();
+  const existing = dependencyChangeTracking.get(key);
+
+  if (existing) {
+    existing.count++;
+    const timeSinceLastChange = now - existing.lastChange;
+    existing.isFrequent = timeSinceLastChange < 1000; // Changed within 1 second
+    existing.lastChange = now;
+  } else {
+    dependencyChangeTracking.set(key, {
+      count: 1,
+      lastChange: now,
+      isFrequent: false,
+    });
+  }
+
+  return dependencyChangeTracking.get(key)!;
+}
+
+// Enhanced shouldLogDependency function using unified state
+function shouldLogDependency(
+  hookName: string,
+  changeType: "function" | "object" | "primitive",
+  isStable: boolean
+): boolean {
+  // Emergency stop check
+  if ((globalThis as any).__SURFACE_EMERGENCY_STOP?.active) {
+    return false;
+  }
+
+  const dependencyState = getDependencyState();
+
+  // Global enabled check
+  if (!dependencyState.enabled) {
+    return false;
+  }
+
+  // Hook filtering
+  if (dependencyState.allowedHooks) {
+    if (!dependencyState.allowedHooks.includes(hookName)) {
+      return false;
+    }
+  }
+
+  if (dependencyState.excludedHooks.includes(hookName)) {
+    return false;
+  }
+
+  // Level filtering
+  switch (dependencyState.level) {
+    case "silent":
+      return false;
+    case "quiet":
+      // Only show functions and potential loop risks
+      return changeType === "function" || !isStable;
+    case "normal":
+      // Show functions and objects, hide primitives unless unstable
+      return changeType !== "primitive" || !isStable;
+    case "verbose":
+      // Show everything
+      return true;
+    case "debug":
+      // Show everything with extra detail
+      return true;
+  }
+
+  // Type filtering
+  switch (dependencyState.filter) {
+    case "functions-only":
+      return changeType === "function";
+    case "objects-only":
+      return changeType === "object";
+    case "unstable-only":
+      return !isStable;
+    case "stable-only":
+      return isStable;
+    case "loop-risks":
+      // Functions and frequently changing objects
+      return (
+        changeType === "function" || (changeType === "object" && !isStable)
+      );
+    case "all":
+    default:
+      return true;
+  }
+}
+
+/**
+ * Enhanced dependency tracking that respects unified debug controls
+ * FIXED: Always call hooks in same order to comply with Rules of Hooks
+ */
+export function useWhyDidYouUpdate(
+  name: string,
+  props: Record<string, any>
+): void {
+  // ALWAYS call hooks first - never conditionally skip them
+  const previousProps = useRef<Record<string, any> | undefined>(undefined);
+  const lastLogTime = useRef(0);
+
+  const dependencyState = getDependencyState();
+
+  // Check if we should do any work (but hooks are already called)
+  const shouldTrack =
+    dependencyState.enabled &&
+    !(globalThis as any).__SURFACE_EMERGENCY_STOP?.active;
+
+  useEffect(() => {
+    // Early exit if tracking is disabled, but still update previousProps
+    if (!shouldTrack) {
+      previousProps.current = props;
+      return;
+    }
+
+    const currentDependencyState = getDependencyState();
+
+    // Throttling
+    const now = Date.now();
+    if (now - lastLogTime.current < currentDependencyState.throttleMs) {
+      previousProps.current = props;
+      return;
+    }
+
+    if (previousProps.current) {
+      const allKeys = Object.keys({ ...previousProps.current, ...props });
+      const changedProps: ChangedProps = {};
+      const changesToLog: Array<{
+        key: string;
+        change: { from: any; to: any };
+        type: "function" | "object" | "primitive";
+        isStable: boolean;
+      }> = [];
+
+      allKeys.forEach((key) => {
+        if (previousProps.current![key] !== props[key]) {
+          const from = previousProps.current![key];
+          const to = props[key];
+          const fromType = typeof from;
+          const toType = typeof to;
+
+          let changeType: "function" | "object" | "primitive";
+          if (fromType === "function" || toType === "function") {
+            changeType = "function";
+          } else if (fromType === "object" || toType === "object") {
+            changeType = "object";
+          } else {
+            changeType = "primitive";
+          }
+
+          const trackingInfo = trackDependencyChange(name, key, changeType);
+          const isStable = !trackingInfo.isFrequent;
+
+          changedProps[key] = { from, to };
+
+          if (shouldLogDependency(name, changeType, isStable)) {
+            changesToLog.push({
+              key,
+              change: { from, to },
+              type: changeType,
+              isStable,
+            });
+          }
+        }
+      });
+
+      // Log changes if any should be logged
+      if (changesToLog.length > 0) {
+        // Summary log
+        logToDebugSystem(
+          `🔄 [${name}] Dependencies changed:`,
+          Object.fromEntries(changesToLog.map((c) => [c.key, c.change]))
+        );
+
+        // Detailed logs based on level
+        changesToLog.forEach(({ key, change, type, isStable }) => {
+          const { from, to } = change;
+          const fromType = typeof from;
+          const toType = typeof to;
+
+          if (type === "function") {
+            const stability = isStable ? "" : " ⚠️ FREQUENT";
+            logToDebugSystem(
+              `📝 [${name}] ${key}: function changed (function → function)${stability}`
+            );
+          } else if (type === "object") {
+            const stability = isStable ? "" : " ⚠️ FREQUENT";
+            if (currentDependencyState.level === "debug") {
+              logToDebugSystem(
+                `📦 [${name}] ${key}: object changed${stability}`,
+                {
+                  from,
+                  to,
+                }
+              );
+            } else {
+              logToDebugSystem(
+                `📦 [${name}] ${key}: object changed${stability}`
+              );
+            }
+          } else {
+            // Primitive changes (only in verbose/debug mode)
+            if (
+              currentDependencyState.level === "verbose" ||
+              currentDependencyState.level === "debug"
+            ) {
+              logToDebugSystem(`🔧 [${name}] ${key}: ${fromType} → ${toType}`, {
+                from,
+                to,
+              });
+            }
+          }
+        });
+
+        lastLogTime.current = now;
+      }
+    }
+
+    previousProps.current = props;
+  }); // Deliberately no deps - we want this to run on every render to track changes
+}
+
+/**
+ * Enhanced version that tracks render count and warns about excessive renders
+ */
+export function useRenderTracker(
+  name: string,
+  props: Record<string, any>
+): void {
+  const renderCount = useRef(0);
+  const lastWarning = useRef(0);
+
+  renderCount.current += 1;
+
+  // Warn every 10 renders after threshold
+  if (renderCount.current > 10 && renderCount.current % 10 === 0) {
+    const now = Date.now();
+    if (now - lastWarning.current > 1000) {
+      // Throttle warnings to once per second
+      logWarnToDebugSystem(
+        `⚠️ [${name}] High render count detected: ${renderCount.current}`
+      );
+      lastWarning.current = now;
+    }
+  }
+
+  useWhyDidYouUpdate(name, props);
+}
+
+// Global circuit breaker state (simplified - could be moved to main debug system later)
+const circuitBreakers = new Map<
+  string,
+  {
+    isOpen: boolean;
+    renderCount: number;
+    lastReset: number;
+    threshold: number;
+  }
+>();
+
+/**
+ * Circuit breaker configuration
+ */
+interface CircuitBreakerConfig {
+  maxRenders?: number; // Max renders before opening circuit (default: 15)
+  resetInterval?: number; // Reset interval in ms (default: 5000)
+  autoRestore?: boolean; // Auto-restore after reset interval (default: true)
+  onBreak?: (name: string, renderCount: number) => void;
+  onRestore?: (name: string) => void;
+}
+
+/**
+ * Enhanced render tracker with automatic circuit breaker protection
+ */
+export function useCircuitBreakerTracker(
+  name: string,
+  props: Record<string, any>,
+  config: CircuitBreakerConfig = {}
+): { isDisabled: boolean; renderCount: number } {
+  const {
+    maxRenders = 15,
+    resetInterval = 5000,
+    autoRestore = true,
+    onBreak,
+    onRestore,
+  } = config;
+
+  const renderCount = useRef(0);
+  const lastWarning = useRef(0);
+
+  renderCount.current += 1;
+
+  // Get or create circuit breaker state
+  if (!circuitBreakers.has(name)) {
+    circuitBreakers.set(name, {
+      isOpen: false,
+      renderCount: 0,
+      lastReset: Date.now(),
+      threshold: maxRenders,
+    });
+  }
+
+  const breaker = circuitBreakers.get(name)!;
+  breaker.renderCount = renderCount.current;
+
+  const now = Date.now();
+
+  // Auto-restore circuit breaker after reset interval
+  if (
+    breaker.isOpen &&
+    autoRestore &&
+    now - breaker.lastReset > resetInterval
+  ) {
+    breaker.isOpen = false;
+    breaker.lastReset = now;
+    renderCount.current = 0; // Reset render count
+    logToDebugSystem(`🔄 [${name}] Circuit breaker auto-restored`);
+    onRestore?.(name);
+  }
+
+  // Check if we should open the circuit breaker
+  if (!breaker.isOpen && renderCount.current > maxRenders) {
+    breaker.isOpen = true;
+    breaker.lastReset = now;
+    logErrorToDebugSystem(
+      `🚨 [${name}] CIRCUIT BREAKER OPEN - Excessive renders detected: ${renderCount.current}`
+    );
+    logErrorToDebugSystem(
+      `🛑 [${name}] Hook disabled to prevent infinite loop`
+    );
+    onBreak?.(name, renderCount.current);
+  }
+
+  // Warn about high render count (but less frequently when circuit is open)
+  if (renderCount.current > 10 && renderCount.current % 5 === 0) {
+    if (now - lastWarning.current > 1000) {
+      if (breaker.isOpen) {
+        logWarnToDebugSystem(
+          `⚠️ [${name}] Hook disabled (renders: ${renderCount.current})`
+        );
+      } else {
+        logWarnToDebugSystem(
+          `⚠️ [${name}] High render count detected: ${renderCount.current}`
+        );
+      }
+      lastWarning.current = now;
+    }
+  }
+
+  // Always call useWhyDidYouUpdate to maintain hook order
+  // The function itself will handle whether to actually track based on circuit state
+  useWhyDidYouUpdate(name, breaker.isOpen ? {} : props);
+
+  return {
+    isDisabled: breaker.isOpen,
+    renderCount: renderCount.current,
+  };
+}
+
+/**
+ * Safe hook wrapper that automatically disables when excessive renders detected
+ */
+export function useSafeHook<T>(
+  name: string,
+  hookFn: () => T,
+  fallbackValue: T,
+  config: CircuitBreakerConfig = {}
+): T {
+  const { isDisabled } = useCircuitBreakerTracker(name, {}, config);
+
+  if (isDisabled) {
+    logToDebugSystem(
+      `🛑 [${name}] Hook execution skipped (circuit breaker open)`
+    );
+    return fallbackValue;
+  }
+
+  try {
+    return hookFn();
+  } catch (error) {
+    logErrorToDebugSystem(`❌ [${name}] Hook execution failed:`, error);
+    return fallbackValue;
+  }
+}
+
+/**
+ * Manual circuit breaker control
+ */
+export const circuitBreakerControl = {
+  /**
+   * Check if a circuit breaker is open
+   */
+  isOpen(name: string): boolean {
+    return circuitBreakers.get(name)?.isOpen ?? false;
+  },
+
+  /**
+   * Manually open a circuit breaker
+   */
+  open(name: string): void {
+    if (!circuitBreakers.has(name)) {
+      circuitBreakers.set(name, {
+        isOpen: false,
+        renderCount: 0,
+        lastReset: Date.now(),
+        threshold: 15,
+      });
+    }
+    const breaker = circuitBreakers.get(name)!;
+    breaker.isOpen = true;
+    breaker.lastReset = Date.now();
+    logToDebugSystem(`🛑 [${name}] Circuit breaker manually opened`);
+  },
+
+  /**
+   * Manually close/restore a circuit breaker
+   */
+  close(name: string): void {
+    const breaker = circuitBreakers.get(name);
+    if (breaker) {
+      breaker.isOpen = false;
+      breaker.lastReset = Date.now();
+      logToDebugSystem(`🔄 [${name}] Circuit breaker manually restored`);
+    }
+  },
+
+  /**
+   * Get circuit breaker status
+   */
+  getStatus(name: string) {
+    return circuitBreakers.get(name) ?? null;
+  },
+
+  /**
+   * Reset all circuit breakers
+   */
+  resetAll(): void {
+    circuitBreakers.clear();
+    logToDebugSystem(`🔄 All circuit breakers reset`);
+  },
+
+  /**
+   * List all circuit breakers and their status
+   */
+  listAll(): Array<{ name: string; isOpen: boolean; renderCount: number }> {
+    return Array.from(circuitBreakers.entries()).map(([name, breaker]) => ({
+      name,
+      isOpen: breaker.isOpen,
+      renderCount: breaker.renderCount,
+    }));
+  },
+};
+
+// Global emergency stop
+export const emergencyStop = {
+  isActive: false,
+
+  /**
+   * Activate emergency stop - disables all circuit-breaker protected hooks
+   */
+  activate(): void {
+    this.isActive = true;
+    logErrorToDebugSystem(
+      `🚨 EMERGENCY STOP ACTIVATED - All protected hooks disabled`
+    );
+  },
+
+  /**
+   * Deactivate emergency stop
+   */
+  deactivate(): void {
+    this.isActive = false;
+    circuitBreakers.clear();
+    logToDebugSystem(`✅ Emergency stop deactivated - Hooks restored`);
+  },
+};
+
+/**
+ * Emergency-stop aware safe hook wrapper
+ */
+export function useEmergencySafeHook<T>(
+  name: string,
+  hookFn: () => T,
+  fallbackValue: T,
+  config: CircuitBreakerConfig = {}
+): T {
+  if (emergencyStop.isActive) {
+    logWarnToDebugSystem(
+      `🚨 [${name}] Hook execution blocked (emergency stop active)`
+    );
+    return fallbackValue;
+  }
+
+  return useSafeHook(name, hookFn, fallbackValue, config);
+}
+
+// Initialize emergency stop globals
+(globalThis as any).__SURFACE_EMERGENCY_STOP = {
+  active: false,
+  activate: () => {
+    console.error(
+      "🚨 EMERGENCY STOP ACTIVATED - All Surface debug logging disabled"
+    );
+    (globalThis as any).__SURFACE_EMERGENCY_STOP.active = true;
+    emergencyStop.activate();
+  },
+  deactivate: () => {
+    console.log("✅ Emergency stop deactivated - Debug logging restored");
+    (globalThis as any).__SURFACE_EMERGENCY_STOP.active = false;
+    emergencyStop.deactivate();
+  },
+  status: () => {
+    const globalDebug = (globalThis as any).surfaceDebug;
+    const depState = globalDebug?.getDependencyStatus?.() || {};
+    console.log("🔍 Surface Debug Status:", {
+      emergencyActive: (globalThis as any).__SURFACE_EMERGENCY_STOP.active,
+      dependencyTracking: depState.enabled,
+      level: depState.level,
+      filter: depState.filter,
+    });
+  },
+};
+
+// Initialize notification system on module load
+initializeNotificationSystem();
+
+console.log(`
+✅ Surface Dependency Tracking (integrated with unified debug framework)
+
+🔧 Debug Framework Integration:
+  - Logs stream to both console AND debug panel
+  - Controlled by DependencyTrackingConfig settings
+  - Available debug points: dependencies, health, performance
+  - Logs visible in DebugExternalPanel and DebugLogsList
+
+🎛️ Console Commands:
+  surfaceDebug.deps.off()           - Disable dependency logs
+  surfaceDebug.deps.quiet()         - Only critical changes (recommended) 
+  surfaceDebug.deps.normal()        - Standard dependency tracking
+  surfaceDebug.deps.verbose()       - Detailed dependency tracking
+  surfaceDebug.deps.functionsOnly() - Only function changes
+  surfaceDebug.deps.objectsOnly()   - Only object changes
+  surfaceDebug.deps.unstableOnly()  - Only changing dependencies
+  
+🚨 Emergency Protection:
+  __SURFACE_EMERGENCY_STOP.activate()   - Stop ALL logging immediately
+  __SURFACE_EMERGENCY_STOP.deactivate() - Restore normal operation
+  __SURFACE_EMERGENCY_STOP.status()     - Check current status
+  
+🎯 View logs in the Debug UI panel or console for infinite render debugging!
+`);

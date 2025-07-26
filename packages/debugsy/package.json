@@ -1,0 +1,43 @@
+{
+  "name": "@workspace/debugsy",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "@workspace/shadcn": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.8",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./src/*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    },
+    "./src/components/*": {
+      "types": "./src/components/*.tsx",
+      "default": "./src/components/*.tsx"
+    },
+    "./src/hooks/*": {
+      "types": "./src/hooks/*.ts",
+      "default": "./src/hooks/*.ts"
+    },
+    "./src/utils/*": {
+      "types": "./src/utils/*.ts",
+      "default": "./src/utils/*.ts"
+    }
+  }
+}
