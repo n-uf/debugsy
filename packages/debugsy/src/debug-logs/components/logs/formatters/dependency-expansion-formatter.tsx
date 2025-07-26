@@ -13,76 +13,43 @@ import { safeJsonStringify } from "../utils/json/json-utilities";
 import { type LogSeverity } from "./default-log-formatter";
 import { formatTime } from "./health-expansion-formatter";
 
-// Modern design system constants
-const DESIGN_TOKENS = {
-  colors: {
-    primary: "#3b82f6",
-    secondary: "#8b5cf6",
-    success: "#10b981",
-    warning: "#f59e0b",
-    error: "#ef4444",
-    info: "#06b6d4",
-
-    // Semantic colors
-    added: "#22c55e",
-    removed: "#ef4444",
-    changed: "#f59e0b",
-
-    // Surface colors
-    surface: {
-      primary: "#0f172a",
-      secondary: "#1e293b",
-      tertiary: "#334155",
-      elevated: "#475569",
-    },
-
-    // Text colors
-    text: {
-      primary: "#f8fafc",
-      secondary: "#cbd5e1",
-      tertiary: "#94a3b8",
-      accent: "#60a5fa",
-    },
-
-    // Border colors
-    border: {
-      subtle: "#334155",
-      default: "#475569",
-      emphasis: "#64748b",
-    },
-  },
-
+// Engineering-focused design constants
+const ENGINEERING_TOKENS = {
   spacing: {
     xs: "2px",
     sm: "4px",
-    md: "8px",
-    lg: "12px",
-    xl: "16px",
-    "2xl": "20px",
-    "3xl": "24px",
-  },
-
-  borderRadius: {
-    sm: "4px",
     md: "6px",
     lg: "8px",
-    xl: "12px",
   },
 
-  shadows: {
-    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+  colors: {
+    // Terminal-like colors
+    bg: "#0d1117",
+    bgSecondary: "#161b22",
+    border: "#30363d",
+
+    // Status colors
+    added: "#28a745",
+    removed: "#d73a49",
+    changed: "#fb8500",
+
+    // Text colors
+    text: "#f0f6fc",
+    textSecondary: "#8b949e",
+    textMuted: "#6e7681",
+    accent: "#58a6ff",
+  },
+
+  fonts: {
+    mono: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace",
   },
 } as const;
 
-// High-end JsonView styling
-const MODERN_JSON_VIEW_STYLE = {
-  fontFamily:
-    "'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
-  fontSize: "12px",
+// Compact JsonView styling
+const COMPACT_JSON_STYLE = {
+  fontFamily: ENGINEERING_TOKENS.fonts.mono,
+  fontSize: "11px",
   backgroundColor: "transparent",
-  borderRadius: DESIGN_TOKENS.borderRadius.md,
 } as const;
 
 /**
@@ -210,9 +177,9 @@ const parseEnhancedLogType = (
 };
 
 /**
- * Enhanced diff component with modern design
+ * Compact engineering-focused diff display
  */
-const ModernDiffDisplay: React.FC<{
+const CompactDiffDisplay: React.FC<{
   diffs: DiffEntry[];
   summary: string;
 }> = React.memo(({ diffs, summary }) => {
@@ -221,79 +188,68 @@ const ModernDiffDisplay: React.FC<{
   return (
     <div
       style={{
-        background: `linear-gradient(135deg, ${DESIGN_TOKENS.colors.surface.secondary}22 0%, ${DESIGN_TOKENS.colors.surface.tertiary}11 100%)`,
-        border: `1px solid ${DESIGN_TOKENS.colors.border.default}`,
-        borderRadius: DESIGN_TOKENS.borderRadius.lg,
-        padding: DESIGN_TOKENS.spacing.lg,
-        marginTop: DESIGN_TOKENS.spacing.md,
-        boxShadow: DESIGN_TOKENS.shadows.md,
-        backdropFilter: "blur(8px)",
+        background: ENGINEERING_TOKENS.colors.bgSecondary,
+        border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
+        borderRadius: "3px",
+        padding: ENGINEERING_TOKENS.spacing.md,
+        marginTop: ENGINEERING_TOKENS.spacing.sm,
+        fontSize: "10px",
+        fontFamily: ENGINEERING_TOKENS.fonts.mono,
       }}
     >
-      {/* Header with summary */}
+      {/* Compact header */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: DESIGN_TOKENS.spacing.md,
-          marginBottom: DESIGN_TOKENS.spacing.lg,
-          paddingBottom: DESIGN_TOKENS.spacing.md,
-          borderBottom: `1px solid ${DESIGN_TOKENS.colors.border.subtle}`,
+          gap: ENGINEERING_TOKENS.spacing.sm,
+          marginBottom: ENGINEERING_TOKENS.spacing.sm,
+          paddingBottom: ENGINEERING_TOKENS.spacing.xs,
+          borderBottom: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
         }}
       >
-        <div
-          style={{
-            background: `linear-gradient(135deg, ${DESIGN_TOKENS.colors.info} 0%, ${DESIGN_TOKENS.colors.secondary} 100%)`,
-            borderRadius: DESIGN_TOKENS.borderRadius.md,
-            padding: `${DESIGN_TOKENS.spacing.xs} ${DESIGN_TOKENS.spacing.sm}`,
-            fontSize: "10px",
-            fontWeight: "600",
-            color: DESIGN_TOKENS.colors.text.primary,
-            boxShadow: DESIGN_TOKENS.shadows.sm,
-          }}
-        >
-          📊 DIFF
-        </div>
         <span
           style={{
-            color: DESIGN_TOKENS.colors.text.secondary,
-            fontSize: "11px",
-            fontWeight: "500",
+            background: ENGINEERING_TOKENS.colors.accent,
+            color: ENGINEERING_TOKENS.colors.text,
+            fontSize: "8px",
+            fontWeight: "600",
+            padding: `1px ${ENGINEERING_TOKENS.spacing.xs}`,
+            borderRadius: "2px",
           }}
         >
+          DIFF
+        </span>
+        <span style={{ color: ENGINEERING_TOKENS.colors.textSecondary }}>
           {summary}
         </span>
       </div>
 
-      {/* Diff entries */}
+      {/* Compact diff entries */}
       <div
         style={{
-          display: "grid",
-          gap: DESIGN_TOKENS.spacing.md,
-          maxHeight: "200px",
+          display: "flex",
+          flexDirection: "column",
+          gap: ENGINEERING_TOKENS.spacing.xs,
+          maxHeight: "120px",
           overflowY: "auto",
-          overflowX: "hidden",
         }}
       >
-        {diffs.slice(0, 12).map((diff, idx) => (
-          <ModernDiffEntry key={idx} diff={diff} />
+        {diffs.slice(0, 8).map((diff, idx) => (
+          <CompactDiffEntry key={idx} diff={diff} />
         ))}
 
-        {diffs.length > 12 && (
+        {diffs.length > 8 && (
           <div
             style={{
-              textAlign: "center",
-              padding: DESIGN_TOKENS.spacing.md,
-              background: DESIGN_TOKENS.colors.surface.secondary,
-              borderRadius: DESIGN_TOKENS.borderRadius.md,
-              border: `1px dashed ${DESIGN_TOKENS.colors.border.subtle}`,
-              color: DESIGN_TOKENS.colors.text.tertiary,
-              fontSize: "10px",
+              fontSize: "8px",
+              color: ENGINEERING_TOKENS.colors.textMuted,
               fontStyle: "italic",
+              textAlign: "center",
+              padding: ENGINEERING_TOKENS.spacing.xs,
             }}
           >
-            +{diffs.length - 12} more changes (expand full view for complete
-            diff)
+            +{diffs.length - 8} more changes
           </div>
         )}
       </div>
@@ -301,93 +257,179 @@ const ModernDiffDisplay: React.FC<{
   );
 });
 
-ModernDiffDisplay.displayName = "ModernDiffDisplay";
+CompactDiffDisplay.displayName = "CompactDiffDisplay";
 
 /**
- * Individual diff entry with enhanced styling
+ * Compact engineering-focused diff entry
  */
-const ModernDiffEntry: React.FC<{ diff: DiffEntry }> = React.memo(
+const CompactDiffEntry: React.FC<{ diff: DiffEntry }> = React.memo(
   ({ diff }) => {
-    const changeTypeConfig = {
-      added: { color: DESIGN_TOKENS.colors.added, icon: "➕", label: "ADD" },
-      removed: {
-        color: DESIGN_TOKENS.colors.removed,
-        icon: "➖",
-        label: "DEL",
-      },
-      changed: {
-        color: DESIGN_TOKENS.colors.changed,
-        icon: "🔄",
-        label: "MOD",
-      },
+    const typeConfig = {
+      added: { color: ENGINEERING_TOKENS.colors.added, symbol: "+" },
+      removed: { color: ENGINEERING_TOKENS.colors.removed, symbol: "-" },
+      changed: { color: ENGINEERING_TOKENS.colors.changed, symbol: "~" },
     };
 
-    const config = changeTypeConfig[diff.type];
+    const config = typeConfig[diff.type];
+    const enhanced = getEnhancedObjectDisplay(diff.from);
+    const enhancedTo =
+      diff.type !== "removed" ? getEnhancedObjectDisplay(diff.to) : null;
 
     return (
       <div
         style={{
-          background: `${config.color}08`,
+          fontSize: "9px",
+          fontFamily: ENGINEERING_TOKENS.fonts.mono,
+          padding: ENGINEERING_TOKENS.spacing.xs,
+          background: `${config.color}0a`,
           border: `1px solid ${config.color}30`,
-          borderRadius: DESIGN_TOKENS.borderRadius.md,
-          overflow: "hidden",
+          borderRadius: "2px",
         }}
       >
-        {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: DESIGN_TOKENS.spacing.md,
-            padding: `${DESIGN_TOKENS.spacing.sm} ${DESIGN_TOKENS.spacing.md}`,
-            background: `${config.color}15`,
-            borderBottom: `1px solid ${config.color}20`,
+            gap: ENGINEERING_TOKENS.spacing.sm,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: DESIGN_TOKENS.spacing.xs,
-              background: config.color,
-              borderRadius: DESIGN_TOKENS.borderRadius.sm,
-              padding: `${DESIGN_TOKENS.spacing.xs} ${DESIGN_TOKENS.spacing.sm}`,
-              fontSize: "8px",
-              fontWeight: "700",
-              color: "white",
-              boxShadow: DESIGN_TOKENS.shadows.sm,
-            }}
-          >
-            <span>{config.icon}</span>
-            <span>{config.label}</span>
-          </div>
           <span
             style={{
-              color: DESIGN_TOKENS.colors.text.accent,
-              fontSize: "11px",
-              fontWeight: "600",
-              fontFamily: "'SF Mono', Monaco, monospace",
+              color: config.color,
+              fontWeight: "bold",
+              minWidth: "8px",
+            }}
+          >
+            {config.symbol}
+          </span>
+          <span
+            style={{
+              color: ENGINEERING_TOKENS.colors.accent,
+              fontWeight: "500",
             }}
           >
             {diff.key}
           </span>
         </div>
 
-        {/* Values */}
-        <div style={{ padding: DESIGN_TOKENS.spacing.md }}>
-          {diff.type !== "added" && (
-            <ModernValueDisplay value={diff.from} label="Previous" type="old" />
-          )}
-          {diff.type !== "removed" && (
-            <ModernValueDisplay value={diff.to} label="Current" type="new" />
-          )}
-        </div>
+        {/* Compact value display */}
+        {diff.type !== "added" && (
+          <div
+            style={{
+              marginLeft: "12px",
+              fontSize: "8px",
+              color: ENGINEERING_TOKENS.colors.removed,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <span>old:</span>
+            <span>
+              {enhanced.badge} {enhanced.display}
+            </span>
+          </div>
+        )}
+
+        {enhancedTo && (
+          <div
+            style={{
+              marginLeft: "12px",
+              fontSize: "8px",
+              color: ENGINEERING_TOKENS.colors.added,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <span>new:</span>
+            <span>
+              {enhancedTo.badge} {enhancedTo.display}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
 );
 
-ModernDiffEntry.displayName = "ModernDiffEntry";
+CompactDiffEntry.displayName = "CompactDiffEntry";
+
+/**
+ * Compact value renderer for dependency changes
+ */
+const CompactValueRenderer: React.FC<{
+  value: any;
+  label: string;
+  type: "old" | "new";
+}> = React.memo(({ value, label, type }) => {
+  const enhanced = getEnhancedObjectDisplay(value);
+  const isOld = type === "old";
+  const color = isOld
+    ? ENGINEERING_TOKENS.colors.removed
+    : ENGINEERING_TOKENS.colors.added;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: ENGINEERING_TOKENS.spacing.sm,
+        fontSize: "10px",
+        marginLeft: ENGINEERING_TOKENS.spacing.sm,
+      }}
+    >
+      <span
+        style={{
+          color: color,
+          fontWeight: "600",
+          fontSize: "8px",
+          textTransform: "uppercase",
+          minWidth: "28px",
+        }}
+      >
+        {label}:
+      </span>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: ENGINEERING_TOKENS.spacing.xs,
+          flex: 1,
+        }}
+      >
+        {enhanced.badge && (
+          <span style={{ fontSize: "10px" }}>{enhanced.badge}</span>
+        )}
+        <span
+          style={{
+            color: ENGINEERING_TOKENS.colors.textSecondary,
+            fontFamily: ENGINEERING_TOKENS.fonts.mono,
+            wordBreak: "break-all",
+            fontSize: "9px",
+          }}
+        >
+          {enhanced.display}
+        </span>
+        <span
+          style={{
+            background: ENGINEERING_TOKENS.colors.bgSecondary,
+            color: ENGINEERING_TOKENS.colors.textMuted,
+            fontSize: "7px",
+            padding: `1px ${ENGINEERING_TOKENS.spacing.xs}`,
+            borderRadius: "2px",
+            textTransform: "uppercase",
+            border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
+          }}
+        >
+          {enhanced.type}
+        </span>
+      </div>
+    </div>
+  );
+});
+
+CompactValueRenderer.displayName = "CompactValueRenderer";
 
 /**
  * Modern value display component
@@ -400,19 +442,19 @@ const ModernValueDisplay: React.FC<{
   const enhanced = getEnhancedObjectDisplay(value);
   const isOld = type === "old";
   const color = isOld
-    ? DESIGN_TOKENS.colors.removed
-    : DESIGN_TOKENS.colors.added;
+    ? ENGINEERING_TOKENS.colors.removed
+    : ENGINEERING_TOKENS.colors.added;
 
   return (
     <div
       style={{
         display: "flex",
         alignItems: "flex-start",
-        gap: DESIGN_TOKENS.spacing.md,
-        marginBottom: type === "old" ? DESIGN_TOKENS.spacing.sm : 0,
-        padding: DESIGN_TOKENS.spacing.sm,
+        gap: ENGINEERING_TOKENS.spacing.md,
+        marginBottom: type === "old" ? ENGINEERING_TOKENS.spacing.sm : 0,
+        padding: ENGINEERING_TOKENS.spacing.sm,
         background: `${color}08`,
-        borderRadius: DESIGN_TOKENS.borderRadius.sm,
+        borderRadius: "4px",
         border: `1px solid ${color}20`,
       }}
     >
@@ -421,7 +463,7 @@ const ModernValueDisplay: React.FC<{
         style={{
           display: "flex",
           alignItems: "center",
-          gap: DESIGN_TOKENS.spacing.xs,
+          gap: ENGINEERING_TOKENS.spacing.xs,
           minWidth: "60px",
         }}
       >
@@ -452,7 +494,7 @@ const ModernValueDisplay: React.FC<{
         style={{
           display: "flex",
           alignItems: "center",
-          gap: DESIGN_TOKENS.spacing.sm,
+          gap: ENGINEERING_TOKENS.spacing.sm,
           flex: 1,
           minWidth: 0,
         }}
@@ -462,9 +504,9 @@ const ModernValueDisplay: React.FC<{
         )}
         <span
           style={{
-            color: DESIGN_TOKENS.colors.text.secondary,
+            color: ENGINEERING_TOKENS.colors.textSecondary,
             fontSize: "11px",
-            fontFamily: "'SF Mono', Monaco, monospace",
+            fontFamily: ENGINEERING_TOKENS.fonts.mono,
             wordBreak: "break-all",
             lineHeight: "1.4",
           }}
@@ -473,10 +515,10 @@ const ModernValueDisplay: React.FC<{
         </span>
         <div
           style={{
-            background: DESIGN_TOKENS.colors.surface.tertiary,
-            color: DESIGN_TOKENS.colors.text.tertiary,
+            background: ENGINEERING_TOKENS.colors.bgSecondary,
+            color: ENGINEERING_TOKENS.colors.textMuted,
             fontSize: "8px",
-            padding: `1px ${DESIGN_TOKENS.spacing.xs}`,
+            padding: `1px ${ENGINEERING_TOKENS.spacing.xs}`,
             borderRadius: "2px",
             textTransform: "uppercase",
             fontWeight: "500",
@@ -556,7 +598,7 @@ const EnhancedDependencyValueRenderer: React.FC<{
 
     return {
       src: value,
-      style: MODERN_JSON_VIEW_STYLE,
+      style: COMPACT_JSON_STYLE,
       collapsed: 1,
       displaySize: false,
       enableClipboard: false,
@@ -569,8 +611,8 @@ const EnhancedDependencyValueRenderer: React.FC<{
   return (
     <div
       style={{
-        marginLeft: DESIGN_TOKENS.spacing.lg,
-        marginTop: DESIGN_TOKENS.spacing.sm,
+        marginLeft: ENGINEERING_TOKENS.spacing.lg,
+        marginTop: ENGINEERING_TOKENS.spacing.sm,
       }}
     >
       <span
@@ -586,15 +628,15 @@ const EnhancedDependencyValueRenderer: React.FC<{
       </span>
 
       {/* Value display only - no diff */}
-      <div style={{ marginTop: DESIGN_TOKENS.spacing.sm }}>
+      <div style={{ marginTop: ENGINEERING_TOKENS.spacing.sm }}>
         {isComplex ? (
           <div
             style={{
-              marginTop: DESIGN_TOKENS.spacing.sm,
-              background: DESIGN_TOKENS.colors.surface.secondary,
-              borderRadius: DESIGN_TOKENS.borderRadius.md,
-              padding: DESIGN_TOKENS.spacing.md,
-              border: `1px solid ${DESIGN_TOKENS.colors.border.subtle}`,
+              marginTop: ENGINEERING_TOKENS.spacing.sm,
+              background: ENGINEERING_TOKENS.colors.bgSecondary,
+              borderRadius: "4px",
+              padding: ENGINEERING_TOKENS.spacing.md,
+              border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
             }}
           >
             <JsonView {...jsonViewProps!} />
@@ -653,22 +695,42 @@ export const DependencyExpansionContent: React.FC<{
   }, [log.data]);
 
   return (
-    <div style={{ fontFamily: "monospace" }}>
-      {/* Component Info */}
+    <div
+      style={{ fontFamily: ENGINEERING_TOKENS.fonts.mono, fontSize: "10px" }}
+    >
+      {/* Compact Component Info */}
       <div
         style={{
-          marginBottom: "8px",
-          padding: "4px 6px",
-          backgroundColor: "#1e3a8a11",
+          marginBottom: ENGINEERING_TOKENS.spacing.md,
+          padding: ENGINEERING_TOKENS.spacing.sm,
+          backgroundColor: ENGINEERING_TOKENS.colors.bgSecondary,
+          border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
           borderRadius: "3px",
-          border: "1px solid #1e3a8a22",
         }}
       >
-        <div style={{ color: "#60a5fa", fontSize: "9px", fontWeight: "bold" }}>
-          🧩 Component: {dependencyMeta.componentName}
-        </div>
-        <div style={{ color: "#93c5fd", fontSize: "8px", marginTop: "2px" }}>
-          Logged at {formatTime(log.timestamp)}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "9px",
+          }}
+        >
+          <span
+            style={{
+              color: ENGINEERING_TOKENS.colors.accent,
+              fontWeight: "600",
+            }}
+          >
+            {dependencyMeta.componentName}
+          </span>
+          <span
+            style={{
+              color: ENGINEERING_TOKENS.colors.textMuted,
+            }}
+          >
+            {formatTime(log.timestamp)}
+          </span>
         </div>
       </div>
 
@@ -676,18 +738,26 @@ export const DependencyExpansionContent: React.FC<{
       {dependencyMeta.logType === "dependency-change" &&
         dependencyMeta.dependencyData &&
         Array.isArray(dependencyMeta.dependencyData) && (
-          <div style={{ marginBottom: "8px" }}>
+          <div style={{ marginBottom: ENGINEERING_TOKENS.spacing.md }}>
             <div
               style={{
-                color: "#60a5fa",
-                fontWeight: "bold",
-                marginBottom: "6px",
-                fontSize: "9px",
+                color: ENGINEERING_TOKENS.colors.accent,
+                fontWeight: "600",
+                marginBottom: ENGINEERING_TOKENS.spacing.sm,
+                fontSize: "10px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
               }}
             >
-              🔍 Changed Properties:
+              Changes ({dependencyMeta.dependencyData.length})
             </div>
-            <div style={{ display: "grid", gap: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ENGINEERING_TOKENS.spacing.sm,
+              }}
+            >
               {dependencyMeta.dependencyData.map((item: any, index: number) => {
                 // Calculate diff for this property change (moved outside useMemo)
                 const calculateDiff = () => {
@@ -714,69 +784,93 @@ export const DependencyExpansionContent: React.FC<{
                   <div
                     key={index}
                     style={{
-                      background: `linear-gradient(135deg, ${DESIGN_TOKENS.colors.surface.secondary}22 0%, ${DESIGN_TOKENS.colors.surface.tertiary}11 100%)`,
-                      border: `1px solid ${DESIGN_TOKENS.colors.border.default}`,
-                      borderRadius: DESIGN_TOKENS.borderRadius.lg,
-                      padding: DESIGN_TOKENS.spacing.md,
-                      boxShadow: DESIGN_TOKENS.shadows.sm,
+                      background: ENGINEERING_TOKENS.colors.bgSecondary,
+                      border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
+                      borderRadius: "3px",
+                      padding: ENGINEERING_TOKENS.spacing.md,
+                      marginBottom: ENGINEERING_TOKENS.spacing.sm,
+                      fontSize: "10px",
+                      fontFamily: ENGINEERING_TOKENS.fonts.mono,
                     }}
                   >
-                    {/* Property Header */}
+                    {/* Compact Property Header */}
                     <div
                       style={{
-                        color: DESIGN_TOKENS.colors.text.accent,
-                        fontWeight: "bold",
-                        marginBottom: DESIGN_TOKENS.spacing.sm,
                         display: "flex",
                         alignItems: "center",
-                        gap: DESIGN_TOKENS.spacing.sm,
+                        gap: ENGINEERING_TOKENS.spacing.sm,
+                        marginBottom: ENGINEERING_TOKENS.spacing.sm,
+                        paddingBottom: ENGINEERING_TOKENS.spacing.xs,
+                        borderBottom: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
                       }}
                     >
-                      <span style={{ fontSize: "14px" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          color: (() => {
+                            switch (item.type) {
+                              case "function":
+                                return ENGINEERING_TOKENS.colors.changed;
+                              case "object":
+                                return ENGINEERING_TOKENS.colors.accent;
+                              default:
+                                return ENGINEERING_TOKENS.colors.textSecondary;
+                            }
+                          })(),
+                        }}
+                      >
                         {item.type === "function"
-                          ? "📝"
+                          ? "ƒ"
                           : item.type === "object"
-                            ? "📦"
-                            : "🔧"}
+                            ? "{}"
+                            : "◦"}
                       </span>
                       <span
                         style={{
-                          fontSize: "10px",
-                          fontFamily: "'SF Mono', Monaco, monospace",
-                          color: DESIGN_TOKENS.colors.text.primary,
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          color: ENGINEERING_TOKENS.colors.text,
                         }}
                       >
                         {item.property}
                       </span>
+                      <span
+                        style={{
+                          fontSize: "8px",
+                          color: ENGINEERING_TOKENS.colors.textMuted,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {item.type}
+                      </span>
                     </div>
 
-                    {/* Diff Display - Moved out of "from" section */}
+                    {/* Diff Display */}
                     {diffData && (
-                      <ModernDiffDisplay
+                      <CompactDiffDisplay
                         diffs={diffData.diffs}
                         summary={diffData.summary}
                       />
                     )}
 
-                    {/* From/To Values - Without diff embedded */}
+                    {/* Compact From/To Values */}
                     <div
                       style={{
-                        display: "grid",
-                        gap: DESIGN_TOKENS.spacing.sm,
-                        marginTop: diffData ? DESIGN_TOKENS.spacing.md : 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: ENGINEERING_TOKENS.spacing.xs,
+                        marginTop: diffData ? ENGINEERING_TOKENS.spacing.sm : 0,
                       }}
                     >
-                      <EnhancedDependencyValueRenderer
+                      <CompactValueRenderer
                         value={item.from}
                         label="from"
-                        labelColor="#f87171"
-                        showDiff={false}
+                        type="old"
                       />
-                      <EnhancedDependencyValueRenderer
+                      <CompactValueRenderer
                         value={item.to}
                         label="to"
-                        labelColor="#34d399"
-                        showDiff={false}
+                        type="new"
                       />
                     </div>
                   </div>
@@ -788,31 +882,34 @@ export const DependencyExpansionContent: React.FC<{
 
       {/* Raw Data for non-dependency-change types with JsonView */}
       {log.data && dependencyMeta.logType !== "dependency-change" && (
-        <div style={{ marginBottom: "8px" }}>
+        <div style={{ marginBottom: ENGINEERING_TOKENS.spacing.md }}>
           <div
             style={{
-              color: "#60a5fa",
-              fontWeight: "bold",
-              marginBottom: "4px",
-              fontSize: "9px",
+              color: ENGINEERING_TOKENS.colors.accent,
+              fontWeight: "600",
+              marginBottom: ENGINEERING_TOKENS.spacing.sm,
+              fontSize: "10px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
             }}
           >
-            📊 Raw Data:
+            Data
           </div>
           <div
             style={{
-              backgroundColor: "#0f172a22",
-              padding: "4px 6px",
-              borderRadius: "2px",
-              fontFamily: "monospace",
+              backgroundColor: ENGINEERING_TOKENS.colors.bgSecondary,
+              padding: ENGINEERING_TOKENS.spacing.sm,
+              borderRadius: "3px",
+              border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
+              fontFamily: ENGINEERING_TOKENS.fonts.mono,
               overflow: "auto",
-              maxHeight: "150px",
+              maxHeight: "120px",
             }}
           >
             {displayStrategy.isComplex ? (
               <JsonView
                 src={log.data}
-                style={MODERN_JSON_VIEW_STYLE}
+                style={COMPACT_JSON_STYLE}
                 collapsed={2}
                 displaySize={true}
                 enableClipboard={true}
@@ -823,8 +920,8 @@ export const DependencyExpansionContent: React.FC<{
                 style={{
                   margin: 0,
                   whiteSpace: "pre-wrap",
-                  color: "#d1d5db",
-                  fontSize: "8px",
+                  color: ENGINEERING_TOKENS.colors.text,
+                  fontSize: "9px",
                 }}
               >
                 {safeJsonStringify(log.data, undefined, 2)}
@@ -836,14 +933,24 @@ export const DependencyExpansionContent: React.FC<{
 
       {/* MIGRATED: Updated condition to use JsonUtils.isComplex */}
       {displayStrategy.isComplex && (
-        <div className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center">
-          <span className="mr-1">⚠️</span>
-          Large dependency object - performance optimized view
+        <div
+          style={{
+            fontSize: "8px",
+            color: ENGINEERING_TOKENS.colors.textMuted,
+            fontStyle: "italic",
+            marginTop: ENGINEERING_TOKENS.spacing.sm,
+            padding: ENGINEERING_TOKENS.spacing.xs,
+            border: `1px solid ${ENGINEERING_TOKENS.colors.border}`,
+            borderRadius: "2px",
+            background: ENGINEERING_TOKENS.colors.bgSecondary,
+          }}
+        >
+          ⚠ Large object - optimized view
         </div>
       )}
 
-      {/* Contextual Help Messages */}
-      <DependencyHelpMessage logType={dependencyMeta.logType} />
+      {/* Compact Help Messages */}
+      <CompactHelpMessage logType={dependencyMeta.logType} />
     </div>
   );
 });
@@ -851,9 +958,9 @@ export const DependencyExpansionContent: React.FC<{
 DependencyExpansionContent.displayName = "DependencyExpansionContent";
 
 /**
- * OPTIMIZED: Memoized help message component
+ * Compact engineering-focused help message component
  */
-const DependencyHelpMessage: React.FC<{ logType: EnhancedDependencyLogType }> =
+const CompactHelpMessage: React.FC<{ logType: EnhancedDependencyLogType }> =
   React.memo(({ logType }) => {
     // Memoize help content based on log type
     const helpContent = useMemo(() => {
@@ -861,46 +968,30 @@ const DependencyHelpMessage: React.FC<{ logType: EnhancedDependencyLogType }> =
         case "function-recreation":
         case "object-recreation":
           return {
-            bgColor: "#065f4611",
-            borderColor: "#065f4622",
-            titleColor: "#10b981",
-            textColor: "#6ee7b7",
-            icon: "💡",
-            title: "Smart Dependency Tracking:",
-            text: "🚀📋 = Normal during app initialization. ⚠️ FREQUENT = Performance issue - consider useCallback/useMemo. Gray = Normal change.",
+            color: ENGINEERING_TOKENS.colors.added,
+            icon: "ℹ",
+            text: "🚀📋 = Normal init. ⚠️ FREQUENT = Consider useCallback/useMemo.",
           };
 
         case "render-warning":
           return {
-            bgColor: "#92400e11",
-            borderColor: "#92400e22",
-            titleColor: "#f59e0b",
-            textColor: "#fbbf24",
-            icon: "⚠️",
-            title: "Performance Warning:",
-            text: "This component is re-rendering frequently. Check for unstable dependencies.",
+            color: ENGINEERING_TOKENS.colors.changed,
+            icon: "⚠",
+            text: "High render frequency detected. Check dependencies.",
           };
 
         case "circuit-breaker":
           return {
-            bgColor: "#7f1d1d11",
-            borderColor: "#7f1d1d22",
-            titleColor: "#ef4444",
-            textColor: "#fca5a5",
+            color: ENGINEERING_TOKENS.colors.removed,
             icon: "🚨",
-            title: "Circuit Breaker Activated:",
-            text: "Component disabled to prevent infinite loop. Will auto-restore shortly.",
+            text: "Circuit breaker active. Auto-restore pending.",
           };
 
         case "emergency-stop":
           return {
-            bgColor: "#7f1d1d11",
-            borderColor: "#7f1d1d22",
-            titleColor: "#ef4444",
-            textColor: "#fca5a5",
+            color: ENGINEERING_TOKENS.colors.removed,
             icon: "🛑",
-            title: "Emergency Stop:",
-            text: "System stopped dangerous operation. Check your component logic.",
+            text: "Emergency stop triggered. Check component logic.",
           };
 
         default:
@@ -913,37 +1004,31 @@ const DependencyHelpMessage: React.FC<{ logType: EnhancedDependencyLogType }> =
     return (
       <div
         style={{
-          marginBottom: "8px",
-          padding: "6px",
-          backgroundColor: helpContent.bgColor,
-          borderRadius: "3px",
-          border: `1px solid ${helpContent.borderColor}`,
+          marginTop: ENGINEERING_TOKENS.spacing.sm,
+          padding: ENGINEERING_TOKENS.spacing.sm,
+          backgroundColor: `${helpContent.color}10`,
+          border: `1px solid ${helpContent.color}30`,
+          borderRadius: "2px",
+          fontSize: "8px",
         }}
       >
-        <div
+        <span
           style={{
-            color: helpContent.titleColor,
-            fontWeight: "bold",
-            fontSize: "9px",
-            marginBottom: "3px",
+            color: helpContent.color,
+            fontWeight: "600",
+            marginRight: ENGINEERING_TOKENS.spacing.xs,
           }}
         >
-          {helpContent.icon} {helpContent.title}
-        </div>
-        <div
-          style={{
-            color: helpContent.textColor,
-            fontSize: "8px",
-            lineHeight: "1.3",
-          }}
-        >
+          {helpContent.icon}
+        </span>
+        <span style={{ color: ENGINEERING_TOKENS.colors.textSecondary }}>
           {helpContent.text}
-        </div>
+        </span>
       </div>
     );
   });
 
-DependencyHelpMessage.displayName = "DependencyHelpMessage";
+CompactHelpMessage.displayName = "CompactHelpMessage";
 
 /**
  * OPTIMIZED: Get dependency log metadata for external use
