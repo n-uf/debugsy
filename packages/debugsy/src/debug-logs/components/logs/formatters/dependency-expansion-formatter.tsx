@@ -1,11 +1,19 @@
 "use client";
 
 import React, { useMemo } from "react";
+import JsonView from "react18-json-view";
 import "react18-json-view/src/style.css";
 import type { DebugLogEntry } from "../../../hooks/use-debug";
-import { JsonUtils, safeJsonStringify } from "../utils/json/json-utilities";
+import { safeJsonStringify } from "../utils/json/json-utilities";
 import { type LogSeverity } from "./default-log-formatter";
 import { formatTime, formatValue } from "./health-expansion-formatter";
+
+// OPTIMIZATION: Stable style object for JsonView components
+const JSON_VIEW_STYLE = {
+  fontFamily: "ui-monospace, SFMono-Regular, Monaco, Consolas, monospace",
+  fontSize: "11px",
+  backgroundColor: "transparent",
+} as const;
 
 /**
  * Dependency log types based on the integrated debug-deps.ts system
@@ -90,6 +98,62 @@ const formatDependencyData = (data: any, type: DependencyLogType) => {
 };
 
 /**
+ * OPTIMIZED: Component for rendering from/to values with JsonView support
+ * RELAXED: With superjson handling complexity, we can be more liberal with JsonView
+ */
+const DependencyValueRenderer: React.FC<{
+  value: any;
+  label: string;
+  labelColor: string;
+}> = React.memo(({ value, label, labelColor }) => {
+  // Memoize value display strategy - more permissive with JsonView
+  const displayStrategy = useMemo(() => {
+    if (value === null || value === undefined) {
+      return { isComplex: false, displayValue: String(value) };
+    }
+
+    // With superjson, we can safely render most objects/arrays as JsonView
+    const shouldUseJsonView = typeof value === "object" && value !== null;
+
+    return {
+      isComplex: shouldUseJsonView,
+      displayValue: shouldUseJsonView ? value : formatValue(value),
+    };
+  }, [value]);
+
+  // Memoize JsonView props for complex objects
+  const jsonViewProps = useMemo(() => {
+    if (!displayStrategy.isComplex) return null;
+
+    return {
+      src: value,
+      style: JSON_VIEW_STYLE,
+      collapsed: 1, // Collapse at depth 1 for compact display
+      displaySize: false,
+      enableClipboard: false,
+      theme: "default" as const,
+    };
+  }, [value, displayStrategy.isComplex]);
+
+  return (
+    <div style={{ color: "#9ca3af", marginLeft: "12px", marginTop: "2px" }}>
+      <span style={{ color: labelColor, fontWeight: "bold" }}>{label}:</span>{" "}
+      {displayStrategy.isComplex ? (
+        <div style={{ marginTop: "4px", marginLeft: "8px" }}>
+          <JsonView {...jsonViewProps!} />
+        </div>
+      ) : (
+        <span style={{ fontFamily: "monospace" }}>
+          {displayStrategy.displayValue}
+        </span>
+      )}
+    </div>
+  );
+});
+
+DependencyValueRenderer.displayName = "DependencyValueRenderer";
+
+/**
  * OPTIMIZED: Dependency expansion content with memoized computations
  * This component provides the expansion content for dependency logs
  */
@@ -112,13 +176,15 @@ export const DependencyExpansionContent: React.FC<{
     };
   }, [log.message, log.data, log.level]);
 
+  // RELAXED: More permissive display strategy with superjson safety
   const displayStrategy = useMemo(() => {
     if (!log.data) return { isComplex: false, shouldShow: false };
 
-    const isComplex = JsonUtils.isComplex(log.data);
+    // With superjson, we can safely show most objects as JsonView
+    const shouldUseJsonView = typeof log.data === "object" && log.data !== null;
 
     return {
-      isComplex,
+      isComplex: shouldUseJsonView,
       shouldShow: true,
       content: log.data,
     };
@@ -144,7 +210,7 @@ export const DependencyExpansionContent: React.FC<{
         </div>
       </div>
 
-      {/* Dependency Changes Detail */}
+      {/* Dependency Changes Detail with JsonView support */}
       {dependencyMeta.logType === "dependency-change" &&
         dependencyMeta.dependencyData &&
         Array.isArray(dependencyMeta.dependencyData) && (
@@ -178,27 +244,25 @@ export const DependencyExpansionContent: React.FC<{
                         : "🔧"}{" "}
                     {item.property}
                   </div>
-                  <div
-                    style={{
-                      color: "#9ca3af",
-                      marginLeft: "12px",
-                      marginTop: "2px",
-                    }}
-                  >
-                    <span style={{ color: "#f87171" }}>from:</span>{" "}
-                    {formatValue(item.from)}
-                  </div>
-                  <div style={{ color: "#9ca3af", marginLeft: "12px" }}>
-                    <span style={{ color: "#34d399" }}>to:</span>{" "}
-                    {formatValue(item.to)}
-                  </div>
+
+                  {/* Enhanced from/to rendering with JsonView */}
+                  <DependencyValueRenderer
+                    value={item.from}
+                    label="from"
+                    labelColor="#f87171"
+                  />
+                  <DependencyValueRenderer
+                    value={item.to}
+                    label="to"
+                    labelColor="#34d399"
+                  />
                 </div>
               ))}
             </div>
           </div>
         )}
 
-      {/* Raw Data for non-dependency-change types */}
+      {/* Raw Data for non-dependency-change types with JsonView */}
       {log.data && dependencyMeta.logType !== "dependency-change" && (
         <div style={{ marginBottom: "8px" }}>
           <div
@@ -213,21 +277,35 @@ export const DependencyExpansionContent: React.FC<{
           </div>
           <div
             style={{
-              color: "#d1d5db",
-              fontSize: "8px",
               backgroundColor: "#0f172a22",
               padding: "4px 6px",
               borderRadius: "2px",
               fontFamily: "monospace",
               overflow: "auto",
-              maxHeight: "100px",
+              maxHeight: "150px",
             }}
           >
-            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-              {displayStrategy.isComplex
-                ? JsonUtils.stringify(log.data)
-                : safeJsonStringify(log.data)}
-            </pre>
+            {displayStrategy.isComplex ? (
+              <JsonView
+                src={log.data}
+                style={JSON_VIEW_STYLE}
+                collapsed={2}
+                displaySize={true}
+                enableClipboard={true}
+                theme="default"
+              />
+            ) : (
+              <pre
+                style={{
+                  margin: 0,
+                  whiteSpace: "pre-wrap",
+                  color: "#d1d5db",
+                  fontSize: "8px",
+                }}
+              >
+                {safeJsonStringify(log.data, undefined, 2)}
+              </pre>
+            )}
           </div>
         </div>
       )}
