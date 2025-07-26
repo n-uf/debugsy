@@ -5,48 +5,7 @@
  * organized into logical groups for different use cases.
  */
 
-// Core JSON utilities
-export {
-  safeJsonStringify,
-  testNextJsObjectHandling,
-  truncateText,
-} from "./json-core";
-
-// Performance optimization utilities
-export {
-  analyzeDetectionOverhead,
-  benchmarkJsonMethods,
-  clearJsonStringifyCache,
-  getJsonCacheStats,
-  isLikelyLargeObject,
-  memoizedJsonStringify,
-  performantJsonStringify,
-  simulateLogRenderingPerformance,
-  smartJsonStringify,
-} from "./json-performance";
-
-// Expansion performance testing utilities
-export {
-  benchmarkExpansionPerformance,
-  createExpansionProfiler,
-  createTestObjects,
-  ExpansionPerformanceUtils,
-  measureExpansionPerformance,
-  validatePerformanceTargets,
-} from "./expansion-performance-utils";
-export type { ExpansionPerformanceMetrics } from "./expansion-performance-utils";
-
-// Display formatting utilities
-export {
-  formatDataForDisplay,
-  formatJsonError,
-  formatJsonForCopy,
-  formatJsonForSearch,
-  formatJsonPreview,
-  formatJsonTooltip,
-  formatJsonWithMetadata,
-  getDisplayStrategy,
-} from "./json-display";
+import { safeJsonStringify, safeSuperjsonStringify } from "./json-core";
 
 // Internal imports for class usage
 import {
@@ -55,66 +14,96 @@ import {
   getDisplayStrategy,
 } from "./json-display";
 import {
-  benchmarkJsonMethods,
-  clearJsonStringifyCache,
-  isLikelyLargeObject,
-  performantJsonStringify,
+  benchmarkSerialization,
+  performanceJsonStringify,
+} from "./json-performance";
+
+// Re-export core functions that still exist
+export { safeJsonStringify } from "./json-core";
+export {
+  formatDataForDisplay,
+  formatJsonTooltip,
+  getDisplayStrategy,
+} from "./json-display";
+export {
+  benchmarkSerialization,
+  performanceJsonStringify,
 } from "./json-performance";
 
 /**
  * JSON Utilities Facade - Main interface for all JSON operations
+ * UNIFIED: Now uses safeSuperjsonStringify for consistent safe serialization
  *
  * This provides a simplified interface for common JSON operations,
  * automatically choosing the best strategy based on the data.
  */
 export class JsonUtils {
   /**
-   * Stringify JSON with automatic performance optimization
+   * Smart JSON stringification that chooses optimal strategy
+   * UNIFIED: Uses safeSuperjsonStringify for comprehensive protection
    */
-  static stringify(obj: any, space?: number): string {
-    return performantJsonStringify(obj, space);
+  static stringify(data: any, space?: number): string {
+    try {
+      return safeSuperjsonStringify(data, space);
+    } catch (error) {
+      // Fallback to safe stringify
+      return safeJsonStringify(data, undefined, space);
+    }
   }
 
   /**
-   * Format JSON for display in UI components
+   * Format data for display in UI components
    */
-  static formatForDisplay(obj: any, maxLength: number = 100): string {
-    return formatDataForDisplay(obj, maxLength);
+  static formatForDisplay(data: any, maxLength?: number): string {
+    return formatDataForDisplay(data, maxLength);
   }
 
   /**
-   * Create a tooltip-safe representation of JSON
+   * Create safe tooltip content for JSON data
    */
-  static formatTooltip(obj: any, maxLength: number = 500): string {
-    return formatJsonTooltip(obj, maxLength);
+  static createTooltip(data: any): string {
+    return formatJsonTooltip(data);
   }
 
   /**
-   * Check if an object is likely to cause performance issues
+   * Get the optimal display strategy for data
    */
-  static isLarge(obj: any): boolean {
-    return isLikelyLargeObject(obj);
+  static getDisplayStrategy(data: any) {
+    return getDisplayStrategy(data);
   }
 
   /**
-   * Get recommendations for displaying an object
+   * Performance benchmark for different serialization methods
    */
-  static getDisplayRecommendations(obj: any) {
-    return getDisplayStrategy(obj);
+  static benchmark(testObject: any) {
+    return benchmarkSerialization(testObject);
   }
 
   /**
-   * Benchmark different stringification methods
+   * Check if data is complex and might need special handling
+   * SIMPLIFIED: Basic check since safeSuperjsonStringify handles complexity
    */
-  static benchmark(obj: any, iterations: number = 100) {
-    return benchmarkJsonMethods(obj, iterations);
+  static isComplex(data: any): boolean {
+    if (!data || typeof data !== "object") return false;
+
+    // Basic complexity indicators
+    if (Array.isArray(data)) {
+      return data.length > 50;
+    }
+
+    try {
+      return Object.keys(data).length > 20;
+    } catch {
+      return true; // If we can't check keys, assume it's complex
+    }
   }
 
   /**
-   * Clear performance caches
+   * High-performance JSON stringification
+   * UNIFIED: Uses safeSuperjsonStringify wrapper
    */
-  static clearCaches() {
-    clearJsonStringifyCache();
+  static performantStringify(data: any, space?: number): string {
+    return performanceJsonStringify(data, space);
   }
 }
 

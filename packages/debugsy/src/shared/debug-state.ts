@@ -1,3 +1,5 @@
+import superjson from "superjson";
+import { safeSuperjsonStringify } from "../debug-logs/components/logs/utils/json/json-core";
 import type {
   DebugPoint,
   DebugState,
@@ -41,21 +43,24 @@ export function initializeDebugState(): void {
   const storedConfig = localStorage.getItem("surface-debug-config");
   if (storedConfig) {
     try {
-      const config = JSON.parse(storedConfig);
-      if (config.enabled && Array.isArray(config.enabled)) {
-        globalDebugState.enabled = new Set(config.enabled);
-      }
-      if (typeof config.console === "boolean") {
-        globalDebugState.console = config.console;
-      }
-      if (typeof config.visual === "boolean") {
-        globalDebugState.visual = config.visual;
-      }
-      if (typeof config.performance === "boolean") {
-        globalDebugState.performance = config.performance;
+      // Use superjson to safely parse any complex objects
+      const config = superjson.parse(storedConfig) as any;
+      if (config && typeof config === "object") {
+        if (config.enabled && Array.isArray(config.enabled)) {
+          globalDebugState.enabled = new Set(config.enabled);
+        }
+        if (typeof config.console === "boolean") {
+          globalDebugState.console = config.console;
+        }
+        if (typeof config.visual === "boolean") {
+          globalDebugState.visual = config.visual;
+        }
+        if (typeof config.performance === "boolean") {
+          globalDebugState.performance = config.performance;
+        }
       }
     } catch (e) {
-      console.warn("Failed to parse surface debug config:", e);
+      console.warn("Failed to parse stored debug config:", e);
     }
   }
 
@@ -107,6 +112,7 @@ export function initializeDebugState(): void {
 
 /**
  * Save debug configuration to localStorage
+ * UNIFIED: Now uses safeSuperjsonStringify for consistent safe serialization
  */
 export function saveDebugConfig(): void {
   if (typeof window === "undefined") return;
@@ -118,7 +124,11 @@ export function saveDebugConfig(): void {
       visual: globalDebugState.visual,
       performance: globalDebugState.performance,
     };
-    localStorage.setItem("surface-debug-config", JSON.stringify(config));
+    // Use unified safe superjson wrapper
+    localStorage.setItem(
+      "surface-debug-config",
+      safeSuperjsonStringify(config)
+    );
   } catch (e) {
     console.warn("Failed to save surface debug config:", e);
   }

@@ -7,13 +7,13 @@ import type {
   DebugLogEntry,
   LogLevel,
 } from "../../../../shared/debug-constants";
+import { JsonUtils } from "../utils/json/json-utilities";
 import {
   LOG_STYLES,
   formatDataForDisplay,
   formatPointName,
   getLogEntryBackgroundColor,
   getPointEmoji,
-  isLikelyLargeObject,
 } from "../utils/log-utilities";
 import { getExpansionContent, getLogTypeMeta } from "./formatter-routing";
 import { formatTime } from "./health-expansion-formatter";
@@ -163,8 +163,9 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
           };
         }
 
-        // PERFORMANCE OPTIMIZATION: Fast large object detection (minimal overhead)
-        const isLarge = isLikelyLargeObject(log.data);
+        // OPTIMIZATION: MIGRATED: Uses JsonUtils.isComplex instead of isLikelyLargeObject
+        const isComplex = JsonUtils.isComplex(log.data);
+        const isLarge = isComplex; // Assuming isComplex implies large for now
 
         // PERFORMANCE FIX: For large objects in collapsed mode, skip expensive operations
         if (isLarge && !isCurrentlyExpanded) {

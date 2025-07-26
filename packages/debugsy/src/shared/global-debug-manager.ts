@@ -1,10 +1,7 @@
+import { safeSuperjsonStringify } from "../debug-logs/components/logs/utils/json/json-core";
 import { notifySubscribers } from "../debug-logs/hooks/debug-notifications";
 import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debug-logs/hooks/health-snapshot";
-import {
-  needsSanitization,
-  SANITIZATION_PRESETS,
-  sanitizeLogData,
-} from "../debug-logs/utils/log-data-sanitization";
+import { sanitizeLogData } from "../debug-logs/utils/log-data-sanitization";
 import type {
   DebugLogEntry,
   DebugPoint,
@@ -14,6 +11,7 @@ import type {
 } from "./debug-constants";
 import { getDebugEmoji, MAX_STORED_LOGS } from "./debug-constants";
 import { debugStateControls, getGlobalDebugState } from "./debug-state";
+import { registerSuperjsonCustomSerializers } from "./superjson-config";
 
 /**
  * Unified Global Debug Manager Interface
@@ -118,32 +116,40 @@ declare global {
 
 /**
  * Safe size estimation that handles circular references and complex objects
+ * UNIFIED: Now uses safeSuperjsonStringify for consistent safe serialization
+ *
+ * @param obj Object to estimate size for
+ * @returns Size in bytes (approximate)
  */
-function estimateDataSize(data: any): number {
-  if (!data) return 0;
-
-  // Handle primitives
-  if (typeof data === "string") return data.length;
-  if (typeof data === "number") return 8; // Approximate bytes
-  if (typeof data === "boolean") return 4; // Approximate bytes
-  if (typeof data === "function") return data.toString().length;
-
-  // For objects, avoid JSON.stringify which fails on circular references
-  if (typeof data === "object") {
-    try {
-      // Use a simple heuristic based on keys and structure
-      if (Array.isArray(data)) {
-        return 50 + data.length * 20; // Rough estimate: 50 bytes overhead + 20 per item
-      } else {
-        const keys = Object.keys(data);
-        return 100 + keys.length * 30; // Rough estimate: 100 bytes overhead + 30 per property
-      }
-    } catch {
-      return 500; // Fallback estimate for complex objects
-    }
+function estimateObjectSize(obj: any): number {
+  if (obj === null || obj === undefined) {
+    return 8; // Rough estimate for null/undefined
   }
 
-  return 50; // Default fallback
+  if (typeof obj === "string") {
+    return obj.length * 2; // UTF-16 encoding
+  }
+
+  if (typeof obj === "number" || typeof obj === "boolean") {
+    return 8; // Rough estimate
+  }
+
+  if (typeof obj !== "object") {
+    return 16; // Default for other primitives
+  }
+
+  try {
+    // Use unified safe superjson wrapper to safely serialize, then estimate size
+    const serialized = safeSuperjsonStringify(obj);
+    return serialized.length * 2; // UTF-16 encoding estimate
+  } catch (error) {
+    // Fallback estimation for objects that can't be serialized
+    console.warn(
+      "Failed to estimate object size with safeSuperjsonStringify:",
+      error
+    );
+    return 1000; // Conservative fallback estimate
+  }
 }
 
 /**
@@ -173,23 +179,17 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
       let sanitizedData = data;
       if (data !== undefined) {
         try {
-          // Fast check if data needs sanitization
-          if (needsSanitization(data)) {
-            // Use React-focused preset for UI components
-            const config =
-              point === "surface" || point === "surface-interactions"
-                ? SANITIZATION_PRESETS.reactFocused
-                : SANITIZATION_PRESETS.balanced;
-
-            sanitizedData = sanitizeLogData(data, config);
+          // Use superjson-based sanitization for all complex objects
+          if (typeof data === "object" && data !== null) {
+            sanitizedData = sanitizeLogData(data);
 
             // Log sanitization stats for debugging (only once per session to avoid spam)
             if (!globalThis.__debugSanitizationLogged) {
               console.log(
                 `🧹 [debugsy] Data sanitization active for heavy objects. Point: ${point}`,
                 {
-                  originalSize: estimateDataSize(data),
-                  sanitizedSize: estimateDataSize(sanitizedData),
+                  originalSize: estimateObjectSize(data),
+                  sanitizedSize: estimateObjectSize(sanitizedData),
                   timeTaken: (sanitizedData as any).__sanitizationTime + "ms",
                 }
               );
@@ -586,6 +586,9 @@ export function initializeUnifiedDebugSystem(): void {
   }
 
   console.log("🚀 Initializing Unified Surface Debug System...");
+
+  // Register superjson custom serializers for React Fiber and DOM elements
+  registerSuperjsonCustomSerializers();
 
   // Initialize emergency stop
   if (!globalThis.__SURFACE_EMERGENCY_STOP) {

@@ -5,67 +5,50 @@
  * and performance optimization.
  */
 
-// Core log utilities
-export {
-  LOG_RENDERING_CONFIG,
-  LOG_STYLES,
-  formatPointName,
-  getLogEntryBackgroundColor,
-  getLogsTruncationInfo,
-  getPointEmoji,
-  prepareLogsForRendering,
-} from "./log-utilities";
+// JSON Utilities - Core Facade
+export { default as JsonUtils } from "./json/json-utilities";
 
-// Copy functionality
+// Core JSON utilities (updated exports)
 export {
-  copyLogsToClipboard,
-  getCopyIcon,
-  getHoverMessage,
-  getLogsToCopy,
-  getProgressColor,
-  getProgressWidth,
-} from "./copy-utilities";
-
-// JSON processing utilities
-export {
-  JsonUtils,
+  benchmarkSerialization,
   formatDataForDisplay,
-  isLikelyLargeObject,
-  memoizedJsonStringify,
-  performantJsonStringify,
+  formatJsonTooltip,
+  getDisplayStrategy,
+  performanceJsonStringify,
   safeJsonStringify,
-  smartJsonStringify,
-  truncateText,
 } from "./json/json-utilities";
 
-// JSON performance utilities
-export { clearJsonStringifyCache } from "./json/json-performance";
-
-// Copy configuration
-export {
-  DEFAULT_COPY_CONFIG,
-  getAutoResetAfterDelay,
-  getButtonTransitionDuration,
-  getDisplayDuration,
-  getProgressBarDuration,
-} from "../config/copy-config";
-
-// Type exports
-export type { CopyState } from "./copy-utilities";
+// Copy utilities
+export { copyLogsToClipboard, formatLogForCopy } from "./copy-utilities";
 
 /**
- * Utility Usage Examples:
+ * Utilities Documentation
  *
- * // Format log data for display
- * const displayText = formatDataForDisplay(logData, 500);
+ * This module provides utilities for working with debug logs.
  *
- * // Copy logs to clipboard
- * await copyLogsToClipboard(selectedLogs);
+ * ## JSON Utilities
  *
- * // Check if object needs special handling
- * const isLarge = isLikelyLargeObject(data);
+ * ### JsonUtils Class
+ * Main facade for JSON operations using superjson:
+ * ```typescript
+ * import { JsonUtils } from './utils';
  *
- * // Get log entry styling
- * const bgColor = getLogEntryBackgroundColor(index);
- * const emoji = getPointEmoji('surface-interaction');
+ * // Smart stringification using superjson
+ * const json = JsonUtils.stringify(complexObject);
+ *
+ * // Format for display
+ * const display = JsonUtils.formatForDisplay(data, 100);
+ *
+ * // Check if object is complex
+ * const isComplex = JsonUtils.isComplex(data);
+ * ```
+ *
+ * ## Copy Utilities
+ *
+ * Handle clipboard operations for log data:
+ * ```typescript
+ * import { copyLogsToClipboard } from './utils';
+ *
+ * await copyLogsToClipboard(logs);
+ * ```
  */

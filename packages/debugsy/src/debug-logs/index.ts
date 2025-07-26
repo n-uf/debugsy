@@ -4,27 +4,19 @@
  * All logging-related functionality including hooks, components, and utilities.
  */
 
-// Core logging hooks
-export {
-  clearDebugDisplayContent,
-  notifySubscribers,
-  setDebugDisplayContent,
-  useDebugDisplayContent,
-  useDebugSubscription,
-} from "./hooks/debug-notifications";
+// === SHARED DEBUG LOGS ===
+export { useDebugSubscription } from "./hooks/debug-notifications";
 export { captureHealthSnapshot } from "./hooks/health-snapshot";
 export { useDebug } from "./hooks/use-debug";
 
-// Logging utilities
+// Data sanitization
 export {
-  SANITIZATION_PRESETS,
-  getSanitizationPerformanceStats,
-  needsSanitization,
-  resetSanitizationPerformanceStats,
+  SANITIZATION_CONFIG,
   sanitizeLogData,
+  sanitizeLogDataAdvanced,
 } from "./utils/log-data-sanitization";
 
-// Logging components
+// === COMPONENTS ===
 export { DebugControlPanel } from "./components/debug-control-panel";
 export { DebugDependencyAdvancedControls } from "./components/debug-dependency-advanced-controls";
 export { DebugDependencyControls } from "./components/debug-dependency-controls";

@@ -12,7 +12,8 @@
     "react-dom": "^19.1.0",
     "react-window": "^1.8.11",
     "react-window-infinite-loader": "^1.0.10",
-    "react18-json-view": "^0.2.9"
+    "react18-json-view": "^0.2.9",
+    "superjson": "^2.2.2"
   },
   "devDependencies": {
     "@types/node": "^24.0.8",

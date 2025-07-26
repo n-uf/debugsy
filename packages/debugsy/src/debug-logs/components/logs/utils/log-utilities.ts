@@ -163,19 +163,21 @@ export const getLogEntryBackgroundColor = (index: number): string => {
 };
 
 // Re-export JSON utilities for backward compatibility
-// Components can import from here or directly from json-utilities
+// UPDATED: Only export functions that exist after superjson migration
 export {
-  clearJsonStringifyCache,
-  // Convenience
+  benchmarkSerialization,
+  // Main utility class
   JsonUtils as default,
   // Display formatting
   formatDataForDisplay,
-  // Performance optimizations
-  isLikelyLargeObject,
-  memoizedJsonStringify,
-  performantJsonStringify,
+  formatJsonTooltip,
+  getDisplayStrategy,
+  JsonUtils,
+  // Performance utilities
+  performanceJsonStringify,
   // Core JSON functions
   safeJsonStringify,
-  smartJsonStringify,
-  truncateText,
 } from "./json/json-utilities";
+
+// Export truncateText from json-core since it's still used
+export { truncateText } from "./json/json-core";

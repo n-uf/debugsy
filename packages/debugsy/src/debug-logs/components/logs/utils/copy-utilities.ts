@@ -1,6 +1,7 @@
 import type { DebugLogEntry } from "../../../hooks/use-debug";
 import { DEFAULT_COPY_CONFIG } from "../config/copy-config";
 import { formatTime } from "../formatters";
+import { safeSuperjsonStringify } from "./json/json-core";
 
 /**
  * Copy state - number representing current step (0 = idle, 1+ = steps completed)
@@ -345,6 +346,7 @@ const formatStepDescription = (
 
 /**
  * Formats a log entry for copying - provides detailed multiline format for health logs
+ * UNIFIED: Uses safeSuperjsonStringify to handle all problematic objects consistently
  */
 export const formatLogForCopy = (log: DebugLogEntry): string => {
   const time = formatTime(log.timestamp);
@@ -363,34 +365,27 @@ export const formatLogForCopy = (log: DebugLogEntry): string => {
   Device RAM: ${metrics.performance?.deviceMemory || "unknown"}
 
 🎯 Debug Activity:
-  System: ${metrics.debugActivity?.systemStatus || "unknown"}
-  Emergency Mode: ${metrics.debugActivity?.emergencyMode || "normal"}
-  Dependency Tracking: ${metrics.debugActivity?.dependencyTracking || "disabled"}
-  Active Debug Points: ${metrics.debugActivity?.activeDebugPoints || 0}
-  Total Logs: ${metrics.debugActivity?.totalLogs || 0}
+  Enabled Points: ${metrics.debugActivity?.enabledPoints || "0"}
+  Total Logs: ${metrics.debugActivity?.totalLogs || "0"}
+  Memory Usage: ${metrics.debugActivity?.memoryUsage || "N/A"}
 
-🧠 Dependency Monitoring:
-  Tracking: ${metrics.dependencyMonitoring?.trackingEnabled ? `${metrics.dependencyMonitoring.trackingLevel} mode` : "disabled"}
-  Filter: ${metrics.dependencyMonitoring?.trackingFilter || "all"}
-  Monitored Hooks: ${metrics.dependencyMonitoring?.monitoredHooks || "all"}
-  Excluded Hooks: ${metrics.dependencyMonitoring?.excludedHooks || 0}
+📋 Component Health:
+  Surface Components: ${metrics.componentMetrics?.surfaceComponents || "0"}
+  Frame Elements: ${metrics.componentMetrics?.frameElements || "0"}
+  Selection State: ${metrics.componentMetrics?.selectionActive ? "Active" : "Inactive"}
 
-🛡️ Circuit Breaker Status:
-  Emergency Stop: ${metrics.circuitBreakerStatus?.emergencyStopActive ? "ACTIVE" : "normal"}
-  Active Breakers: ${metrics.circuitBreakerStatus?.activeBreakers || 0}
-  Protection Status: ${metrics.circuitBreakerStatus?.protectionStatus || "normal"}
+🧠 Memory Details:
+  Used: ${metrics.performance?.memoryUsage?.used || "N/A"}
+  Total: ${metrics.performance?.memoryUsage?.total || "N/A"}
+  Percentage: ${metrics.performance?.memoryUsage?.percentage || "N/A"}%
 
-🖥️ Surface Metrics:
-  Viewport: ${metrics.surfaceMetrics?.viewportSize || "unknown"}
-  Device Pixel Ratio: ${metrics.surfaceMetrics?.devicePixelRatio || "unknown"}
-  Surface Elements: ${metrics.surfaceMetrics?.activeElements || 0}
-  Canvas Elements: ${metrics.surfaceMetrics?.canvasElements || 0}
-
-================================`;
+---
+Full Metrics (Safe JSON):
+${safeSuperjsonStringify(metrics)}`;
   }
 
-  // Regular log formatting
-  const data = log.data ? ` | ${JSON.stringify(log.data)}` : "";
+  // For regular logs, use safe superjson to handle any complex objects
+  const data = log.data ? ` | ${safeSuperjsonStringify(log.data)}` : "";
   return `[${time}] ${log.point}: ${log.message}${data}`;
 };
 

@@ -5,12 +5,7 @@
  * transitions in debug logs, helping validate optimizations and identify bottlenecks.
  */
 
-import { formatDataForDisplay } from "./json-display";
-import {
-  isLikelyLargeObject,
-  memoizedJsonStringify,
-  smartJsonStringify,
-} from "./json-performance";
+import { JsonUtils } from "./json-utilities";
 
 /**
  * Performance phases during JSON expansion
@@ -46,19 +41,17 @@ export const measureExpansionPerformance = (
 
   // Phase 1: Object detection
   const detectionStart = performance.now();
-  const isLarge = isLikelyLargeObject(logData);
+  const isLarge = JsonUtils.isComplex(logData);
   const detectionTime = performance.now() - detectionStart;
 
   // Phase 2: JSON string processing
   const processingStart = performance.now();
-  const jsonString = isLarge
-    ? smartJsonStringify(logData, 3, 20)
-    : memoizedJsonStringify(logData, 2);
+  const jsonString = JsonUtils.stringify(logData);
   const jsonProcessingTime = performance.now() - processingStart;
 
-  // Phase 3: Memoization (display format)
+  // Phase 3: Display format
   const memoStart = performance.now();
-  const displayFormat = formatDataForDisplay(logData, 1000);
+  const displayFormat = JsonUtils.formatForDisplay(logData, 1000);
   const memoizationTime = performance.now() - memoStart;
 
   const preRenderTime = performance.now() - startTime;
@@ -355,30 +348,92 @@ export const validatePerformanceTargets = (
 };
 
 /**
- * React Profiler integration for measuring component render times
+ * MIGRATED: Performance testing utilities using JsonUtils
+ * Updated to use superjson-based functions after migration
  */
-export const createExpansionProfiler = (onProfile: (metrics: any) => void) => {
+
+/**
+ * Enhanced JSON stringify for performance analysis
+ */
+export const measureStringifyPerformance = (
+  data: any
+): {
+  timeMs: number;
+  size: number;
+  complexity: boolean;
+} => {
+  const start = performance.now();
+  const isComplex = JsonUtils.isComplex(data);
+  const result = JsonUtils.stringify(data);
+  const end = performance.now();
+
   return {
-    onRender: (
-      id: string,
-      phase: "mount" | "update",
-      actualDuration: number,
-      baseDuration: number,
-      startTime: number,
-      commitTime: number
-    ) => {
-      if (id.includes("DefaultExpandedContent") || id.includes("JsonView")) {
-        onProfile({
-          component: id,
-          phase,
-          actualDuration,
-          baseDuration,
-          startTime,
-          commitTime,
-        });
-      }
-    },
+    timeMs: end - start,
+    size: result.length,
+    complexity: isComplex,
   };
+};
+
+/**
+ * Create test expansion performance analyzer
+ */
+export const createExpansionProfiler = () => {
+  const results: Array<{
+    logData: any;
+    complexity: boolean;
+    stringifyTime: number;
+    displayTime: number;
+  }> = [];
+
+  const measureExpansion = (logData: any) => {
+    const start = performance.now();
+
+    const isComplex = JsonUtils.isComplex(logData);
+
+    const stringifyStart = performance.now();
+    const stringified = isComplex
+      ? JsonUtils.stringify(logData)
+      : JsonUtils.stringify(logData);
+    const stringifyEnd = performance.now();
+
+    const end = performance.now();
+
+    const result = {
+      logData,
+      complexity: isComplex,
+      stringifyTime: stringifyEnd - stringifyStart,
+      displayTime: end - start,
+    };
+
+    results.push(result);
+    return result;
+  };
+
+  const getReport = () => {
+    const complexCount = results.filter((r) => r.complexity).length;
+    const avgStringifyTime =
+      results.reduce((sum, r) => sum + r.stringifyTime, 0) / results.length;
+    const avgDisplayTime =
+      results.reduce((sum, r) => sum + r.displayTime, 0) / results.length;
+
+    return {
+      totalMeasurements: results.length,
+      complexObjects: complexCount,
+      simpleObjects: results.length - complexCount,
+      averageStringifyTime: avgStringifyTime,
+      averageDisplayTime: avgDisplayTime,
+      recommendations: [
+        avgStringifyTime > 10
+          ? "Consider caching for frequently accessed objects"
+          : null,
+        complexCount > results.length * 0.5
+          ? "High ratio of complex objects detected"
+          : null,
+      ].filter(Boolean),
+    };
+  };
+
+  return { measureExpansion, getReport };
 };
 
 /**
