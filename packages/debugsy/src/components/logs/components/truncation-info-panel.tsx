@@ -50,7 +50,7 @@ export const TruncationInfoPanel: React.FC<TruncationInfoPanelProps> =
           style={{
             ...LOG_STYLES.truncationWarning,
             marginTop: "12px",
-            marginBottom: "32px", // Significantly increased to prevent cutoff
+            marginBottom: "4px", // Reduced from 32px to just 4px
             position: "relative",
             zIndex: 1,
             backgroundColor: "#78350f33",
