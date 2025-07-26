@@ -21,7 +21,11 @@ export {
   useSafeHook,
   useWhyDidYouUpdate,
 } from "./src/debug-deps";
-export { useDebug, useDependencyState } from "./src/hooks";
+export {
+  useDebug,
+  useDebugSubscription,
+  useDependencyState,
+} from "./src/hooks";
 
 // Type exports
 export type {
@@ -29,7 +33,7 @@ export type {
   DependencyFilter,
   DependencyLogLevel,
 } from "./src/hooks/debug-constants";
-export type { DebugLogEntry } from "./src/hooks/use-debug";
+export type { DebugLogEntry, GlobalDebugManager } from "./src/hooks/use-debug";
 
 // Component prop types
 export type { DebugControlPanelProps } from "./src/components/debug-control-panel";

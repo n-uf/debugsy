@@ -11,6 +11,9 @@ interface ChangedProps {
 // Import notification system for real-time UI updates
 let notifySubscribers: (() => void) | null = null;
 
+// Import the unified debug system
+import { initializeUnifiedDebugSystem } from "../shared/global-debug-manager";
+
 // Initialize notification system when available
 const initializeNotificationSystem = () => {
   if (!notifySubscribers) {
@@ -838,202 +841,11 @@ export function useEmergencySafeHook<T>(
   return useSafeHook(name, hookFn, fallbackValue, config);
 }
 
-// Initialize emergency stop globals
-(globalThis as any).__SURFACE_EMERGENCY_STOP = {
-  active: false,
-  activate: () => {
-    console.error(
-      "🚨 EMERGENCY STOP ACTIVATED - All Surface debug logging disabled"
-    );
-    (globalThis as any).__SURFACE_EMERGENCY_STOP.active = true;
-    emergencyStop.activate();
-  },
-  deactivate: () => {
-    console.log("✅ Emergency stop deactivated - Debug logging restored");
-    (globalThis as any).__SURFACE_EMERGENCY_STOP.active = false;
-    emergencyStop.deactivate();
-  },
-  status: () => {
-    const globalDebug = (globalThis as any).surfaceDebug;
-    const depState = globalDebug?.getDependencyStatus?.() || {};
-    console.log("🔍 Surface Debug Status:", {
-      emergencyActive: (globalThis as any).__SURFACE_EMERGENCY_STOP.active,
-      dependencyTracking: depState.enabled,
-      level: depState.level,
-      filter: depState.filter,
-    });
-  },
-};
-
-// Initialize global surfaceDebug object if it doesn't exist
-const initializeGlobalSurfaceDebug = () => {
-  if (!(globalThis as any).surfaceDebug) {
-    // Dynamically import to avoid circular dependencies
-    try {
-      const { getGlobalDebugState } = require("../hooks/debug-state");
-
-      (globalThis as any).surfaceDebug = {
-        getDebugState: () => getGlobalDebugState(),
-        getDependencyStatus: () => {
-          const state = getGlobalDebugState();
-          return (
-            state.dependencies || {
-              enabled: false,
-              level: "normal",
-              filter: "all",
-              allowedHooks: null,
-              excludedHooks: [],
-              throttleMs: 100,
-            }
-          );
-        },
-        // Test utilities for verification
-        testDependencyTracking: () => {
-          console.log("🧪 Testing useWhyDidYouUpdate functionality...");
-
-          // Check if global surfaceDebug object exists
-          const globalDebug = (globalThis as any).surfaceDebug;
-          if (!globalDebug) {
-            console.error("❌ Global surfaceDebug object not found");
-            return false;
-          }
-
-          console.log("✅ Global surfaceDebug object found");
-
-          // Check if getDependencyStatus method exists
-          if (!globalDebug.getDependencyStatus) {
-            console.error("❌ getDependencyStatus method not found");
-            return false;
-          }
-
-          console.log("✅ getDependencyStatus method found");
-
-          // Test dependency status
-          const depStatus = globalDebug.getDependencyStatus();
-          console.log("📋 Current dependency status:", depStatus);
-
-          // Test if dependency tracking is enabled
-          if (!depStatus.enabled) {
-            console.warn("⚠️ Dependency tracking is currently disabled");
-            console.log("🔧 Enabling dependency tracking...");
-            globalDebug.deps.on();
-            const newStatus = globalDebug.getDependencyStatus();
-            console.log("📋 Updated dependency status:", newStatus);
-          }
-
-          console.log("\n✅ useWhyDidYouUpdate should now be working!");
-          console.log("📝 To test in components:");
-          console.log(
-            "   1. Add useWhyDidYouUpdate('MyComponent', props) to any component"
-          );
-          console.log(
-            "   2. Change props and watch for dependency change logs"
-          );
-          console.log("   3. Use surfaceDebug.deps.verbose() for more detail");
-
-          return true;
-        },
-        testMockComponent: () => {
-          console.log("\n🧪 Testing with mock component scenario...");
-
-          const globalDebug = (globalThis as any).surfaceDebug;
-          const depState = globalDebug?.getDependencyStatus?.();
-
-          console.log(
-            `📊 Dependency state: enabled=${depState?.enabled}, level=${depState?.level}`
-          );
-
-          if (depState?.enabled) {
-            console.log(
-              "✅ Dependency tracking is active - useWhyDidYouUpdate should work"
-            );
-            console.log(
-              "🔄 Try adding useWhyDidYouUpdate('ComponentName', props) to a component with changing props"
-            );
-          } else {
-            console.log("❌ Dependency tracking is disabled");
-            console.log("💡 Run: surfaceDebug.deps.on() to enable");
-          }
-
-          return depState?.enabled || false;
-        },
-        // Add convenience methods for console usage
-        deps: {
-          off: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = false;
-            console.log("🔇 Dependency tracking disabled");
-          },
-          on: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            console.log("🔊 Dependency tracking enabled");
-          },
-          quiet: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.level = "quiet";
-            console.log("🔇 Dependency tracking: quiet mode (critical only)");
-          },
-          initAware: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.level = "init-aware";
-            console.log(
-              "🚀 Dependency tracking: init-aware mode (smart initialization filtering)"
-            );
-          },
-          normal: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.level = "normal";
-            console.log("🔊 Dependency tracking: normal mode");
-          },
-          verbose: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.level = "verbose";
-            console.log("📢 Dependency tracking: verbose mode");
-          },
-          debug: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.level = "debug";
-            console.log("🐛 Dependency tracking: debug mode (maximum detail)");
-          },
-          functionsOnly: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.filter = "functions-only";
-            console.log("🔧 Dependency tracking: functions only");
-          },
-          objectsOnly: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.filter = "objects-only";
-            console.log("📦 Dependency tracking: objects only");
-          },
-          unstableOnly: () => {
-            const state = getGlobalDebugState();
-            state.dependencies.enabled = true;
-            state.dependencies.filter = "unstable-only";
-            console.log("⚠️ Dependency tracking: unstable only");
-          },
-        },
-      };
-
-      console.log("✅ Global surfaceDebug object initialized");
-    } catch (error) {
-      console.warn("Failed to initialize global surfaceDebug object:", error);
-    }
-  }
-};
-
 // Initialize notification system on module load
 initializeNotificationSystem();
 
-// Initialize global debug object
-initializeGlobalSurfaceDebug();
+// Initialize unified debug system (replaces old surfaceDebug creation)
+initializeUnifiedDebugSystem();
 
 console.log(`
 ✅ Surface Dependency Tracking (integrated with unified debug framework)
@@ -1042,7 +854,8 @@ console.log(`
 
 🚀 NEW: Smart initialization detection! No more false warnings during app startup.
 
-🔧 Debug Framework Integration:
+🔧 Unified Debug Framework:
+  - Single global object: surfaceDebug
   - Logs stream to both console AND debug panel
   - Controlled by DependencyTrackingConfig settings
   - Available debug points: dependencies, health, performance
@@ -1063,9 +876,9 @@ console.log(`
   surfaceDebug.testMockComponent()      - Test mock scenarios
   
 🚨 Emergency Protection:
-  __SURFACE_EMERGENCY_STOP.activate()   - Stop ALL logging immediately
-  __SURFACE_EMERGENCY_STOP.deactivate() - Restore normal operation
-  __SURFACE_EMERGENCY_STOP.status()     - Check current status
+  surfaceDebug.emergency.activate()   - Stop ALL logging immediately
+  surfaceDebug.emergency.deactivate() - Restore normal operation
+  surfaceDebug.emergency.status()     - Check current status
   
 🎯 During INITIALIZATION (🚀): Normal object changes, only warn if excessive
 🎯 During RUNTIME: ⚠️ FREQUENT warnings point to infinite render culprits!

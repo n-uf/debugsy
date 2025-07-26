@@ -1,12 +1,9 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import {
-  getDebugEmoji,
-  MAX_STORED_LOGS,
   type DebugLogEntry,
   type DebugPoint,
   type DependencyFilter,
   type DependencyLogLevel,
-  type LogLevel,
 } from "./debug-constants";
 import {
   clearDebugDisplayContent,
@@ -15,27 +12,45 @@ import {
   useDebugDisplayContent,
   useDebugSubscription,
 } from "./debug-notifications";
+import { dependencyStateControls, getGlobalDebugState } from "./debug-state";
 import {
-  debugStateControls,
-  dependencyStateControls,
-  getGlobalDebugState,
-} from "./debug-state";
-import {
-  captureHealthSnapshot as captureHealthSnapshotCore,
   type HealthMetrics,
   type HealthSnapshotConfig,
 } from "./health-snapshot";
+
+// Import the unified system
 import {
-  needsSanitization,
-  SANITIZATION_PRESETS,
-  sanitizeLogData,
-} from "./log-data-sanitization";
+  initializeUnifiedDebugSystem,
+  type UnifiedSurfaceDebug,
+} from "../shared/global-debug-manager";
 
 // Re-export types for backward compatibility
 export type { DebugLogEntry, DebugPoint, DependencyFilter, DependencyLogLevel };
 
 /**
+ * TypeScript interface for backward compatibility
+ * @deprecated Use UnifiedSurfaceDebug instead
+ */
+export interface GlobalDebugManager extends UnifiedSurfaceDebug {}
+
+/**
+ * Global type declarations to properly type globalThis extensions
+ */
+declare global {
+  var __SURFACE_DEBUG_MANAGER: GlobalDebugManager | undefined;
+  var __SURFACE_EMERGENCY_STOP: {
+    active: boolean;
+    activate: () => void;
+    deactivate: () => void;
+    status: () => void;
+  };
+  var __debugSanitizationLogged: boolean | undefined;
+  // REMOVED: var surfaceDebug - now handled by unified system
+}
+
+/**
  * Safe size estimation that handles circular references and complex objects
+ * @deprecated Use the unified system instead
  */
 function estimateDataSize(data: any): number {
   if (!data) return 0;
@@ -65,319 +80,21 @@ function estimateDataSize(data: any): number {
 }
 
 /**
- * Centralized debug hook for surface components
+ * Centralized debug hook - now returns the unified surfaceDebug singleton
  * Provides granular control over different debug points without prop drilling
+ * FIXED: Uses unified global debug system to prevent feedback loops
  */
-export const useDebug = (point?: DebugPoint) => {
-  // Subscribe to global state changes
-  useDebugSubscription();
+export const useDebug = (point?: DebugPoint): UnifiedSurfaceDebug => {
+  // Ensure unified system is initialized
+  if (!globalThis.surfaceDebug) {
+    initializeUnifiedDebugSystem();
+  }
 
-  const globalDebugState = getGlobalDebugState();
-
-  // Memoize state object to prevent unnecessary re-renders
-  const state = useMemo(
-    () => ({
-      enabled: Array.from(globalDebugState.enabled),
-      console: globalDebugState.console,
-      visual: globalDebugState.visual,
-      performance: globalDebugState.performance,
-    }),
-    [
-      globalDebugState.enabled.size,
-      globalDebugState.console,
-      globalDebugState.visual,
-      globalDebugState.performance,
-      // Force update by including a hash of enabled points
-      Array.from(globalDebugState.enabled).sort().join(","),
-    ]
-  );
-
-  // Check if a specific debug point is enabled
-  const isEnabled = useCallback(
-    (debugPoint: DebugPoint): boolean => {
-      // Health debug point is always enabled
-      if (debugPoint === "health") return true;
-
-      return (
-        globalDebugState.enabled.has(debugPoint) ||
-        globalDebugState.enabled.has("all")
-      );
-    },
-    [state.enabled]
-  );
-
-  // Check if current point is enabled (if point was provided)
-  const enabled = point ? isEnabled(point) : false;
-
-  // Console logging with debug point context
-  const log = useCallback(
-    (
-      debugPoint: DebugPoint,
-      message: string,
-      data?: any,
-      level: LogLevel = "info"
-    ) => {
-      if (!isEnabled(debugPoint)) return;
-
-      // SAFETY: Sanitize data to prevent browser freezing from heavy objects
-      let sanitizedData = data;
-      if (data !== undefined) {
-        try {
-          // Fast check if data needs sanitization
-          if (needsSanitization(data)) {
-            // Use React-focused preset for UI components
-            const config =
-              debugPoint === "surface" || debugPoint === "surface-interactions"
-                ? SANITIZATION_PRESETS.reactFocused
-                : SANITIZATION_PRESETS.balanced;
-
-            sanitizedData = sanitizeLogData(data, config);
-
-            // Log sanitization stats for debugging (only once per session to avoid spam)
-            if (!(globalThis as any).__debugSanitizationLogged) {
-              console.log(
-                `🧹 [debugsy] Data sanitization active for heavy objects. Point: ${debugPoint}`,
-                {
-                  originalSize: estimateDataSize(data), // Safe size estimation
-                  sanitizedSize: estimateDataSize(sanitizedData), // Safe size estimation
-                  timeTaken: sanitizedData.__sanitizationTime + "ms",
-                }
-              );
-              (globalThis as any).__debugSanitizationLogged = true;
-            }
-          }
-        } catch (error) {
-          // Fallback: If sanitization fails, use safe fallback
-          console.warn(
-            `⚠️ [debugsy] Failed to sanitize data for ${debugPoint}:`,
-            error
-          );
-          sanitizedData = {
-            __sanitizationFailed: true,
-            __error: error instanceof Error ? error.message : "Unknown error",
-            __originalType: typeof data,
-            __safePreview: String(data).substring(0, 100) + "...",
-          };
-        }
-      }
-
-      // Store log entry with sanitized data
-      const logEntry: DebugLogEntry = {
-        timestamp: Date.now(),
-        level, // Use the passed level parameter
-        point: debugPoint,
-        message,
-        data: sanitizedData,
-        sessionId: "default", // Placeholder, will be updated
-      };
-
-      // Add to logs array (keep last MAX_STORED_LOGS)
-      globalDebugState.logs = [
-        ...globalDebugState.logs.slice(-(MAX_STORED_LOGS - 1)),
-        logEntry,
-      ];
-
-      // Schedule notification for next frame to avoid render-time updates
-      notifySubscribers();
-
-      // Console output if enabled
-      if (globalDebugState.console) {
-        const emoji = getDebugEmoji(debugPoint);
-        const prefix = `${emoji} [${debugPoint}]`;
-
-        // Use appropriate console method based on log level
-        const consoleMethod =
-          level === "error" || level === "critical"
-            ? console.error
-            : level === "warn"
-              ? console.warn
-              : console.log;
-
-        if (data !== undefined) {
-          consoleMethod(prefix, message, data);
-        } else {
-          consoleMethod(prefix, message);
-        }
-      }
-    },
-    [isEnabled]
-  );
-
-  // Helper logging functions for different severity levels
-  const warn = useCallback(
-    (debugPoint: DebugPoint, message: string, data?: any) => {
-      log(debugPoint, message, data, "warn");
-    },
-    [log]
-  );
-
-  const error = useCallback(
-    (debugPoint: DebugPoint, message: string, data?: any) => {
-      log(debugPoint, message, data, "error");
-    },
-    [log]
-  );
-
-  const critical = useCallback(
-    (debugPoint: DebugPoint, message: string, data?: any) => {
-      log(debugPoint, message, data, "critical");
-    },
-    [log]
-  );
-
-  // Health snapshot function - captures comprehensive app metrics
-  const captureHealthSnapshot = useCallback(() => {
-    return captureHealthSnapshotCore(globalDebugState, log);
-  }, [log]);
-
-  // Visual debug flag
-  const showVisual = useCallback(
-    (debugPoint: DebugPoint): boolean => {
-      return globalDebugState.visual && isEnabled(debugPoint);
-    },
-    [isEnabled]
-  );
-
-  // Performance timing
-  const time = useCallback(
-    (debugPoint: DebugPoint, label: string) => {
-      if (!globalDebugState.performance || !isEnabled(debugPoint)) return;
-      console.time(`[${debugPoint}] ${label}`);
-    },
-    [isEnabled]
-  );
-
-  const timeEnd = useCallback(
-    (debugPoint: DebugPoint, label: string) => {
-      if (!globalDebugState.performance || !isEnabled(debugPoint)) return;
-      console.timeEnd(`[${debugPoint}] ${label}`);
-    },
-    [isEnabled]
-  );
-
-  // Control functions using the extracted state controls
-  const enable = useCallback((debugPoint: DebugPoint) => {
-    debugStateControls.enable(debugPoint);
-    notifySubscribers();
-  }, []);
-
-  const disable = useCallback((debugPoint: DebugPoint) => {
-    debugStateControls.disable(debugPoint);
-    notifySubscribers();
-  }, []);
-
-  const toggle = useCallback(
-    (debugPoint: DebugPoint) => {
-      if (globalDebugState.enabled.has(debugPoint)) {
-        disable(debugPoint);
-      } else {
-        enable(debugPoint);
-      }
-    },
-    [enable, disable]
-  );
-
-  const enableAll = useCallback(() => {
-    debugStateControls.enableAll();
-    notifySubscribers();
-  }, []);
-
-  const disableAll = useCallback(() => {
-    debugStateControls.disableAll();
-    notifySubscribers();
-  }, []);
-
-  // Configuration
-  const setConsoleEnabled = useCallback((enabled: boolean) => {
-    debugStateControls.setConsoleEnabled(enabled);
-    notifySubscribers();
-  }, []);
-
-  const setVisualEnabled = useCallback((enabled: boolean) => {
-    debugStateControls.setVisualEnabled(enabled);
-    notifySubscribers();
-  }, []);
-
-  const setPerformanceEnabled = useCallback((enabled: boolean) => {
-    debugStateControls.setPerformanceEnabled(enabled);
-    notifySubscribers();
-  }, []);
-
-  // Logs management
-  const getLogs = useCallback((): DebugLogEntry[] => {
-    return [...globalDebugState.logs]; // Return a copy to prevent mutations
-  }, [globalDebugState.logs.length]); // Only update when log count changes
-
-  const clearLogs = useCallback(() => {
-    debugStateControls.clearLogs();
-    notifySubscribers();
-  }, []);
-
-  // Return memoized debug interface to prevent unnecessary re-renders
-  return useMemo(
-    () => ({
-      // Current enabled state
-      enabled,
-
-      // Check functions
-      isEnabled,
-      showVisual,
-
-      // Logging functions
-      log,
-      warn,
-      error,
-      critical,
-      time,
-      timeEnd,
-
-      // Control functions
-      enable,
-      disable,
-      toggle,
-      enableAll,
-      disableAll,
-
-      // Configuration
-      setConsoleEnabled,
-      setVisualEnabled,
-      setPerformanceEnabled,
-
-      // Logs management
-      getLogs,
-      clearLogs,
-
-      // Current state - now memoized
-      state,
-
-      // Health snapshot function
-      captureHealthSnapshot,
-    }),
-    [
-      enabled,
-      isEnabled,
-      showVisual,
-      log,
-      warn,
-      error,
-      critical,
-      time,
-      timeEnd,
-      enable,
-      disable,
-      toggle,
-      enableAll,
-      disableAll,
-      setConsoleEnabled,
-      setVisualEnabled,
-      setPerformanceEnabled,
-      getLogs,
-      clearLogs,
-      state,
-      captureHealthSnapshot,
-    ]
-  );
+  // Always return the same unified singleton instance - no React dependencies!
+  return globalThis.surfaceDebug;
 };
+
+// REMOVED: All the old initializeGlobalDebugManager code - now handled by unified system
 
 /**
  * Unified dependency state hook - replaces the old useDependencyState from debug-deps.ts
