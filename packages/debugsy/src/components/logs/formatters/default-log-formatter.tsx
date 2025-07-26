@@ -11,7 +11,6 @@ import {
   getLogEntryBackgroundColor,
   getPointEmoji,
   isLikelyLargeObject,
-  memoizedJsonStringify,
 } from "../utils/log-utilities";
 import { getExpansionContent, getLogTypeMeta } from "./formatter-routing";
 import { formatTime } from "./health-expansion-formatter";
@@ -101,6 +100,7 @@ const getSeverityEmoji = (severity: LogSeverity): string => {
  * Optimized default formatter for debug log entries with performance enhancements
  * ENHANCED: Now supports automatic expansion routing to specialized formatters
  * PERFORMANCE: Uses hot registry for zero-overhead lookups
+ * PERFORMANCE: Defers expensive operations for large objects in collapsed mode
  * Memoized to prevent unnecessary re-renders of expensive JSON operations
  */
 export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
@@ -116,8 +116,16 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
     }) => {
       const [internalExpanded, setInternalExpanded] = useState(false);
 
+      // Use internal state if no external control provided
+      const isCurrentlyExpanded = onToggleExpand
+        ? isExpanded
+        : internalExpanded;
+      const handleToggle =
+        onToggleExpand || (() => setInternalExpanded(!internalExpanded));
+
       // OPTIMIZATION: Combined memoization with log-type-aware enhancements
       // PERFORMANCE: Uses hot registry for zero-overhead metadata lookup
+      // PERFORMANCE FIX: Defer expensive JSON operations for large objects in collapsed mode
       const computedProps = useMemo(() => {
         // Get specialized log type metadata (ZERO-OVERHEAD with hot registry)
         const logTypeMeta = getLogTypeMeta(log);
@@ -130,10 +138,6 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         const severityStyle = getSeverityStyle(effectiveSeverity);
         const severityEmoji = getSeverityEmoji(effectiveSeverity);
 
-        // Data-related computations (single pass)
-        let formattedDataDisplay = null;
-        let tooltipJsonString = "";
-
         // Use specialized expand behavior if available
         const shouldShowExpand =
           showExpandButton !== undefined
@@ -142,17 +146,58 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
               ? logTypeMeta.shouldExpand
               : !!log.data;
 
-        if (log.data) {
-          // Single large object detection
-          const isLarge = isLikelyLargeObject(log.data);
+        // PERFORMANCE OPTIMIZATION: Early return for no data
+        if (!log.data) {
+          return {
+            severityStyle,
+            severityEmoji,
+            formattedDataDisplay: null,
+            tooltipJsonString: "",
+            shouldShowExpand: false,
+            effectiveSeverity,
+            isLarge: false,
+          };
+        }
 
-          // Format display data
-          formattedDataDisplay = formatDataForDisplay(log.data, 1000);
+        // PERFORMANCE OPTIMIZATION: Fast large object detection (minimal overhead)
+        const isLarge = isLikelyLargeObject(log.data);
 
-          // Generate tooltip string
-          tooltipJsonString = isLarge
-            ? `[Large Object: Click to expand for details]`
-            : memoizedJsonStringify(log.data);
+        // PERFORMANCE FIX: For large objects in collapsed mode, skip expensive operations
+        if (isLarge && !isCurrentlyExpanded) {
+          return {
+            severityStyle,
+            severityEmoji,
+            formattedDataDisplay: Array.isArray(log.data)
+              ? `[Large Array: ${log.data.length} items]`
+              : `[Large Object: ${Object.keys(log.data).length} keys]`,
+            tooltipJsonString: "[Large Object: Click to expand for details]",
+            shouldShowExpand,
+            effectiveSeverity,
+            isLarge: true,
+          };
+        }
+
+        // PERFORMANCE OPTIMIZATION: For small/medium objects OR when expanded, do full processing
+        let formattedDataDisplay = null;
+        let tooltipJsonString = "";
+
+        // Format display data (only for non-large objects or when expanded)
+        formattedDataDisplay = formatDataForDisplay(log.data, 1000);
+
+        // Generate tooltip string (optimized path)
+        if (isLarge) {
+          tooltipJsonString = "[Large Object: Click to expand for details]";
+        } else {
+          // For smaller objects, use memoized stringify but with shorter length for tooltips
+          try {
+            const preview = formatDataForDisplay(log.data, 500);
+            tooltipJsonString =
+              preview.length > 500
+                ? preview.substring(0, 500) + "..."
+                : preview;
+          } catch {
+            tooltipJsonString = "[Object: Click to expand for details]";
+          }
         }
 
         return {
@@ -162,15 +207,15 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
           tooltipJsonString,
           shouldShowExpand,
           effectiveSeverity,
+          isLarge,
         };
-      }, [severity, log.data, log.point, showExpandButton]);
-
-      // Use internal state if no external control provided
-      const isCurrentlyExpanded = onToggleExpand
-        ? isExpanded
-        : internalExpanded;
-      const handleToggle =
-        onToggleExpand || (() => setInternalExpanded(!internalExpanded));
+      }, [
+        severity,
+        log.data,
+        log.point,
+        showExpandButton,
+        isCurrentlyExpanded,
+      ]);
 
       // OPTIMIZED: Route to appropriate expansion content based on log type
       // PERFORMANCE: Uses hot registry for zero-overhead component lookup
