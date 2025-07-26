@@ -3,11 +3,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { DebugLogEntry } from "../hooks/use-debug";
 import { DebugControlPanel } from "./debug-control-panel";
-import { DebugLogsList } from "./debug-logs-list";
 import { DebugPanelHeader } from "./debug-panel-header";
 import { DebugPanelResizeHandle } from "./debug-panel-resize-handle";
 import { DebugResizePresets } from "./debug-resize-presets";
 import { DebugStatsPanel } from "./debug-stats-panel";
+import { DebugLogsList } from "./logs/debug-logs-list";
 
 export interface DebugExternalPanelProps {
   logs: DebugLogEntry[];

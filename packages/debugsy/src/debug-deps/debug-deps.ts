@@ -712,6 +712,76 @@ const initializeGlobalSurfaceDebug = () => {
             }
           );
         },
+        // Test utilities for verification
+        testDependencyTracking: () => {
+          console.log("🧪 Testing useWhyDidYouUpdate functionality...");
+
+          // Check if global surfaceDebug object exists
+          const globalDebug = (globalThis as any).surfaceDebug;
+          if (!globalDebug) {
+            console.error("❌ Global surfaceDebug object not found");
+            return false;
+          }
+
+          console.log("✅ Global surfaceDebug object found");
+
+          // Check if getDependencyStatus method exists
+          if (!globalDebug.getDependencyStatus) {
+            console.error("❌ getDependencyStatus method not found");
+            return false;
+          }
+
+          console.log("✅ getDependencyStatus method found");
+
+          // Test dependency status
+          const depStatus = globalDebug.getDependencyStatus();
+          console.log("📋 Current dependency status:", depStatus);
+
+          // Test if dependency tracking is enabled
+          if (!depStatus.enabled) {
+            console.warn("⚠️ Dependency tracking is currently disabled");
+            console.log("🔧 Enabling dependency tracking...");
+            globalDebug.deps.on();
+            const newStatus = globalDebug.getDependencyStatus();
+            console.log("📋 Updated dependency status:", newStatus);
+          }
+
+          console.log("\n✅ useWhyDidYouUpdate should now be working!");
+          console.log("📝 To test in components:");
+          console.log(
+            "   1. Add useWhyDidYouUpdate('MyComponent', props) to any component"
+          );
+          console.log(
+            "   2. Change props and watch for dependency change logs"
+          );
+          console.log("   3. Use surfaceDebug.deps.verbose() for more detail");
+
+          return true;
+        },
+        testMockComponent: () => {
+          console.log("\n🧪 Testing with mock component scenario...");
+
+          const globalDebug = (globalThis as any).surfaceDebug;
+          const depState = globalDebug?.getDependencyStatus?.();
+
+          console.log(
+            `📊 Dependency state: enabled=${depState?.enabled}, level=${depState?.level}`
+          );
+
+          if (depState?.enabled) {
+            console.log(
+              "✅ Dependency tracking is active - useWhyDidYouUpdate should work"
+            );
+            console.log(
+              "🔄 Try adding useWhyDidYouUpdate('ComponentName', props) to a component with changing props"
+            );
+          } else {
+            console.log("❌ Dependency tracking is disabled");
+            console.log("💡 Run: surfaceDebug.deps.on() to enable");
+          }
+
+          return depState?.enabled || false;
+        },
         // Add convenience methods for console usage
         deps: {
           off: () => {
@@ -785,6 +855,8 @@ initializeGlobalSurfaceDebug();
 console.log(`
 ✅ Surface Dependency Tracking (integrated with unified debug framework)
 
+🎯 PRIMARY PURPOSE: Fix "Maximum update depth exceeded" React errors!
+
 🔧 Debug Framework Integration:
   - Logs stream to both console AND debug panel
   - Controlled by DependencyTrackingConfig settings
@@ -800,10 +872,14 @@ console.log(`
   surfaceDebug.deps.objectsOnly()   - Only object changes
   surfaceDebug.deps.unstableOnly()  - Only changing dependencies
   
+🧪 Test Commands:
+  surfaceDebug.testDependencyTracking() - Verify functionality
+  surfaceDebug.testMockComponent()      - Test mock scenarios
+  
 🚨 Emergency Protection:
   __SURFACE_EMERGENCY_STOP.activate()   - Stop ALL logging immediately
   __SURFACE_EMERGENCY_STOP.deactivate() - Restore normal operation
   __SURFACE_EMERGENCY_STOP.status()     - Check current status
   
-🎯 View logs in the Debug UI panel or console for infinite render debugging!
+🎯 Look for ⚠️ FREQUENT warnings - these point to infinite render culprits!
 `);

@@ -214,20 +214,27 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
             }}
             onClick={computedProps.shouldShowExpand ? handleToggle : undefined}
           >
-            {/* Expand/Collapse Button */}
-            {computedProps.shouldShowExpand && (
-              <span
-                style={{
-                  fontSize: "10px",
-                  color: "#9ca3af",
-                  marginRight: "4px",
-                  minWidth: "12px",
-                  textAlign: "center",
-                }}
-              >
-                {isCurrentlyExpanded ? "▼" : "▶"}
-              </span>
-            )}
+            {/* Expand/Collapse Button - Always render for consistent alignment */}
+            <span
+              style={{
+                fontSize: "10px",
+                color: computedProps.shouldShowExpand
+                  ? "#9ca3af"
+                  : "transparent",
+                marginRight: "4px",
+                minWidth: "12px",
+                textAlign: "center",
+                visibility: computedProps.shouldShowExpand
+                  ? "visible"
+                  : "hidden",
+              }}
+            >
+              {computedProps.shouldShowExpand
+                ? isCurrentlyExpanded
+                  ? "▼"
+                  : "▶"
+                : "▶"}
+            </span>
 
             {/* Severity Indicator */}
             {computedProps.severityEmoji && (
