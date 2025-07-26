@@ -70,89 +70,23 @@ const MemoizedLogEntry: React.FC<{
 MemoizedLogEntry.displayName = "MemoizedLogEntry";
 
 /**
- * Virtual scrolling container for better performance with large log lists
- * Renders only visible items plus a small buffer
+ * Simple log container that renders all logs without virtualization complexity
+ * Fixes the height issue while maintaining proper scrolling behavior
  */
-const VirtualizedLogContainer: React.FC<{
+const LogContainer: React.FC<{
   logs: DebugLogEntry[];
-  containerHeight: number;
-  itemHeight: number;
-}> = React.memo(({ logs, containerHeight, itemHeight }) => {
-  const [scrollTop, setScrollTop] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Calculate visible range with buffer
-  const visibleRange = useMemo(() => {
-    const buffer = 5; // Render 5 extra items above/below visible area
-    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - buffer);
-    const visibleCount = Math.ceil(containerHeight / itemHeight) + buffer * 2;
-    const endIndex = Math.min(logs.length - 1, startIndex + visibleCount);
-
-    return { startIndex, endIndex };
-  }, [scrollTop, itemHeight, containerHeight, logs.length]);
-
-  // Handle scroll events
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-  }, []);
-
-  // Get visible logs with proper keys
-  const visibleLogs = useMemo(() => {
-    return logs
-      .slice(visibleRange.startIndex, visibleRange.endIndex + 1)
-      .map((log, relativeIndex) => ({
-        log,
-        index: visibleRange.startIndex + relativeIndex,
-        uniqueKey: `${log.timestamp}-${log.point}-${visibleRange.startIndex + relativeIndex}`,
-      }));
-  }, [logs, visibleRange]);
-
-  // Only use virtualization for large lists (>50 items)
-  if (logs.length <= 50) {
-    return (
-      <div ref={containerRef}>
-        {logs.map((log, index) => (
-          <MemoizedLogEntry
-            key={`${log.timestamp}-${index}`}
-            log={log}
-            index={index}
-            uniqueKey={`${log.timestamp}-${log.point}-${index}`}
-          />
-        ))}
-      </div>
-    );
-  }
-
+}> = React.memo(({ logs }) => {
   return (
-    <div
-      ref={containerRef}
-      style={{ height: containerHeight, overflowY: "auto" }}
-      onScroll={handleScroll}
-    >
-      {/* Spacer for items before visible range */}
-      {visibleRange.startIndex > 0 && (
-        <div style={{ height: visibleRange.startIndex * itemHeight }} />
-      )}
-
-      {/* Visible items */}
-      {visibleLogs.map(({ log, index, uniqueKey }) => (
+    <>
+      {logs.map((log, index) => (
         <MemoizedLogEntry
-          key={uniqueKey}
+          key={`${log.timestamp}-${index}`}
           log={log}
           index={index}
-          uniqueKey={uniqueKey}
+          uniqueKey={`${log.timestamp}-${log.point}-${index}`}
         />
       ))}
-
-      {/* Spacer for items after visible range */}
-      {visibleRange.endIndex < logs.length - 1 && (
-        <div
-          style={{
-            height: (logs.length - 1 - visibleRange.endIndex) * itemHeight,
-          }}
-        />
-      )}
-    </div>
+    </>
   );
 });
 
@@ -200,6 +134,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [pausedLogs, setPausedLogs] = useState<DebugLogEntry[]>([]);
   const logsContainerRef = useRef<HTMLDivElement>(null);
+  const logsDisplayAreaRef = useRef<HTMLDivElement>(null); // For measuring actual display area
   const stateResetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Memoize active logs to prevent unnecessary recalculations
@@ -406,74 +341,92 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({ logs }) => {
         tabIndex={0}
         style={{
           flex: 1,
-          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto", // Restored scrolling - parent handles scroll, child fills space
           padding: "4px 8px",
           outline: "none", // Remove focus outline
         }}
       >
-        {truncationInfo.isLogsTruncated && (
-          <div style={LOG_STYLES.truncationWarning}>
-            ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
-            {logs.length} logs (performance limit)
-          </div>
-        )}
+        {/* Status messages area */}
+        <div
+          ref={logsDisplayAreaRef}
+          style={{ flex: 1, display: "flex", flexDirection: "column" }}
+        >
+          {truncationInfo.isLogsTruncated && (
+            <div style={LOG_STYLES.truncationWarning}>
+              ⚠️ Showing latest {LOG_RENDERING_CONFIG.MAX_RENDERED_LOGS} of{" "}
+              {logs.length} logs (performance limit)
+            </div>
+          )}
 
-        {isPaused && (
-          <div
-            style={{
-              ...LOG_STYLES.truncationWarning,
-              backgroundColor: "#fbbf2422",
-              borderColor: "#f59e0b44",
-              color: "#f59e0b",
-              fontWeight: "bold",
-            }}
-          >
-            ⏸️ Log rendering paused - {pausedLogs.length} logs frozen
-          </div>
-        )}
+          {isPaused && (
+            <div
+              style={{
+                ...LOG_STYLES.truncationWarning,
+                backgroundColor: "#fbbf2422",
+                borderColor: "#f59e0b44",
+                color: "#f59e0b",
+                fontWeight: "bold",
+              }}
+            >
+              ⏸️ Log rendering paused - {pausedLogs.length} logs frozen
+            </div>
+          )}
 
-        {reversedLogs.length === 0 ? (
-          <div style={LOG_STYLES.emptyState}>
-            No debug logs yet.
-            <br />
-            Enable debug points and interact with the surface to see logs here.
-          </div>
-        ) : (
-          <>
-            {/* Use virtualized container for better performance */}
-            <VirtualizedLogContainer
-              logs={reversedLogs}
-              containerHeight={400} // Adjust based on your container
-              itemHeight={25} // Approximate height of each log entry
-            />
+          {reversedLogs.length === 0 ? (
+            <div
+              style={{
+                ...LOG_STYLES.emptyState,
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              No debug logs yet.
+              <br />
+              Enable debug points and interact with the surface to see logs
+              here.
+            </div>
+          ) : (
+            <>
+              {/* Use virtualized container for better performance - now fills available space */}
+              <VirtualizedLogContainer
+                logs={reversedLogs}
+                parentRef={logsDisplayAreaRef}
+                itemHeight={25} // Approximate height of each log entry
+              />
 
-            {truncationInfo.isLogsTruncated && (
-              <div
-                key="hidden-logs-indicator"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  marginTop: "8px",
-                  padding: "6px 8px",
-                  backgroundColor: "#78350f22",
-                  borderRadius: "4px",
-                  fontSize: "10px",
-                  fontFamily: "monospace",
-                  lineHeight: "1.2",
-                  justifyContent: "center",
-                  border: "1px dashed #78350f44",
-                }}
-              >
-                <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
-                <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
-                  ... and {truncationInfo.hiddenLogsCount.toLocaleString()} more
-                  logs hidden for performance
-                </span>
-              </div>
-            )}
-          </>
-        )}
+              {truncationInfo.isLogsTruncated && (
+                <div
+                  key="hidden-logs-indicator"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    marginTop: "8px",
+                    padding: "6px 8px",
+                    backgroundColor: "#78350f22",
+                    borderRadius: "4px",
+                    fontSize: "10px",
+                    fontFamily: "monospace",
+                    lineHeight: "1.2",
+                    justifyContent: "center",
+                    border: "1px dashed #78350f44",
+                    flexShrink: 0, // Don't shrink this element
+                  }}
+                >
+                  <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
+                  <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
+                    ... and {truncationInfo.hiddenLogsCount.toLocaleString()}{" "}
+                    more logs hidden for performance
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Actions Panel - Vertical button panel on the right of logs */}
