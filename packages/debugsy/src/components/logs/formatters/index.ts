@@ -5,6 +5,23 @@ export {
   type LogSeverity,
 } from "./default-log-formatter";
 
+// CENTRALIZED: Formatter routing configuration
+export {
+  clearFormatterCache,
+  getExpansionContent,
+  getFormatterConfig,
+  getLogTypeMeta,
+  getRegisteredFormatterTypes,
+  registerFormatter,
+  unregisterFormatter,
+  validateFormatters,
+  type FormatterConfig,
+  type FormatterMeta,
+} from "./formatter-routing";
+
+// DEFAULT EXPANSION: Default expansion content component
+export { DefaultExpandedContent } from "./default-expansion-content";
+
 // OPTIMIZED: Expansion-focused formatters (new architecture)
 export {
   CategorySection,

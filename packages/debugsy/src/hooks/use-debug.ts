@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { useWhyDidYouUpdate } from "../debug-deps/debug-deps";
 import {
-  MAX_STORED_LOGS,
   getDebugEmoji,
+  MAX_STORED_LOGS,
   type DebugLogEntry,
   type DebugPoint,
   type DependencyFilter,
@@ -26,6 +26,11 @@ import {
   type HealthMetrics,
   type HealthSnapshotConfig,
 } from "./health-snapshot";
+import {
+  needsSanitization,
+  SANITIZATION_PRESETS,
+  sanitizeLogData,
+} from "./log-data-sanitization";
 
 // Re-export types for backward compatibility
 export type { DebugLogEntry, DebugPoint, DependencyFilter, DependencyLogLevel };
@@ -85,13 +90,55 @@ export const useDebug = (point?: DebugPoint) => {
     (debugPoint: DebugPoint, message: string, data?: any) => {
       if (!isEnabled(debugPoint)) return;
 
-      // Store log entry
+      // SAFETY: Sanitize data to prevent browser freezing from heavy objects
+      let sanitizedData = data;
+      if (data !== undefined) {
+        try {
+          // Fast check if data needs sanitization
+          if (needsSanitization(data)) {
+            // Use React-focused preset for UI components
+            const config =
+              debugPoint === "surface" || debugPoint === "surface-interactions"
+                ? SANITIZATION_PRESETS.reactFocused
+                : SANITIZATION_PRESETS.balanced;
+
+            sanitizedData = sanitizeLogData(data, config);
+
+            // Log sanitization stats for debugging (only once per session to avoid spam)
+            if (!(globalThis as any).__debugSanitizationLogged) {
+              console.log(
+                `🧹 [debugsy] Data sanitization active for heavy objects. Point: ${debugPoint}`,
+                {
+                  originalSize: JSON.stringify(data).length,
+                  sanitizedSize: JSON.stringify(sanitizedData).length,
+                  timeTaken: sanitizedData.__sanitizationTime + "ms",
+                }
+              );
+              (globalThis as any).__debugSanitizationLogged = true;
+            }
+          }
+        } catch (error) {
+          // Fallback: If sanitization fails, use safe fallback
+          console.warn(
+            `⚠️ [debugsy] Failed to sanitize data for ${debugPoint}:`,
+            error
+          );
+          sanitizedData = {
+            __sanitizationFailed: true,
+            __error: error instanceof Error ? error.message : "Unknown error",
+            __originalType: typeof data,
+            __safePreview: String(data).substring(0, 100) + "...",
+          };
+        }
+      }
+
+      // Store log entry with sanitized data
       const logEntry: DebugLogEntry = {
         timestamp: Date.now(),
         level: "info",
         point: debugPoint,
         message,
-        data,
+        data: sanitizedData,
         sessionId: "default", // Placeholder, will be updated
       };
 
