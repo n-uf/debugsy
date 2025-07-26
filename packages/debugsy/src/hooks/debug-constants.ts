@@ -50,10 +50,13 @@ export interface DependencyTrackingConfig {
   throttleMs: number;
 }
 
+// Log severity levels
+export type LogLevel = "info" | "warn" | "error" | "critical" | "success";
+
 // Debug log entry interface
 export interface DebugLogEntry {
   timestamp: number;
-  level: string;
+  level: LogLevel;
   point: DebugPoint;
   message: string;
   data?: any;

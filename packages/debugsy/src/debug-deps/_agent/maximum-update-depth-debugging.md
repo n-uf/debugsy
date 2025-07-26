@@ -9,6 +9,38 @@ Error: Maximum update depth exceeded. This can happen when a component
 repeatedly calls setState inside useEffect, useLayoutEffect, or render.
 ```
 
+## 🚀 **Smart Severity System (NEW)**
+
+The debug-deps module now intelligently differentiates between **normal app initialization** and **actual infinite render problems**:
+
+### **Initialization Phase (🚀)**
+
+- **First 5 seconds** after app start or after new components appear
+- **Object changes are normal** - components mounting, setting initial state
+- **Only warns if excessive** (3+ rapid changes indicating real problems)
+- **Shows `📋 INIT` indicator** for normal initialization changes
+
+### **Runtime Phase (⚠️)**
+
+- **After initialization settles** (5 seconds of stability)
+- **Object changes are suspicious** - likely indicates render loops
+- **Shows `⚠️ FREQUENT` warnings** for problematic dependencies
+- **Much stricter detection** to catch real issues
+
+### **Recommended Severity Level**
+
+```javascript
+// 🌟 BEST FOR DEVELOPMENT: Shows problems without initialization noise
+surfaceDebug.deps.initAware();
+```
+
+This mode:
+
+- ✅ **Shows function changes** (always important)
+- ✅ **Shows real runtime problems** with warnings
+- ❌ **Hides normal initialization** object changes
+- 🎯 **Focuses on actual issues** you need to fix
+
 ## 🔍 **How It Works: Causality Tracking**
 
 Unlike React DevTools which shows you **what** is happening, `useWhyDidYouUpdate` shows you **why** it's happening by tracking the causality chain of dependency changes.
@@ -74,27 +106,52 @@ const CrashingComponent = (props) => {
 };
 ```
 
-### **Step 3: Enable Console Monitoring**
+### **Step 3: Enable Smart Console Monitoring**
 
 ```javascript
-// In browser console
-surfaceDebug.deps.on(); // Enable tracking
-surfaceDebug.deps.verbose(); // Show detailed changes
+// In browser console - RECOMMENDED for most cases
+surfaceDebug.deps.initAware(); // 🌟 Smart filtering (recommended)
+
+// OR for maximum detail when needed
+surfaceDebug.deps.verbose(); // Show everything (may be noisy during init)
 ```
 
-### **Step 4: Read the Causality Pattern**
+### **Step 4: Read the Smart Causality Pattern**
 
-Look for patterns like this in the console:
+Now you'll see context-aware patterns like this:
+
+**During App Initialization (Normal):**
+
+```
+🔄 [MyComponent] Dependencies changed: { config: [Object → Object] }
+📦 [MyComponent] config: object changed (#1) 🚀 📋 INIT
+📦 [AnotherComponent] props: object changed (#2) 🚀 📋 INIT
+```
+
+**During Runtime (Problematic):**
 
 ```
 🔄 [CrashingComponent] Dependencies changed: { callback: [Function → Function] }
-📝 [CrashingComponent] callback: function changed ⚠️ FREQUENT
+📝 [CrashingComponent] callback: function changed (#3) ⚠️ FREQUENT
 🔄 [CrashingComponent] Dependencies changed: { callback: [Function → Function] }
-📝 [CrashingComponent] callback: function changed ⚠️ FREQUENT
-🔄 [CrashingComponent] Dependencies changed: { callback: [Function → Function] }
+📝 [CrashingComponent] callback: function changed (#4) ⚠️ FREQUENT
 ```
 
-The `⚠️ FREQUENT` warning means: **This dependency is changing rapidly - it's your culprit!**
+**Understanding the Indicators & Colors:**
+
+**Color Coding:**
+
+- **Gray Border** 🔘 = Normal dependency change (info level)
+- **Orange Border** 🟠 = Potential performance issue (warn level)
+- **Red Border** 🔴 = Critical problem requiring immediate attention (error level)
+
+**Message Indicators:**
+
+- `(#3)` = **Change counter** - shows how many times this dependency has changed
+- `🚀` = Initialization phase (first 5 seconds)
+- `📋 INIT` = Normal initialization change (Gray)
+- `⚠️ FREQUENT` = **Real runtime problem** - infinite loop risk! (Orange)
+- No indicator = Runtime phase, normal change (Gray)
 
 ## 🔄 **Common Causality Patterns**
 
@@ -266,6 +323,33 @@ const GrandParent = () => {
 };
 ```
 
+## 📊 **Using Change Counters for Analysis**
+
+The counter `(#3)` shows how many times each dependency has changed, helping you identify problematic patterns:
+
+### **Normal Counter Patterns:**
+
+```
+📦 [MyComponent] config: object changed (#1) 🚀 📋 INIT  // ✅ Once during init
+📝 [MyComponent] onSubmit: function changed (#2)        // ✅ Low count, stable
+📦 [MyComponent] data: object changed (#3)              // ✅ Occasional changes
+```
+
+### **Problematic Counter Patterns:**
+
+```
+📝 [BadComponent] callback: function changed (#15) ⚠️ FREQUENT  // 🚨 Very high count!
+📦 [BadComponent] config: object changed (#22) ⚠️ FREQUENT     // 🚨 Recreated constantly
+📦 [BadComponent] props: object changed (#8) ⚠️ FREQUENT       // 🚨 Still growing
+```
+
+### **Counter Analysis Tips:**
+
+- **Low counts (1-3)** = Normal, healthy dependency usage
+- **Medium counts (4-10)** = Monitor, could indicate instability
+- **High counts (10+)** = Likely problem, especially with `⚠️ FREQUENT`
+- **Rapidly increasing** = Active infinite loop in progress
+
 ## 🔧 **Advanced Debugging Techniques**
 
 ### **Binary Search Debugging**
@@ -330,24 +414,30 @@ surfaceDebug.deps.functionsOnly();
 
 You've fixed the issue when:
 
-1. **No more `⚠️ FREQUENT` warnings** in the console
+1. **No more `⚠️ FREQUENT` warnings** in the console (after initialization)
 2. **Circuit breaker no longer triggers** (component renders normally)
 3. **Stable render counts** (not incrementing rapidly)
 4. **React stops throwing** the "Maximum update depth exceeded" error
+5. **Initialization shows `📋 INIT`** then settles to normal patterns
 
 ## 📊 **Common Success Patterns**
 
 After applying fixes, you should see:
 
 ```
-// ✅ Good: Stable dependencies
-📝 [Component] data: object changed (occasional, when props actually change)
+// ✅ Good: Normal initialization sequence (GRAY borders in UI)
+📦 [Component] config: object changed (#1) 🚀 📋 INIT
+📦 [Component] data: object changed (#2) 🚀 📋 INIT
+🏁 App initialization phase completed - switching to runtime severity
+
+// ✅ Good: Stable runtime dependencies (GRAY borders in UI)
+📝 [Component] data: object changed (#3) (occasional, when props actually change)
 📝 [Component] callback: function stable (no changes unless needed)
 
 // ✅ Good: Render count stabilizes
 🔍 [Component] Render count: 3 (stable)
 
-// ✅ Good: No frequent warnings
+// ✅ Good: No orange warnings after initialization, low change counts
 🔄 [Component] Dependencies changed: { data: [Object → Object] } (only when needed)
 ```
 

@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 // Add import for react18-json-view
 import "react18-json-view/src/style.css";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
+import type { DebugLogEntry, LogLevel } from "../../../hooks/debug-constants";
 import {
   LOG_STYLES,
   formatDataForDisplay,
@@ -16,9 +16,9 @@ import { getExpansionContent, getLogTypeMeta } from "./formatter-routing";
 import { formatTime } from "./health-expansion-formatter";
 
 /**
- * Severity levels for log entries
+ * Severity levels for log entries (using unified LogLevel type)
  */
-export type LogSeverity = "info" | "warn" | "error" | "critical" | "success";
+export type LogSeverity = LogLevel;
 
 /**
  * Props for the DefaultLogFormatter component
@@ -108,7 +108,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
     ({
       log,
       index,
-      severity = "info",
+      severity, // If not provided, will use log.level below
       showExpandButton,
       isExpanded = false,
       onToggleExpand,
@@ -123,6 +123,9 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
       const handleToggle =
         onToggleExpand || (() => setInternalExpanded(!internalExpanded));
 
+      // Use the log's level as severity if no explicit severity is provided
+      const effectiveSeverity = severity || (log.level as LogSeverity);
+
       // OPTIMIZATION: Combined memoization with log-type-aware enhancements
       // PERFORMANCE: Uses hot registry for zero-overhead metadata lookup
       // PERFORMANCE FIX: Defer expensive JSON operations for large objects in collapsed mode
@@ -130,13 +133,12 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         // Get specialized log type metadata (ZERO-OVERHEAD with hot registry)
         const logTypeMeta = getLogTypeMeta(log);
 
-        // Use specialized severity if available, otherwise use provided severity
-        const effectiveSeverity =
-          logTypeMeta?.severity || (severity as LogSeverity);
+        // Use specialized severity if available, otherwise use effectiveSeverity
+        const finalSeverity = logTypeMeta?.severity || effectiveSeverity;
 
         // Severity-related computations
-        const severityStyle = getSeverityStyle(effectiveSeverity);
-        const severityEmoji = getSeverityEmoji(effectiveSeverity);
+        const severityStyle = getSeverityStyle(finalSeverity);
+        const severityEmoji = getSeverityEmoji(finalSeverity);
 
         // Use specialized expand behavior if available
         const shouldShowExpand =
@@ -153,7 +155,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
             severityEmoji,
             formattedDataDisplay: null,
             shouldShowExpand: false,
-            effectiveSeverity,
+            effectiveSeverity: finalSeverity,
             isLarge: false,
           };
         }
@@ -170,7 +172,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
               ? `[Large Array: ${log.data.length} items]`
               : `[Large Object: ${Object.keys(log.data).length} keys]`,
             shouldShowExpand,
-            effectiveSeverity,
+            effectiveSeverity: finalSeverity,
             isLarge: true,
           };
         }
@@ -183,16 +185,28 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
           severityEmoji,
           formattedDataDisplay,
           shouldShowExpand,
-          effectiveSeverity,
+          effectiveSeverity: finalSeverity,
           isLarge,
         };
       }, [
-        severity,
+        effectiveSeverity,
         log.data,
         log.point,
         showExpandButton,
         isCurrentlyExpanded,
       ]);
+
+      // Get severity-based styling
+      const severityStyle = useMemo(
+        () => computedProps.severityStyle,
+        [computedProps.severityStyle]
+      );
+
+      // Get severity emoji
+      const severityEmoji = useMemo(
+        () => computedProps.severityEmoji,
+        [computedProps.severityEmoji]
+      );
 
       // OPTIMIZED: Route to appropriate expansion content based on log type
       // PERFORMANCE: Uses hot registry for zero-overhead component lookup

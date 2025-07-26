@@ -50,33 +50,13 @@ const extractComponentName = (message: string): string => {
 };
 
 /**
- * OPTIMIZED: Get dependency log severity with lookup table
+ * Get dependency log severity directly from log record
+ * The severity is already determined by debug-deps.ts when creating the log
  */
-const SEVERITY_MAP: Record<DependencyLogType, LogSeverity> = {
-  "circuit-breaker": "critical",
-  "emergency-stop": "critical",
-  "render-warning": "warn",
-  "hook-execution": "warn",
-  "function-recreation": "error",
-  "object-recreation": "error",
-  "dependency-change": "info",
-  "primitive-change": "info",
-  unknown: "info",
-};
-
-const getDependencySeverity = (
-  logType: DependencyLogType,
-  message: string
-): LogSeverity => {
-  // Check for frequency warnings that override default severity
-  if (
-    (logType === "function-recreation" || logType === "object-recreation") &&
-    message.includes("⚠️ FREQUENT")
-  ) {
-    return "warn";
-  }
-
-  return SEVERITY_MAP[logType];
+const getDependencySeverity = (log: DebugLogEntry): LogSeverity => {
+  // Use the log's level as the severity - it's already been determined
+  // by the smart logic in debug-deps.ts
+  return log.level as LogSeverity;
 };
 
 /**
@@ -122,7 +102,7 @@ export const DependencyExpansionContent: React.FC<{ log: DebugLogEntry }> =
     const dependencyMeta = useMemo(() => {
       const logType = parseDependencyLogType(log.message);
       const componentName = extractComponentName(log.message);
-      const severity = getDependencySeverity(logType, log.message);
+      const severity = getDependencySeverity(log);
       const dependencyData = formatDependencyData(log.data, logType);
 
       return {
@@ -131,7 +111,7 @@ export const DependencyExpansionContent: React.FC<{ log: DebugLogEntry }> =
         severity,
         dependencyData,
       };
-    }, [log.message, log.data]);
+    }, [log.message, log.data, log.level]);
 
     return (
       <div style={{ fontFamily: "monospace" }}>
@@ -269,11 +249,8 @@ const DependencyHelpMessage: React.FC<{ logType: DependencyLogType }> =
             titleColor: "#10b981",
             textColor: "#6ee7b7",
             icon: "💡",
-            title: "Fix Suggestion:",
-            text:
-              logType === "function-recreation"
-                ? "Use useCallback() to memoize this function with stable dependencies"
-                : "Use useMemo() to memoize this object or array with stable dependencies",
+            title: "Smart Dependency Tracking:",
+            text: "🚀📋 = Normal during app initialization. ⚠️ FREQUENT = Performance issue - consider useCallback/useMemo. Gray = Normal change.",
           };
 
         case "render-warning":
@@ -362,7 +339,7 @@ export const getDependencyLogMeta = (log: DebugLogEntry) => {
 
   const logType = parseDependencyLogType(log.message);
   const componentName = extractComponentName(log.message);
-  const severity = getDependencySeverity(logType, log.message);
+  const severity = getDependencySeverity(log);
 
   return {
     logType,

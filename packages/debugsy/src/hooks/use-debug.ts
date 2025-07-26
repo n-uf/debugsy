@@ -6,6 +6,7 @@ import {
   type DebugPoint,
   type DependencyFilter,
   type DependencyLogLevel,
+  type LogLevel,
 } from "./debug-constants";
 import {
   clearDebugDisplayContent,
@@ -110,7 +111,12 @@ export const useDebug = (point?: DebugPoint) => {
 
   // Console logging with debug point context
   const log = useCallback(
-    (debugPoint: DebugPoint, message: string, data?: any) => {
+    (
+      debugPoint: DebugPoint,
+      message: string,
+      data?: any,
+      level: LogLevel = "info"
+    ) => {
       if (!isEnabled(debugPoint)) return;
 
       // SAFETY: Sanitize data to prevent browser freezing from heavy objects
@@ -158,7 +164,7 @@ export const useDebug = (point?: DebugPoint) => {
       // Store log entry with sanitized data
       const logEntry: DebugLogEntry = {
         timestamp: Date.now(),
-        level: "info",
+        level, // Use the passed level parameter
         point: debugPoint,
         message,
         data: sanitizedData,
@@ -179,14 +185,44 @@ export const useDebug = (point?: DebugPoint) => {
         const emoji = getDebugEmoji(debugPoint);
         const prefix = `${emoji} [${debugPoint}]`;
 
+        // Use appropriate console method based on log level
+        const consoleMethod =
+          level === "error" || level === "critical"
+            ? console.error
+            : level === "warn"
+              ? console.warn
+              : console.log;
+
         if (data !== undefined) {
-          console.log(prefix, message, data);
+          consoleMethod(prefix, message, data);
         } else {
-          console.log(prefix, message);
+          consoleMethod(prefix, message);
         }
       }
     },
     [isEnabled]
+  );
+
+  // Helper logging functions for different severity levels
+  const warn = useCallback(
+    (debugPoint: DebugPoint, message: string, data?: any) => {
+      log(debugPoint, message, data, "warn");
+    },
+    [log]
+  );
+
+  const error = useCallback(
+    (debugPoint: DebugPoint, message: string, data?: any) => {
+      log(debugPoint, message, data, "error");
+    },
+    [log]
+  );
+
+  const critical = useCallback(
+    (debugPoint: DebugPoint, message: string, data?: any) => {
+      log(debugPoint, message, data, "critical");
+    },
+    [log]
   );
 
   // Health snapshot function - captures comprehensive app metrics
@@ -289,6 +325,9 @@ export const useDebug = (point?: DebugPoint) => {
 
       // Logging functions
       log,
+      warn,
+      error,
+      critical,
       time,
       timeEnd,
 
@@ -319,6 +358,9 @@ export const useDebug = (point?: DebugPoint) => {
       isEnabled,
       showVisual,
       log,
+      warn,
+      error,
+      critical,
       time,
       timeEnd,
       enable,
