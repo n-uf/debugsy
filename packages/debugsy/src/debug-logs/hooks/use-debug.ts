@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   type DebugLogEntry,
   type DebugPoint,
@@ -82,19 +82,142 @@ function estimateDataSize(data: any): number {
   return 50; // Default fallback
 }
 
+// Cache for stable debug objects per debug point
+const stableDebugCache = new Map<DebugPoint | "global", StableDebugInterface>();
+
 /**
- * Centralized debug hook - now returns the unified surfaceDebug singleton
- * Provides granular control over different debug points without prop drilling
- * FIXED: Uses unified global debug system to prevent feedback loops
+ * Stable debug interface without problematic getters
+ * This interface provides the same functionality but with stable references
  */
-export const useDebug = (point?: DebugPoint): UnifiedSurfaceDebug => {
+interface StableDebugInterface {
+  // Core logging - same as UnifiedSurfaceDebug
+  log: (
+    point: DebugPoint,
+    message: string,
+    data?: any,
+    level?: "info" | "warn" | "error" | "critical" | "success"
+  ) => void;
+  warn: (point: DebugPoint, message: string, data?: any) => void;
+  error: (point: DebugPoint, message: string, data?: any) => void;
+  critical: (point: DebugPoint, message: string, data?: any) => void;
+  time: (point: DebugPoint, label: string) => void;
+  timeEnd: (point: DebugPoint, label: string) => void;
+
+  // State checking - converted from getters to methods
+  enabled: boolean; // Static value for this debug point
+  isEnabled: (point: DebugPoint) => boolean;
+  showVisual: (point: DebugPoint) => boolean;
+
+  // Control functions - same as UnifiedSurfaceDebug
+  enable: (point: DebugPoint) => void;
+  disable: (point: DebugPoint) => void;
+  toggle: (point: DebugPoint) => void;
+  enableAll: () => void;
+  disableAll: () => void;
+
+  // Configuration - same as UnifiedSurfaceDebug
+  setConsoleEnabled: (enabled: boolean) => void;
+  setVisualEnabled: (enabled: boolean) => void;
+  setPerformanceEnabled: (enabled: boolean) => void;
+
+  // Logs management - same as UnifiedSurfaceDebug
+  getLogs: () => any[];
+  clearLogs: () => void;
+
+  // Simplified state access without problematic getters
+  getDebugState: () => any;
+  getDependencyStatus: () => any;
+
+  // State property for compatibility with existing components
+  state: {
+    enabled: DebugPoint[];
+    console: boolean;
+    visual: boolean;
+    performance: boolean;
+  };
+}
+
+/**
+ * Create a stable debug interface for a specific debug point
+ */
+function createStableDebugInterface(
+  point: DebugPoint | "global"
+): StableDebugInterface {
   // Ensure unified system is initialized
   if (!globalThis.surfaceDebug) {
     initializeUnifiedDebugSystem();
   }
 
-  // Always return the same unified singleton instance - no React dependencies!
-  return globalThis.surfaceDebug;
+  const unified = globalThis.surfaceDebug;
+
+  // Create stable interface that delegates to unified system
+  const stable: StableDebugInterface = {
+    // Core logging - delegate to unified system
+    log: unified.log,
+    warn: unified.warn,
+    error: unified.error,
+    critical: unified.critical,
+    time: unified.time,
+    timeEnd: unified.timeEnd,
+
+    // State checking - compute enabled state once for this point
+    enabled: point === "global" ? unified.enabled : unified.isEnabled(point),
+    isEnabled: unified.isEnabled,
+    showVisual: unified.showVisual,
+
+    // Control functions - delegate to unified system
+    enable: unified.enable,
+    disable: unified.disable,
+    toggle: unified.toggle,
+    enableAll: unified.enableAll,
+    disableAll: unified.disableAll,
+
+    // Configuration - delegate to unified system
+    setConsoleEnabled: unified.setConsoleEnabled,
+    setVisualEnabled: unified.setVisualEnabled,
+    setPerformanceEnabled: unified.setPerformanceEnabled,
+
+    // Logs management - delegate to unified system
+    getLogs: unified.getLogs,
+    clearLogs: unified.clearLogs,
+
+    // Simplified state access - delegate to unified system methods
+    getDebugState: unified.getDebugState,
+    getDependencyStatus: unified.getDependencyStatus,
+
+    // State property for compatibility with existing components
+    // Get snapshot of current state at creation time to avoid getter instability
+    state: {
+      enabled: Array.from(getGlobalDebugState().enabled),
+      console: getGlobalDebugState().console,
+      visual: getGlobalDebugState().visual,
+      performance: getGlobalDebugState().performance,
+    },
+  };
+
+  return stable;
+}
+
+/**
+ * Centralized debug hook - now returns stable debug interfaces per point
+ * FIXED: Returns stable objects without problematic getters for React dependencies
+ */
+export const useDebug = (point: DebugPoint = "all"): StableDebugInterface => {
+  // Use useMemo to ensure the same object is returned for the same point
+  return useMemo(() => {
+    // Check cache first
+    if (stableDebugCache.has(point)) {
+      return stableDebugCache.get(point)!;
+    }
+
+    // Create new stable interface
+    const stable = createStableDebugInterface(point);
+
+    // Cache it
+    stableDebugCache.set(point, stable);
+
+    return stable;
+  }, [point]);
 };
 
 // REMOVED: All the old initializeGlobalDebugManager code - now handled by unified system
