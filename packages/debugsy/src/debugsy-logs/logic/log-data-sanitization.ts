@@ -23,6 +23,37 @@ const COMPILED_CODE_PATTERNS = {
 } as const;
 
 /**
+ * Safely sanitize React elements to extract useful information
+ * without the problematic $$typeof symbols and circular references
+ */
+const sanitizeReactElement = (element: any): any => {
+  if (!element || typeof element !== "object") {
+    return element;
+  }
+
+  // If it's a React element, extract safe information
+  if (element.hasOwnProperty("$$typeof") || element.hasOwnProperty("_owner")) {
+    const safeName =
+      typeof element.type === "function"
+        ? `[Function: ${element.type.name || "Anonymous"}]`
+        : typeof element.type === "string"
+          ? element.type
+          : "[Unknown React Element]";
+
+    return {
+      __isReactElement: true,
+      type: safeName,
+      // Recursively sanitize props, but avoid _owner and other problematic properties
+      props: element.props ? sanitizeLogData(element.props) : undefined,
+      key: element.key,
+      // Skip: $$typeof, _owner, _store (these cause the issues)
+    };
+  }
+
+  return element;
+};
+
+/**
  * Primary data sanitization using safe superjson
  * UNIFIED: Uses safeSuperjsonStringify for consistent handling of problematic objects
  */
@@ -34,6 +65,14 @@ export const sanitizeLogData = (data: unknown): unknown => {
   // For primitive types, return as-is
   if (typeof data !== "object") {
     return data;
+  }
+
+  // Handle React elements before superjson processing
+  if (isProblematicData(data)) {
+    const sanitized = sanitizeReactElement(data);
+    if (sanitized !== data) {
+      return sanitized;
+    }
   }
 
   try {
@@ -63,11 +102,29 @@ const isProblematicData = (data: any): boolean => {
   if (!data || typeof data !== "object") return false;
 
   try {
+    // Check for React elements with $$typeof symbol (the main culprit!)
+    if (
+      data.hasOwnProperty("$$typeof") ||
+      data.hasOwnProperty("_owner") ||
+      data.hasOwnProperty("_store")
+    ) {
+      return true;
+    }
+
     // Check for React Fiber properties (these create circular references)
     if (
       data.hasOwnProperty("__reactFiber$") ||
       data.hasOwnProperty("__reactInternalInstance") ||
       data.hasOwnProperty("_reactInternalFiber")
+    ) {
+      return true;
+    }
+
+    // Check for React element-like structures
+    if (
+      data.type &&
+      (typeof data.type === "function" || typeof data.type === "string") &&
+      data.props !== undefined
     ) {
       return true;
     }
