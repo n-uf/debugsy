@@ -295,7 +295,7 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
                 getLogEntryBackgroundColor(index),
               borderLeft: computedProps.severityStyle.borderLeft,
               boxShadow: computedProps.severityStyle.boxShadow,
-              cursor: computedProps.shouldShowExpand ? "pointer" : "copy",
+              cursor: computedProps.shouldShowExpand ? "pointer" : "text",
               transition: "all 0.2s ease",
               position: "relative",
               // Add subtle visual feedback for copy state

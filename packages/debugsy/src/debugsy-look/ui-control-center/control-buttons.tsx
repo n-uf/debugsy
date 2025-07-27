@@ -1,16 +1,31 @@
 "use client";
 
 import React from "react";
-import { type DebugPoint } from "../../debugsy-shared/debug-constants";
+import {
+  type DebugPoint,
+  DEBUG_POINT_CONFIG,
+} from "../../debugsy-shared/debug-point-config";
 
-export interface DebugPointConfig {
+export interface DebugPointButtonConfig {
   key: DebugPoint;
   emoji: string;
   label: string;
 }
 
+/**
+ * Transform debug point config for button components
+ * Converts centralized config to button-specific format
+ */
+export const getDebugPointsForButtons = (pointKeys: DebugPoint[]) => {
+  return pointKeys.map((key) => ({
+    key,
+    emoji: DEBUG_POINT_CONFIG[key].emoji,
+    label: DEBUG_POINT_CONFIG[key].label,
+  }));
+};
+
 export interface DebugPointButtonsProps {
-  debugPoints: DebugPointConfig[];
+  debugPoints: DebugPointButtonConfig[];
   isEnabled: (point: DebugPoint) => boolean;
   onToggle: (point: DebugPoint) => void;
   className?: string;
@@ -18,7 +33,7 @@ export interface DebugPointButtonsProps {
 
 // Memoized individual button component to prevent unnecessary re-renders
 const DebugPointButton = React.memo<{
-  point: DebugPointConfig;
+  point: DebugPointButtonConfig;
   enabled: boolean;
   onToggle: (point: DebugPoint) => void;
 }>(({ point, enabled, onToggle }) => (
@@ -61,7 +76,7 @@ export const DebugPointButtons: React.FC<DebugPointButtonsProps> = ({
   const firstRow = debugPoints.slice(0, midPoint);
   const secondRow = debugPoints.slice(midPoint);
 
-  const renderButtons = (points: DebugPointConfig[]) =>
+  const renderButtons = (points: DebugPointButtonConfig[]) =>
     points.map((point) => (
       <DebugPointButton
         key={point.key}

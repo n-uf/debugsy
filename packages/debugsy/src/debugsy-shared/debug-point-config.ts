@@ -12,8 +12,10 @@
 export interface DebugPointConfig {
   emoji: string;
   description: string;
-  category: "core" | "interaction" | "performance" | "legacy" | "system";
+  label: string; // Short display name for UI
+  category: "core" | "interaction" | "performance" | "system";
   priority?: number; // For interaction handlers
+  look?: boolean; // Whether to show in main control panel (defaults to true for non-system)
 }
 
 /**
@@ -26,126 +28,138 @@ export const DEBUG_POINT_CONFIG = {
   dispatcher: {
     emoji: "🎯",
     description: "Central mouse event dispatcher coordination",
+    label: "Dispatcher",
     category: "core" as const,
+    look: true,
   },
   "hit-testing": {
     emoji: "🔍",
     description: "Priority-based hit test routing & decisions",
+    label: "Hit Test",
     category: "core" as const,
+    look: true,
   },
   routing: {
     emoji: "🔗",
     description: "Event routing decisions with conflict resolution",
+    label: "Routing",
     category: "core" as const,
+    look: true,
   },
 
   // Surface & Components
   surface: {
     emoji: "🌍",
     description: "Surface component lifecycle",
+    label: "Surface",
     category: "core" as const,
+    look: true,
   },
   "surface-interactions": {
     emoji: "🏠",
     description: "Surface component coordination",
+    label: "Surface.io",
     category: "core" as const,
+    look: true,
   },
   "surface-dock": {
     emoji: "🚢",
     description: "SurfaceDock component lifecycle",
+    label: "Dock",
     category: "core" as const,
+    look: true,
   },
 
   // Interactions (with priorities)
   "surface-interaction": {
     emoji: "🌍",
     description: "Viewport pan/zoom interactions",
+    label: "Viewport",
     category: "interaction" as const,
     priority: 999,
+    look: false, // Advanced/specialized
   },
   "frame-interaction": {
     emoji: "📦",
     description: "Frame drag/resize interactions",
+    label: "Frame",
     category: "interaction" as const,
     priority: 2,
+    look: true,
   },
   "selection-interaction": {
     emoji: "📋",
     description: "Multi-frame selection system",
+    label: "Selection",
     category: "interaction" as const,
     priority: 998,
+    look: true,
   },
 
   // Registry & Management
   "handler-registry": {
     emoji: "📝",
     description: "Handler registration/unregistration lifecycle",
+    label: "Registry",
     category: "core" as const,
+    look: true,
   },
   "frame-metrics": {
     emoji: "📏",
     description: "Frame positioning and sizing state",
+    label: "Metrics",
     category: "core" as const,
+    look: false, // Specialized/verbose
   },
 
   // Performance & Monitoring
   performance: {
     emoji: "⚡",
     description: "Event throughput, timing, and efficiency",
+    label: "Perf",
     category: "performance" as const,
+    look: true,
   },
   dependencies: {
     emoji: "🧠",
     description: "React hook dependency tracking and optimization",
+    label: "Deps",
     category: "performance" as const,
+    look: false, // Specialized debugging
   },
   health: {
     emoji: "🏥",
     description: "System health snapshots and metrics - always enabled",
+    label: "Health",
     category: "system" as const,
+    look: false, // Always enabled, no need for button
   },
 
   // Visual & Debug
   "visual-debug": {
     emoji: "👁️",
     description: "Visual debug overlays and priority zones",
+    label: "Visual",
     category: "system" as const,
-  },
-
-  // Legacy (Canvas Events)
-  "canvas-events": {
-    emoji: "🎨",
-    description: "Canvas-level event handling (legacy)",
-    category: "legacy" as const,
-  },
-  "viewport-changes": {
-    emoji: "🔍",
-    description: "Viewport scale/offset changes (legacy)",
-    category: "legacy" as const,
-  },
-  "auto-layout": {
-    emoji: "📐",
-    description: "Auto-layout calculations",
-    category: "legacy" as const,
-  },
-  "event-propagation": {
-    emoji: "📡",
-    description: "Event bubbling and propagation (legacy)",
-    category: "legacy" as const,
+    look: true,
   },
 
   // Aliases
   "mouse-dispatcher": {
     emoji: "🖱️",
     description: "Event dispatcher system (alias for dispatcher)",
+    label: "MouseDisp",
     category: "core" as const,
+    look: false, // Alias, use main dispatcher instead
   },
 
   // Special
   all: {
     emoji: "🚀",
     description: "Enable all debug points",
+    label: "All",
     category: "system" as const,
+    look: false, // Special control, handled separately
   },
 } as const;
 
@@ -154,3 +168,28 @@ export const DEBUG_POINT_CONFIG = {
  * 🎯 SINGLE SOURCE OF TRUTH: Add/remove debug points in DEBUG_POINT_CONFIG only!
  */
 export type DebugPoint = keyof typeof DEBUG_POINT_CONFIG;
+
+/**
+ * Get debug points by category for organized display
+ */
+export const getDebugPointsByCategory = (
+  category: DebugPointConfig["category"]
+) => {
+  return Object.entries(DEBUG_POINT_CONFIG)
+    .filter(([_, config]) => config.category === category)
+    .map(([key, _]) => key as DebugPoint);
+};
+
+/**
+ * Get debug points that should be shown in the control panel
+ * Uses the look flag with smart defaults
+ */
+export const getLookDebugPoints = (): DebugPoint[] => {
+  return Object.entries(DEBUG_POINT_CONFIG)
+    .filter(([_, config]) => {
+      // Default: show if not explicitly set to false and not system category
+      const defaultShow = config.category !== "system";
+      return config.look ?? defaultShow;
+    })
+    .map(([key, _]) => key as DebugPoint);
+};

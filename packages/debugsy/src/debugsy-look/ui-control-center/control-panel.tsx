@@ -3,9 +3,10 @@
 import React, { useMemo, useState } from "react";
 import { useDebugSubscription } from "../../debugsy-logs/hooks/debug-notifications";
 import { useDebugsy } from "../../debugsy-logs/hooks/use-debugsy";
+import { getLookDebugPoints } from "../../debugsy-shared/debug-point-config";
 import { DebugDependencyControls } from "../ui-dependency/dependency-controls";
 import { DebugDisplayPanel } from "../ui-display/debug-display-panel";
-import { DebugPointButtons, type DebugPointConfig } from "./control-buttons";
+import { DebugPointButtons, getDebugPointsForButtons } from "./control-buttons";
 
 export interface DebugControlPanelProps {
   className?: string;
@@ -18,21 +19,6 @@ export interface DebugControlPanelProps {
   onDisplayClick?: () => void;
   showDependencyControls?: boolean;
 }
-
-// Event Dispatcher Architecture debug points
-const DEBUG_POINTS: DebugPointConfig[] = [
-  { key: "dispatcher", emoji: "🎯", label: "Dispatcher" },
-  { key: "hit-testing", emoji: "🔍", label: "Hit Test" },
-  { key: "routing", emoji: "🔗", label: "Routing" },
-  { key: "surface", emoji: "🌍", label: "Surface" },
-  { key: "surface-interactions", emoji: "🌍", label: "Surface.io" },
-  { key: "frame-interaction", emoji: "📦", label: "Frame" },
-  { key: "selection-interaction", emoji: "📋", label: "Selection" },
-  { key: "handler-registry", emoji: "📝", label: "Registry" },
-  { key: "performance", emoji: "⚡", label: "Perf" },
-  { key: "visual-debug", emoji: "👁️", label: "Visual" },
-  { key: "surface-dock", emoji: "🚢", label: "Dock" },
-];
 
 /**
  * Debug Control Panel - Clean, minimal toolbar with modular components
@@ -52,6 +38,12 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   useDebugSubscription();
 
   const debug = useDebugsy();
+
+  // Get debug points for control panel from centralized config
+  const debugPoints = useMemo(
+    () => getDebugPointsForButtons(getLookDebugPoints()),
+    []
+  );
 
   // PERFORMANCE FIX: Memoize expensive operations to prevent cascade re-renders
   const expensiveState = useMemo(
@@ -83,7 +75,7 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
         <div className="flex items-start gap-4 px-4 py-1">
           {/* Debug Points - Optimized with stable props */}
           <DebugPointButtons
-            debugPoints={DEBUG_POINTS}
+            debugPoints={debugPoints}
             isEnabled={debugPointProps.isEnabled}
             onToggle={debugPointProps.onToggle}
           />
