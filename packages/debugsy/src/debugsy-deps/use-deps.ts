@@ -25,9 +25,9 @@
  */
 
 import { useEffect, useRef } from "react";
-import { logWarnToDebugSystem } from "./dependency-logger";
-import { getDepsSettings } from "./dependency-settings";
-import { analyzeChanges, logDependencyChanges } from "./dependency-utilities";
+import { logWarnToDebugSystem } from "./deps-logger";
+import { getDepsSettings } from "./deps-settings";
+import { analyzeChanges, logDependencyChanges } from "./logic/change-utils";
 
 /**
  * Enhanced dependency tracking that respects unified debug controls

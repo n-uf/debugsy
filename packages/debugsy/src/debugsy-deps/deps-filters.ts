@@ -8,8 +8,8 @@
  * - Emergency stop and initialization-aware logic
  */
 
-import { initializationPhase } from "./change-tracking";
-import { getDepsSettings } from "./dependency-settings";
+import { getDepsSettings } from "./deps-settings";
+import { initializationPhase } from "./logic/change-tracking";
 
 /**
  * Enhanced shouldLogDependency function using unified state

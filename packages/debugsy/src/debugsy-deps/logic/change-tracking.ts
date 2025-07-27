@@ -7,7 +7,7 @@
  * - Pattern analysis for detecting render loops and unstable dependencies
  */
 
-import { logToDebugSystem } from "./dependency-logger";
+import { logToDebugSystem } from "../deps-logger";
 
 export interface ChangeTrackingInfo {
   count: number;

@@ -8,14 +8,14 @@
  * - Structured change logging with severity detection
  */
 
+import { shouldLogDependency } from "../deps-filters";
+import { logToDebugSystem, logWarnToDebugSystem } from "../deps-logger";
+import { getDepsSettings } from "../deps-settings";
 import {
   initializationPhase,
   trackDependencyChange,
   type ChangeTrackingInfo,
 } from "./change-tracking";
-import { shouldLogDependency } from "./dependency-filters";
-import { logToDebugSystem, logWarnToDebugSystem } from "./dependency-logger";
-import { getDepsSettings } from "./dependency-settings";
 
 /**
  * Change information for a single prop

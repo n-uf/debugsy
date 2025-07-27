@@ -21,7 +21,7 @@
  */
 
 // Core dependency tracking functionality
-export { useRenderTracker, useWhyDidYouUpdate } from "./debug-deps";
+export { useRenderTracker, useWhyDidYouUpdate } from "./use-deps";
 
 // Logging system
 export {
@@ -29,23 +29,23 @@ export {
   logErrorToDebugSystem,
   logToDebugSystem,
   logWarnToDebugSystem,
-} from "./dependency-logger";
+} from "./deps-logger";
 
 // State management
 export {
   getDepsSettings as getDependencyState,
   type DepsSettings as DependencyState,
-} from "./dependency-settings";
+} from "./deps-settings";
 
 // Change tracking and frequency detection
 export {
   initializationPhase,
   trackDependencyChange,
   type ChangeTrackingInfo,
-} from "./change-tracking";
+} from "./logic/change-tracking";
 
 // Filtering logic
-export { shouldLogDependency } from "./dependency-filters";
+export { shouldLogDependency } from "./deps-filters";
 
 // Utility functions for change analysis and logging
 export {
@@ -55,7 +55,7 @@ export {
   logDependencyChanges,
   logPropChange,
   type PropChange,
-} from "./dependency-utilities";
+} from "./logic/change-utils";
 
 // UI state management and controls (for backward compatibility)
 // Re-export the dependency state management functionality
