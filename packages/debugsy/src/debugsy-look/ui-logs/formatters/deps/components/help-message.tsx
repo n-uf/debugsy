@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { DependencyLogType } from "../../../../../debugsy-space/debugsy-point";
+import type { LogType } from "../../../../../debugsy-space/debugsy-point";
 import { SHARED_TOKENS } from "../../shared-tokens";
 
 /**
  * Compact engineering-focused help message component
  */
 export const CompactHelpMessage: React.FC<{
-  logType: DependencyLogType | "unknown";
+  logType: LogType | "unknown";
 }> = React.memo(({ logType }) => {
   // Memoize help content based on log type
   const helpContent = useMemo(() => {

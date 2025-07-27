@@ -27,11 +27,96 @@
 import { useEffect, useRef } from "react";
 import { logWarnToDebugSystem } from "./deps-logger";
 import { getDepsSettings } from "./deps-settings";
-import { analyzeChanges } from "./logic/change-utils";
+import { analyzeChanges, logDependencyChanges } from "./logic/change-utils";
+
+// Global render rate notification system
+let renderRateNotifier: {
+  lastNotification: number;
+  notificationCooldown: number; // Prevent spam notifications
+} = {
+  lastNotification: 0,
+  notificationCooldown: 3000, // 3 seconds between notifications
+};
+
+/**
+ * Render Rate Notifier - Shows UI notifications for excessive re-rendering
+ * Integrates with debug display system to provide visual feedback
+ */
+function notifyHighRenderRate(
+  componentName: string,
+  renderCount: number,
+  timeElapsed: number,
+  renderRate: number,
+  threshold: number
+): void {
+  const now = Date.now();
+
+  // Respect cooldown to prevent notification spam
+  if (
+    now - renderRateNotifier.lastNotification <
+    renderRateNotifier.notificationCooldown
+  ) {
+    return;
+  }
+
+  renderRateNotifier.lastNotification = now;
+
+  // Try to use debug display system for UI notification
+  try {
+    // Dynamic import to avoid circular dependencies
+    const {
+      setDebugDisplayContent,
+    } = require("../debugsy-look/ui-display/debug-display-state");
+
+    const severity = renderRate > threshold * 3 ? "error" : "warning";
+    const emoji = severity === "error" ? "🚨" : "⚠️";
+
+    setDebugDisplayContent({
+      message: `${emoji} HIGH RENDER RATE DETECTED!
+Component: ${componentName}
+Rate: ${renderRate.toFixed(1)} renders/sec
+Count: ${renderCount} renders in ${timeElapsed}ms
+Threshold: ${threshold} renders
+
+💡 This may indicate a render loop or unstable dependencies.`,
+      type: severity,
+      duration: 8000, // Auto-clear after 8 seconds
+    });
+
+    console.warn(
+      `🚨 RENDER RATE NOTIFIER: ${componentName} - ${renderRate.toFixed(1)} renders/sec`
+    );
+  } catch (error) {
+    // Fallback if display system unavailable
+    console.warn(
+      `🚨 HIGH RENDER RATE: ${componentName} - ${renderRate.toFixed(1)} renders/sec (${renderCount} in ${timeElapsed}ms)`
+    );
+  }
+}
+
+// Interface for dependency change information
+export interface DependencyChangeInfo {
+  changesCount: number;
+  hasFrequentChanges: boolean;
+  changeTypes: Array<"function" | "object" | "primitive">;
+  frequentChangeTypes: Array<"function" | "object" | "primitive">;
+}
+
+// Interface for render rate information
+export interface RenderRateInfo {
+  renderCount: number;
+  timeElapsed: number;
+  renderRate: number;
+  threshold: number;
+  isExcessive: boolean;
+  alertsTriggered: number;
+}
 
 /**
  * Enhanced deps tracking that respects unified debug controls
  * REFACTORED: Extracted complex utility logic for better maintainability
+ * FIXED: Rules of Hooks violation - all hooks now called unconditionally
+ * ENHANCED: Returns dependency change information and accepts callback
  *
  * Features:
  * - Smart frequency detection with initialization-aware logic
@@ -39,38 +124,47 @@ import { analyzeChanges } from "./logic/change-utils";
  * - Detailed change analysis with type discrimination
  * - Performance-conscious throttling
  * - Clean separation between React logic and analysis utilities
+ * - Returns change information for caller to handle
  */
 export function useWhyDidYouUpdate(
   name: string,
-  props: Record<string, any>
-): void {
-  // ALWAYS call hooks first - never conditionally skip them
+  props: Record<string, any>,
+  onFrequentChanges?: (info: DependencyChangeInfo) => void
+): DependencyChangeInfo {
+  // ✅ ALWAYS call ALL hooks first - never conditionally skip them
   const previousProps = useRef<Record<string, any> | undefined>(undefined);
   const lastLogTime = useRef(0);
+  const changeInfo = useRef<DependencyChangeInfo>({
+    changesCount: 0,
+    hasFrequentChanges: false,
+    changeTypes: [],
+    frequentChangeTypes: [],
+  });
 
-  // Get current deps state - AFTER hooks are called
-  const depsState = getDepsSettings();
-
-  // Early return if deps tracking disabled - but AFTER calling hooks
-  if (
-    !depsState.enabled ||
-    !props ||
-    typeof props !== "object" ||
-    Object.keys(props).length === 0
-  ) {
-    return;
-  }
-
-  // Throttling check using current state
-  const now = Date.now();
-  const currentDepsState = getDepsSettings();
-
-  // Respect throttling settings from current state
-  if (now - lastLogTime.current < currentDepsState.throttleMs) {
-    return;
-  }
-
+  // ✅ RULES OF HOOKS FIX: useEffect MUST always be called - move conditions inside
   useEffect(() => {
+    // Get current deps state inside effect
+    const depsState = getDepsSettings();
+
+    // Early return if deps tracking disabled - but INSIDE the effect
+    if (
+      !depsState.enabled ||
+      !props ||
+      typeof props !== "object" ||
+      Object.keys(props).length === 0
+    ) {
+      return;
+    }
+
+    // Throttling check using current state
+    const now = Date.now();
+    const currentDepsState = getDepsSettings();
+
+    // Respect throttling settings from current state
+    if (now - lastLogTime.current < currentDepsState.throttleMs) {
+      return;
+    }
+
     // Skip on first render (no previous props to compare)
     if (previousProps.current === undefined) {
       previousProps.current = props;
@@ -78,40 +172,92 @@ export function useWhyDidYouUpdate(
     }
 
     // Use extracted utility for change analysis and logging
-    analyzeChanges(name, previousProps.current, props);
+    const changes = analyzeChanges(name, previousProps.current, props);
+
+    if (changes.length > 0) {
+      logDependencyChanges(name, changes);
+
+      // Update change information
+      const changeTypes = changes.map((change) => change.type);
+      const frequentChanges = changes.filter((change) => !change.isStable);
+      const frequentChangeTypes = frequentChanges.map((change) => change.type);
+      const hasFrequentChanges = frequentChanges.length > 0;
+
+      changeInfo.current = {
+        changesCount: changes.length,
+        hasFrequentChanges,
+        changeTypes,
+        frequentChangeTypes,
+      };
+
+      // Call callback if frequent changes detected
+      if (hasFrequentChanges && onFrequentChanges) {
+        onFrequentChanges(changeInfo.current);
+      }
+    }
 
     // Update for next render
     previousProps.current = props;
     lastLogTime.current = now;
-  });
+  }); // Note: No dependency array to run on every render
+
+  return changeInfo.current;
 }
 
 /**
- * Simplified render tracking hook
- * Tracks render frequency and logs warnings for excessive renders
+ * Enhanced render tracking hook with UI notifications and callback support
+ * Tracks render frequency and provides callback when excessive renders detected
+ * FIXED: Rules of Hooks violation - all hooks now called unconditionally
+ * ENHANCED: Added callback support and return value for render rate info
  */
 export function useRenderTracker(
   componentName: string,
-  threshold: number = 10
-): void {
-  // Hook calls first
+  threshold: number = 10,
+  onExcessiveRenders?: (info: RenderRateInfo) => void
+): RenderRateInfo {
+  // ✅ ALWAYS call ALL hooks first - never conditionally skip them
   const renderCount = useRef(0);
   const startTime = useRef<number>(Date.now());
+  const alertsTriggered = useRef(0);
+  const renderInfo = useRef<RenderRateInfo>({
+    renderCount: 0,
+    timeElapsed: 0,
+    renderRate: 0,
+    threshold,
+    isExcessive: false,
+    alertsTriggered: 0,
+  });
 
-  // State check after hooks
-  const depsState = getDepsSettings();
-  if (!depsState.enabled) {
-    return;
-  }
-
+  // ✅ RULES OF HOOKS FIX: useEffect MUST always be called - move conditions inside
   useEffect(() => {
+    // Get current deps state inside effect
+    const depsState = getDepsSettings();
+
+    // Early return if deps tracking disabled - but INSIDE the effect
+    if (!depsState.enabled) {
+      return;
+    }
+
     renderCount.current += 1;
+    const timeElapsed = Date.now() - startTime.current;
+    const renderRate = renderCount.current / (timeElapsed / 1000);
+
+    // Update render info
+    renderInfo.current = {
+      renderCount: renderCount.current,
+      timeElapsed,
+      renderRate,
+      threshold,
+      isExcessive: renderCount.current >= threshold,
+      alertsTriggered: alertsTriggered.current,
+    };
 
     // Log warning if excessive renders detected
     if (renderCount.current >= threshold) {
-      const timeElapsed = Date.now() - startTime.current;
-      const renderRate = renderCount.current / (timeElapsed / 1000);
+      alertsTriggered.current += 1;
+      renderInfo.current.alertsTriggered = alertsTriggered.current;
 
+      // Console logging
       logWarnToDebugSystem(
         `${componentName} has rendered ${renderCount.current} times in ${timeElapsed}ms (${renderRate.toFixed(
           2
@@ -125,9 +271,31 @@ export function useRenderTracker(
         }
       );
 
+      // 🚨 UI Notification System for high render rates
+      notifyHighRenderRate(
+        componentName,
+        renderCount.current,
+        timeElapsed,
+        renderRate,
+        threshold
+      );
+
+      // 🔔 NEW: Callback support for external handling
+      if (onExcessiveRenders) {
+        onExcessiveRenders(renderInfo.current);
+      }
+
       // Reset counter to prevent spam
       renderCount.current = 0;
       startTime.current = Date.now();
     }
-  });
+  }); // Note: No dependency array to run on every render
+
+  return renderInfo.current;
 }
+
+/**
+ * Export render rate notifier for external use
+ * Allows other components to trigger render rate notifications
+ */
+export { notifyHighRenderRate };
