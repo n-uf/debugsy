@@ -16,15 +16,14 @@ export {
 } from "./dependency-expansion-formatter";
 
 export {
-  formatTime,
-  formatValue,
-  getHealthLogMeta,
   HealthExpansionContent,
+  formatTime,
+  getHealthLogMeta,
 } from "./health-expansion-formatter";
 
 export {
-  getSanitizedDataLogMeta,
   SanitizedDataExpansionContent,
+  getSanitizedDataLogMeta,
 } from "./sanitized-data-expansion-formatter";
 
 // Formatter system
