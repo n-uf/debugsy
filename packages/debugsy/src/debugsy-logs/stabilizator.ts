@@ -1,54 +1,25 @@
-import { useMemo } from "react";
-import {
-  type DebugLogEntry,
-  type DebugPoint,
-} from "../../debugsy-space/debugsy-constants";
-import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
-import {
-  clearDebugDisplayContent,
-  setDebugDisplayContent,
-} from "../hooks/debug-notifications";
-import {
-  type HealthMetrics,
-  type HealthSnapshotConfig,
-} from "../hooks/health-snapshot";
-
-// Import the unified system
-import {
-  initializeDebugsySpace,
-  type DebugsySpace,
-} from "../../debugsy-space/debugsy-space";
-
-// Re-export types for backward compatibility
-export type { DebugLogEntry, DebugPoint };
-
 /**
- * Global type declarations to properly type globalThis extensions
+ * Debugsy Stabilizator
+ *
+ * RESPONSIBILITY: Provides stable, React-safe interfaces to the debugsy system
+ * - Eliminates problematic getters that cause React dependency instability
+ * - Provides caching for stable object references
+ * - Converts dynamic properties to static snapshots for React components
+ *
+ * The "Stabilizator" name reflects its core purpose: stabilizing dynamic debugsy
+ * interfaces for safe use in React dependency arrays and memoization.
  */
-declare global {
-  var __SURFACE_DEBUG_MANAGER: DebugsySpace | undefined;
-  var __DEBUGSY_EMERGENCY_STOP: {
-    active: boolean;
-    activate: () => void;
-    deactivate: () => void;
-    status: () => void;
-  };
-  var __debugsySanitizationLogged: boolean | undefined;
-  // REMOVED: var surfaceDebug - now handled by unified system
-}
 
-// Cache for stable debugsy objects per debug point
-const stableDebugsyCache = new Map<
-  DebugPoint | "global",
-  StableDebugsyInterface
->();
+import { type DebugPoint } from "../debugsy-space/debugsy-constants";
+import { initializeDebugsySpace } from "../debugsy-space/debugsy-space";
+import { getGlobalDebugState } from "../debugsy-space/debugsy-space-settings";
 
 /**
  * Stable debugsy interface without problematic getters
  * This interface provides the same functionality but with stable references
  */
-interface StableDebugsyInterface {
-  // Core logging - same as UnifiedSurfaceDebug
+export interface StableDebugsyInterface {
+  // Core logging - same as DebugsySpace
   log: (
     point: DebugPoint,
     message: string,
@@ -66,19 +37,19 @@ interface StableDebugsyInterface {
   isEnabled: (point: DebugPoint) => boolean;
   showVisual: (point: DebugPoint) => boolean;
 
-  // Control functions - same as UnifiedSurfaceDebug
+  // Control functions - same as DebugsySpace
   enable: (point: DebugPoint) => void;
   disable: (point: DebugPoint) => void;
   toggle: (point: DebugPoint) => void;
   enableAll: () => void;
   disableAll: () => void;
 
-  // Configuration - same as UnifiedSurfaceDebug
+  // Configuration - same as DebugsySpace
   setConsoleEnabled: (enabled: boolean) => void;
   setVisualEnabled: (enabled: boolean) => void;
   setPerformanceEnabled: (enabled: boolean) => void;
 
-  // Logs management - same as UnifiedSurfaceDebug
+  // Logs management - same as DebugsySpace
   getLogs: () => any[];
   clearLogs: () => void;
 
@@ -94,6 +65,12 @@ interface StableDebugsyInterface {
     performance: boolean;
   };
 }
+
+// Cache for stable debugsy objects per debug point
+const stableDebugsyCache = new Map<
+  DebugPoint | "global",
+  StableDebugsyInterface
+>();
 
 /**
  * Create a stable debugsy interface for a specific debug point
@@ -158,35 +135,37 @@ function createStableDebugsyInterface(
 }
 
 /**
- * Centralized debugsy hook - now returns stable debugsy interfaces per point
- * FIXED: Returns stable objects without problematic getters for React dependencies
+ * Get or create a stable debugsy interface for a specific debug point
+ * Uses caching to ensure the same object reference is returned for the same point
  */
-export const useDebugsy = (
-  point: DebugPoint = "all"
-): StableDebugsyInterface => {
-  // Use useMemo to ensure the same object is returned for the same point
-  return useMemo(() => {
-    // Check cache first
-    if (stableDebugsyCache.has(point)) {
-      return stableDebugsyCache.get(point)!;
-    }
+export function getStableDebugsyInterface(
+  point: DebugPoint | "global" = "all"
+): StableDebugsyInterface {
+  // Check cache first
+  if (stableDebugsyCache.has(point)) {
+    return stableDebugsyCache.get(point)!;
+  }
 
-    // Create new stable interface
-    const stable = createStableDebugsyInterface(point);
+  // Create new stable interface
+  const stable = createStableDebugsyInterface(point);
 
-    // Cache it
-    stableDebugsyCache.set(point, stable);
+  // Cache it
+  stableDebugsyCache.set(point, stable);
 
-    return stable;
-  }, [point]);
-};
+  return stable;
+}
 
-// REMOVED: All the old initializeGlobalDebugManager code - now handled by unified system
+/**
+ * Clear the stable debugsy cache
+ * Useful for testing or when the underlying system changes significantly
+ */
+export function clearStableDebugsyCache(): void {
+  stableDebugsyCache.clear();
+}
 
-// Re-export utilities
-export {
-  clearDebugDisplayContent,
-  setDebugDisplayContent,
-  type HealthMetrics,
-  type HealthSnapshotConfig,
-};
+/**
+ * Get cache size for debugging/monitoring
+ */
+export function getStableDebugsyCacheSize(): number {
+  return stableDebugsyCache.size;
+}

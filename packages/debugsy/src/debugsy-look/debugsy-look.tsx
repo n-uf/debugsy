@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useDebugSubscription } from "../debugsy-logs/hooks/debug-notifications";
-import { useDebugsy } from "../debugsy-logs/hooks/use-debugsy";
+import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import { DebugControlPanel } from "./ui-control-center/control-panel";
 import { DebugPanelHeader } from "./ui-control-center/header";
 import { DebugPanelResizeHandle } from "./ui-control-center/resize-handle";

@@ -5,8 +5,8 @@ export {
 } from "./debugsy-look";
 export {
   DebugPointButtons,
+  type DebugPointButtonConfig,
   type DebugPointButtonsProps,
-  type DebugPointConfig,
 } from "./ui-control-center/control-buttons";
 export {
   DebugControlPanel,

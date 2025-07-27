@@ -5,7 +5,7 @@ import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
 } from "../../../debugsy-logs/hooks/debug-notifications";
-import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
 import { type DepthSetting } from "../../../shared/object-depth-utils";
 import {
   DEFAULT_COPY_CONFIG,

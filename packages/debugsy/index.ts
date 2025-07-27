@@ -14,8 +14,14 @@ export { useRenderTracker, useWhyDidYouUpdate } from "./src/debugsy-deps";
 // === DEBUG LOGGING SYSTEM ===
 export {
   captureHealthSnapshot,
+  sanitizeLogData,
+  useDebugSubscription,
+  useDebugsy,
+} from "./src/debugsy-logs";
+
+// === UI COMPONENTS ===
+export {
   DebugControlPanel,
-  DebugDependencyAdvancedControls,
   DebugDependencyControls,
   DebugDisplayPanel,
   DebugLogsList,
@@ -23,30 +29,35 @@ export {
   DebugPointButtons,
   DebugResizePresets,
   DebugStatsPanel,
-  DebugsyPanel,
-  sanitizeLogData,
-  useDebugSubscription,
-  useDebugsy,
-} from "./src/debugsy-logs";
+  Debugsy as DebugsyPanel,
+} from "./src/debugsy-look";
 
 // === LOG FORMATTERS ===
 export {
   DefaultLogFormatter,
   DependencyExpansionContent,
-  FORMATTER_REGISTRY,
-  getDependencyLogMeta,
-  getExpansionContent,
-  getHealthLogMeta,
-  getLogTypeMeta,
-  getRegisteredFormatterTypes,
-  getSanitizedDataLogMeta,
   HealthExpansionContent,
-  registerFormatter,
   SanitizedDataExpansionContent,
+} from "./src/debugsy-look/ui-logs/formatters";
+
+export {
+  FORMATTER_REGISTRY,
+  getExpansionContent,
+  getLogTypeMeta,
+  registerFormatter,
   type FormatterConfig,
   type FormatterMeta,
-  type LogSeverity,
-} from "./src/debugsy-logs";
+} from "./src/debugsy-look/ui-logs/formatters/formatter-routing";
+
+export { type LogSeverity } from "./src/debugsy-look/ui-logs/formatters/default-log-formatter";
+
+export { getDependencyLogMeta } from "./src/debugsy-look/ui-logs/formatters/deps";
+
+export { getHealthLogMeta } from "./src/debugsy-look/ui-logs/formatters/health-expansion-formatter";
+
+export { getSanitizedDataLogMeta } from "./src/debugsy-look/ui-logs/formatters/sanitized-data-expansion-formatter";
+
+export { getRegisteredFormatterTypes } from "./src/debugsy-look/ui-logs/formatters/formatter-routing";
 
 // === TYPE EXPORTS ===
 export type {
@@ -58,17 +69,19 @@ export type {
 // === COMPONENT PROP TYPES ===
 export type {
   DebugControlPanelProps,
-  DebugDependencyAdvancedControlsProps,
   DebugDependencyControlsProps,
   DebugDisplayPanelProps,
   DebugLogsListProps,
   DebugPanelHeaderProps,
+  DebugPointButtonConfig,
   DebugPointButtonsProps,
-  DebugPointConfig,
   DebugResizePresetsProps,
   DebugStatsPanelProps,
-  DebugsyPanelProps,
-} from "./src/debugsy-logs";
+  DebugsyProps as DebugsyPanelProps,
+} from "./src/debugsy-look";
+
+// === ADVANCED DEPENDENCY CONTROLS ===
+export type { DebugDependencyAdvancedControlsProps } from "./src/debugsy-look/ui-dependency/dependency-advanced-controls";
 
 // Object depth utilities
 export {

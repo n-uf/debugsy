@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
 import { formatTime } from "./health-expansion-formatter";
 
 /**

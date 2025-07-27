@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useDebugDisplayContent } from "../../debugsy-logs/hooks/debug-notifications";
-import type { DebugLogEntry } from "../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../debugsy-logs/use-debugsy";
 // Import unified debug point configuration
 import { getDebugPointEmoji } from "../../debugsy-space/debugsy-constants";
 

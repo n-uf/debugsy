@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
 import { type DepthSetting } from "../../../shared/object-depth-utils";
 import { DefaultLogFormatter } from "../formatters";
 

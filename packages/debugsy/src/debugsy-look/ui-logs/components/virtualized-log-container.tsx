@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
 import { type DepthSetting } from "../../../shared/object-depth-utils";
 import { MemoizedLogEntry } from "./memoized-log-entry";
 
