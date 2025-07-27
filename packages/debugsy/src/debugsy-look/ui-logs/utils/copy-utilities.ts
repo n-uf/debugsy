@@ -1,11 +1,11 @@
-import type { DebugLogEntry } from "../../../debugsy-shared/debug-constants";
+import type { DebugLogEntry } from "../../../debugsy-space/debugsy-constants";
 import {
   createObjectDiff,
   getDiffSummary,
   processObjectForDisplay,
   type DepthSetting,
   type DiffEntry,
-} from "../../../debugsy-shared/object-depth-utils";
+} from "../../../shared/object-depth-utils";
 import { DEFAULT_COPY_CONFIG } from "../config/copy-config";
 import { formatTime } from "../formatters";
 import { extractComponentName, getLogTypeMetadata } from "../formatters/deps";

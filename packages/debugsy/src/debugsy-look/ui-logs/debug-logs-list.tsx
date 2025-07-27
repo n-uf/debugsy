@@ -22,7 +22,7 @@ import {
 } from "./components";
 
 // Import object depth utilities
-import { type DepthSetting } from "../../debugsy-shared/object-depth-utils";
+import { type DepthSetting } from "../../shared/object-depth-utils";
 
 // Import extracted utilities and formatters
 import {

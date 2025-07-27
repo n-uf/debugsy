@@ -7,7 +7,7 @@
  */
 
 // Import unified debug point configuration
-import { getDebugPointEmoji } from "../../../debugsy-shared/debug-constants";
+import { getDebugPointEmoji } from "../../../debugsy-space/debugsy-constants";
 
 /**
  * Rendering configuration constants for debug logs
@@ -18,8 +18,8 @@ export const LOG_RENDERING_CONFIG = {
 } as const;
 
 /**
- * Get emoji for a debug point - unified function from debug-constants
- * @deprecated Use getDebugPointEmoji directly from debug-constants instead
+ * Get emoji for a debug point - unified function from debugsy-constants
+ * @deprecated Use getDebugPointEmoji directly from debugsy-constants instead
  */
 export const getPointEmoji = getDebugPointEmoji;
 

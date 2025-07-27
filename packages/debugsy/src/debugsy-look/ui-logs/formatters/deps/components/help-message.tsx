@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { DependencyLogType } from "../../../../../debugsy-shared/debug-point-config";
+import type { DependencyLogType } from "../../../../../debugsy-space/debugsy-point-config";
 import { SHARED_TOKENS } from "../../shared-tokens";
 
 /**

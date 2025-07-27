@@ -82,7 +82,7 @@ surfaceDebug.testDependencyTracking();
 // Expected output:
 // 🧪 Testing useWhyDidYouUpdate functionality...
 // ✅ Global surfaceDebug object found
-// ✅ getDependencyStatus method found
+// ✅ getDepsSettings method found
 // 📋 Current dependency status: { enabled: true, level: "normal", ... }
 // ✅ useWhyDidYouUpdate should now be working!
 ```

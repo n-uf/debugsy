@@ -1,5 +1,5 @@
 import React from "react";
-import type { DebugLogEntry } from "../../../debugsy-shared/debug-constants";
+import type { DebugLogEntry } from "../../../debugsy-space/debugsy-constants";
 import type { LogSeverity } from "./default-log-formatter";
 
 // Direct imports for all formatters - simple and performant

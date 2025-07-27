@@ -68,7 +68,7 @@ export function createEmergencyCommands(): EmergencyCommands {
     },
 
     status: () => {
-      const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
+      const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
       const emergencyActive =
         globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
 

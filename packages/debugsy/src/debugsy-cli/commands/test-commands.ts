@@ -35,18 +35,18 @@ export function createTestCommands(): TestCommands {
 
       console.log("✅ Global debugsy object found");
 
-      // Check if getDependencyStatus method exists
-      if (!globalThis.debugsySpace.getDependencyStatus) {
+      // Check if getDepsSettings method exists
+      if (!globalThis.debugsySpace.getDepsSettings) {
         console.log(`
-❌ TEST FAILED: getDependencyStatus method not found
+❌ TEST FAILED: getDepsSettings method not found
    The dependency tracking system is not properly initialized.
 `);
         return false;
       }
 
-      console.log("✅ getDependencyStatus method found");
+      console.log("✅ getDepsSettings method found");
 
-      const depStatus = globalThis.debugsySpace.getDependencyStatus();
+      const depStatus = globalThis.debugsySpace.getDepsSettings();
       console.log(`
 📊 CURRENT DEPENDENCY STATUS:
    Enabled: ${depStatus.enabled ? "✅ Yes" : "❌ No"}
@@ -57,7 +57,7 @@ export function createTestCommands(): TestCommands {
       // Test enabling dependency tracking
       console.log("🔄 Testing dependency tracking toggle...");
       globalThis.debugsySpace.deps.on();
-      const newStatus = globalThis.debugsySpace.getDependencyStatus();
+      const newStatus = globalThis.debugsySpace.getDepsSettings();
 
       console.log(`
 📊 UPDATED DEPENDENCY STATUS:
@@ -117,7 +117,7 @@ export function createTestCommands(): TestCommands {
       console.log("   ✅ Emergency stop deactivated");
 
       // Test dependency status
-      const depState = globalThis.debugsySpace?.getDependencyStatus?.();
+      const depState = globalThis.debugsySpace?.getDepsSettings?.();
 
       console.log(`
 📊 DEPENDENCY SYSTEM STATUS:`);

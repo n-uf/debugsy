@@ -7,7 +7,7 @@ import {
   type AllConfiguredLogTypes,
   type DebugPoint,
   type DebugPointConfig,
-} from "./debug-point-config";
+} from "./debugsy-point-config";
 
 // Re-export for external use
 export {
@@ -15,7 +15,7 @@ export {
   type DebugPoint,
   type DebugPointConfig,
   type DependencyLogType,
-} from "./debug-point-config";
+} from "./debugsy-point-config";
 
 /**
  * Get emoji for debug point category
@@ -23,28 +23,6 @@ export {
  */
 export function getDebugPointEmoji(point: DebugPoint): string {
   return DEBUG_POINT_CONFIG[point]?.emoji || "🔧";
-}
-
-/**
- * Get description for debug point
- */
-export function getDebugPointDescription(point: DebugPoint): string {
-  return DEBUG_POINT_CONFIG[point]?.description || "Unknown debug point";
-}
-
-/**
- * Get category for debug point
- */
-export function getDebugPointCategory(point: DebugPoint): string {
-  return DEBUG_POINT_CONFIG[point]?.category || "unknown";
-}
-
-/**
- * Get priority for interaction debug points
- */
-export function getDebugPointPriority(point: DebugPoint): number | undefined {
-  const config = DEBUG_POINT_CONFIG[point] as DebugPointConfig;
-  return config?.priority;
 }
 
 /**
@@ -67,12 +45,6 @@ export function getAllDebugPoints(): DebugPoint[] {
     .filter((point) => point !== "all")
     .map((point) => point as DebugPoint);
 }
-
-/**
- * Legacy compatibility - maintain old function name for backward compatibility
- * @deprecated Use getDebugPointEmoji instead
- */
-export const getDebugEmoji = getDebugPointEmoji;
 
 // Dependency tracking types
 export type DependencyLogLevel =
@@ -129,7 +101,7 @@ export interface DebugLogEntry {
 }
 
 // Debug state interface
-export interface DebugState {
+export interface DebugsySettings {
   enabled: Set<DebugPoint>;
   console: boolean;
   visual: boolean;
@@ -157,6 +129,3 @@ export interface DebugDisplayContent {
 export interface DebugDisplayState {
   content: DebugDisplayContent | null;
 }
-
-// Notification throttling constants
-export const NOTIFICATION_THROTTLE = 16; // ~60fps max update rate

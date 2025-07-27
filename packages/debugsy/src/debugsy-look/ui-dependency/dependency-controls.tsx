@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useDebugSubscription } from "../../debugsy-logs/hooks/debug-notifications";
-import { useDependencySettings } from "../../debugsy-shared/debug-settings";
+import { useDependencySettings } from "../../debugsy-space/debugsy-space-settings";
 import { DebugDependencyAdvancedControls } from "./dependency-advanced-controls";
 
 export interface DebugDependencyControlsProps {

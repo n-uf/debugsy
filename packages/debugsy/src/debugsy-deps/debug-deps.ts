@@ -26,7 +26,7 @@
 
 import { useEffect, useRef } from "react";
 import { logWarnToDebugSystem } from "./dependency-logger";
-import { getDependencyState } from "./dependency-state";
+import { getDepsSettings } from "./dependency-settings";
 import { analyzeChanges, logDependencyChanges } from "./dependency-utilities";
 
 /**
@@ -48,7 +48,7 @@ export function useWhyDidYouUpdate(
   const previousProps = useRef<Record<string, any> | undefined>(undefined);
   const lastLogTime = useRef(0);
 
-  const dependencyState = getDependencyState();
+  const dependencyState = getDepsSettings();
 
   // Check if we should do any work (but hooks are already called)
   const shouldTrack =
@@ -62,7 +62,7 @@ export function useWhyDidYouUpdate(
       return;
     }
 
-    const currentDependencyState = getDependencyState();
+    const currentDependencyState = getDepsSettings();
 
     // Throttling
     const now = Date.now();

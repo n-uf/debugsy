@@ -3,11 +3,11 @@
 import React, { useMemo } from "react";
 import JsonView from "react18-json-view";
 import "react18-json-view/src/style.css";
-import type { DebugLogEntry } from "../../../../debugsy-shared/debug-constants";
+import type { DebugLogEntry } from "../../../../debugsy-space/debugsy-constants";
 import {
   createObjectDiff,
   getDiffSummary,
-} from "../../../../debugsy-shared/object-depth-utils";
+} from "../../../../shared/object-depth-utils";
 import { safeJsonStringify } from "../../utils/json/json-utilities";
 import { formatTime } from "../health-expansion-formatter";
 import { CompactHeader } from "../shared-components";

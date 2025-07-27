@@ -4,7 +4,7 @@ import React from "react";
 import { useDebugDisplayContent } from "../../debugsy-logs/hooks/debug-notifications";
 import type { DebugLogEntry } from "../../debugsy-logs/hooks/use-debugsy";
 // Import unified debug point configuration
-import { getDebugPointEmoji } from "../../debugsy-shared/debug-constants";
+import { getDebugPointEmoji } from "../../debugsy-space/debugsy-constants";
 
 export interface DebugDisplayPanelProps {
   logs: DebugLogEntry[];

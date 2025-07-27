@@ -1,8 +1,9 @@
-import type { DebugLogEntry } from "../../../../debugsy-shared/debug-constants";
+import type { DebugLogEntry } from "../../../../debugsy-space/debugsy-constants";
+
 import {
   getLogTypeConfig,
   type DependencyLogType,
-} from "../../../../debugsy-shared/debug-point-config";
+} from "../../../../debugsy-space/debugsy-point-config";
 import type { LogSeverity } from "../default-log-formatter";
 import { COMPONENT_NAME_REGEX } from "./constants";
 

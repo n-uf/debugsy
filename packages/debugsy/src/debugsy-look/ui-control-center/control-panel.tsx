@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { useDebugSubscription } from "../../debugsy-logs/hooks/debug-notifications";
 import { useDebugsy } from "../../debugsy-logs/hooks/use-debugsy";
-import { getLookDebugPoints } from "../../debugsy-shared/debug-point-config";
+import { getLookDebugPoints } from "../../debugsy-space/debugsy-point-config";
 import { DebugDependencyControls } from "../ui-dependency/dependency-controls";
 import { DebugDisplayPanel } from "../ui-display/debug-display-panel";
 import { DebugPointButtons, getDebugPointsForButtons } from "./control-buttons";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { DiffEntry } from "../../../../../debugsy-shared/object-depth-utils";
+import type { DiffEntry } from "../../../../../shared/object-depth-utils";
 import { SHARED_TOKENS } from "../../shared-tokens";
 import { getEnhancedObjectDisplay } from "../utils";
 

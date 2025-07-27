@@ -1,7 +1,7 @@
-import type {
-  DebugLogEntry,
-  DebugPoint,
-} from "../../debugsy-shared/debug-constants";
+import {
+  type DebugLogEntry,
+  type DebugPoint,
+} from "../../debugsy-space/debugsy-constants";
 
 // Health metrics structure
 export interface HealthMetrics {

@@ -5,6 +5,7 @@ import {
 } from "../debugsy-cli";
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/hooks/health-snapshot";
+import { registerSuperjsonCustomSerializers } from "../shared/superjson-config";
 import {
   getDebugPointEmoji,
   LogLevel,
@@ -12,9 +13,11 @@ import {
   MAX_STORED_LOGS,
   type DebugLogEntry,
   type DebugPoint,
-} from "./debug-constants";
-import { debugSettingsControls, getGlobalDebugState } from "./debug-settings";
-import { registerSuperjsonCustomSerializers } from "./superjson-config";
+} from "./debugsy-constants";
+import {
+  debugSettingsControls,
+  getGlobalDebugState,
+} from "./debugsy-space-settings";
 
 /**
  * Unified Global Debug Manager Interface
@@ -73,7 +76,7 @@ export interface DebugsySpace extends DebugsyCLIWithHelp {
 
   // === STATE ACCESS ===
   getDebugState: () => any;
-  getDependencyStatus: () => any;
+  getDepsSettings: () => any;
   state: any; // Getter for current state
 
   // CLI commands are now inherited from DebugsyCLIWithHelp
@@ -304,7 +307,7 @@ function createDebugsySpace(): DebugsySpace {
     // === STATE ACCESS ===
     getDebugState: () => getGlobalDebugState(),
 
-    getDependencyStatus: () => {
+    getDepsSettings: () => {
       const state = getGlobalDebugState();
       return {
         enabled: state.enabled.has("dependencies"),
@@ -381,7 +384,7 @@ export function initializeDebugsySpace(): void {
         globalThis.__DEBUGSY_EMERGENCY_STOP.active = false;
       },
       status: () => {
-        const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
+        const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
         console.log("🔍 Surface Debug Status:", {
           emergencyActive: globalThis.__DEBUGSY_EMERGENCY_STOP.active,
           dependencyTracking: depState.enabled,

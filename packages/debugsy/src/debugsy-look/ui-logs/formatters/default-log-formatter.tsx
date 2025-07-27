@@ -8,11 +8,11 @@ import { useLongPress } from "@uidotdev/usehooks";
 import type {
   DebugLogEntry,
   LogLevel,
-} from "../../../debugsy-shared/debug-constants";
+} from "../../../debugsy-space/debugsy-constants";
 import {
   type DepthSetting,
   processObjectForDisplay,
-} from "../../../debugsy-shared/object-depth-utils";
+} from "../../../shared/object-depth-utils";
 import { JsonUtils } from "../utils/json/json-utilities";
 import {
   LOG_STYLES,

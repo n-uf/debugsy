@@ -3,7 +3,7 @@
  *
  * This module provides a comprehensive command-line interface for the debugsy system
  * that runs in the browser console. It extracts all CLI-related functionality from
- * the core debug-space.ts into organized, modular command groups.
+ * the core debugsy-space.ts into organized, modular command groups.
  *
  * Features:
  * - Status reporting commands

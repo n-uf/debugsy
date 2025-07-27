@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useState } from "react";
-import type {
-  DebugDisplayContent,
-  DebugDisplayState,
-} from "../../debugsy-shared/debug-constants";
+import {
+  type DebugDisplayContent,
+  type DebugDisplayState,
+} from "../../debugsy-space/debugsy-constants";
 
 // Subscribers for state changes
 const subscribers = new Set<() => void>();

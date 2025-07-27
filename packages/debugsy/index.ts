@@ -6,13 +6,14 @@ export {
   type DependencyLogLevel,
   type LogLevel,
   type DebugsySpace as UnifiedSurfaceDebug,
-} from "./src/debugsy-shared";
+} from "./src/debugsy-space";
 
 // === DEBUG DEPENDENCY TRACKING ===
 export { useRenderTracker, useWhyDidYouUpdate } from "./src/debugsy-deps";
 
 // === DEBUG LOGGING SYSTEM ===
 export {
+  captureHealthSnapshot,
   DebugControlPanel,
   DebugDependencyAdvancedControls,
   DebugDependencyControls,
@@ -23,7 +24,6 @@ export {
   DebugResizePresets,
   DebugStatsPanel,
   DebugsyPanel,
-  captureHealthSnapshot,
   sanitizeLogData,
   useDebugSubscription,
   useDebugsy,
@@ -34,15 +34,15 @@ export {
   DefaultLogFormatter,
   DependencyExpansionContent,
   FORMATTER_REGISTRY,
-  HealthExpansionContent,
-  SanitizedDataExpansionContent,
   getDependencyLogMeta,
   getExpansionContent,
   getHealthLogMeta,
   getLogTypeMeta,
   getRegisteredFormatterTypes,
   getSanitizedDataLogMeta,
+  HealthExpansionContent,
   registerFormatter,
+  SanitizedDataExpansionContent,
   type FormatterConfig,
   type FormatterMeta,
   type LogSeverity,
@@ -84,4 +84,4 @@ export {
   testStringMode,
   type DepthSetting,
   type DiffEntry,
-} from "./src/debugsy-shared/object-depth-utils";
+} from "./src/shared/object-depth-utils";

@@ -2,23 +2,22 @@ import { useMemo } from "react";
 import {
   type DebugLogEntry,
   type DebugPoint,
-} from "../../debugsy-shared/debug-constants";
-import { getGlobalDebugState } from "../../debugsy-shared/debug-settings";
+} from "../../debugsy-space/debugsy-constants";
+import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-  useDebugDisplayContent,
-} from "./debug-notifications";
+} from "../hooks/debug-notifications";
 import {
   type HealthMetrics,
   type HealthSnapshotConfig,
-} from "./health-snapshot";
+} from "../hooks/health-snapshot";
 
 // Import the unified system
 import {
   initializeDebugsySpace,
   type DebugsySpace,
-} from "../../debugsy-shared/debug-space";
+} from "../../debugsy-space/debugsy-space";
 
 // Re-export types for backward compatibility
 export type { DebugLogEntry, DebugPoint };
@@ -85,7 +84,7 @@ interface StableDebugsyInterface {
 
   // Simplified state access without problematic getters
   getDebugState: () => any;
-  getDependencyStatus: () => any;
+  getDepsSettings: () => any;
 
   // State property for compatibility with existing components
   state: {
@@ -143,7 +142,7 @@ function createStableDebugsyInterface(
 
     // Simplified state access - delegate to unified system methods
     getDebugState: unified.getDebugState,
-    getDependencyStatus: unified.getDependencyStatus,
+    getDepsSettings: unified.getDepsSettings,
 
     // State property for compatibility with existing components
     // Get snapshot of current state at creation time to avoid getter instability
@@ -188,7 +187,6 @@ export const useDebugsy = (
 export {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-  useDebugDisplayContent,
   type HealthMetrics,
   type HealthSnapshotConfig,
 };

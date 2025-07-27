@@ -15,7 +15,7 @@ import {
 } from "./change-tracking";
 import { shouldLogDependency } from "./dependency-filters";
 import { logToDebugSystem, logWarnToDebugSystem } from "./dependency-logger";
-import { getDependencyState } from "./dependency-state";
+import { getDepsSettings } from "./dependency-settings";
 
 /**
  * Change information for a single prop
@@ -125,7 +125,7 @@ export function logPropChange(name: string, propChange: PropChange): void {
   const { shouldWarn, phaseIndicator, stabilityIndicator, counterIndicator } =
     getChangeIndicators(isStable, trackingInfo);
 
-  const dependencyState = getDependencyState();
+  const dependencyState = getDepsSettings();
 
   if (type === "function") {
     const message = `📝 [${name}] ${key}: function changed${counterIndicator} (function → function)${phaseIndicator}${stabilityIndicator}`;

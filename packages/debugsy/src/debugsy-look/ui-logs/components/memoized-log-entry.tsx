@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
-import { type DepthSetting } from "../../../debugsy-shared/object-depth-utils";
+import { type DepthSetting } from "../../../shared/object-depth-utils";
 import { DefaultLogFormatter } from "../formatters";
 
 /**

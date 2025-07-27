@@ -32,7 +32,10 @@ export {
 } from "./dependency-logger";
 
 // State management
-export { getDependencyState, type DependencyState } from "./dependency-state";
+export {
+  getDepsSettings as getDependencyState,
+  type DepsSettings as DependencyState,
+} from "./dependency-settings";
 
 // Change tracking and frequency detection
 export {
@@ -55,14 +58,15 @@ export {
 } from "./dependency-utilities";
 
 // UI state management and controls (for backward compatibility)
-export { useDependencySettings as useDependencyState } from "../debugsy-shared/debug-settings";
+// Re-export the dependency state management functionality
+export { useDependencySettings as useDependencyState } from "../debugsy-space/debugsy-space-settings";
 
-// Types (re-export for convenience)
+// Re-export core types for backward compatibility and convenience
 export type {
-  DebugLogEntry,
   DependencyFilter,
   DependencyLogLevel,
-} from "../debugsy-shared/debug-constants";
+  DependencyTrackingConfig,
+} from "../debugsy-space/debugsy-constants";
 
 /**
  * ✅ UTILITY EXTRACTION COMPLETE: Extracted Complex Logic from useWhyDidYouUpdate

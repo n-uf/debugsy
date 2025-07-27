@@ -7,12 +7,11 @@
  * - Ensures unified system initialization
  */
 
-import type {
-  DependencyLogType,
-  LogLevel,
-  LogType,
-} from "../debugsy-shared/debug-constants";
-import { initializeDebugsySpace } from "../debugsy-shared/debug-space";
+import {
+  type LogLevel,
+  type LogType,
+} from "../debugsy-space/debugsy-constants";
+import { initializeDebugsySpace } from "../debugsy-space/debugsy-space";
 
 /**
  * Unified Debugsy Logger for Dependencies
@@ -74,7 +73,7 @@ export const dependencyLogger = new DependencyLogger();
 export const logToDebugSystem = (
   message: string,
   data?: any,
-  logType?: DependencyLogType
+  logType?: LogType
 ): void => {
   dependencyLogger.log(message, data, "info", logType);
 };
@@ -82,7 +81,7 @@ export const logToDebugSystem = (
 export const logWarnToDebugSystem = (
   message: string,
   data?: any,
-  logType?: DependencyLogType
+  logType?: LogType
 ): void => {
   dependencyLogger.warn(message, data, logType);
 };
@@ -90,7 +89,7 @@ export const logWarnToDebugSystem = (
 export const logErrorToDebugSystem = (
   message: string,
   data?: any,
-  logType?: DependencyLogType
+  logType?: LogType
 ): void => {
   dependencyLogger.error(message, data, logType);
 };

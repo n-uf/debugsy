@@ -1058,7 +1058,7 @@ const PerformantComponent = (props) => {
 3. **Verify global object**:
    ```javascript
    console.log(surfaceDebug); // Should exist
-   console.log(surfaceDebug.getDependencyStatus()); // Should return config
+   console.log(surfaceDebug.getDepsSettings()); // Should return config
    ```
 
 ### **Performance Issues**
@@ -1088,7 +1088,7 @@ const PerformantComponent = (props) => {
 
 ### **Console Errors**
 
-**Error**: `Cannot read property 'getDependencyStatus' of undefined`
+**Error**: `Cannot read property 'getDepsSettings' of undefined`
 
 **Solution**: Debug system not initialized properly
 

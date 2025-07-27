@@ -1,5 +1,5 @@
 import { notifySubscribers } from "../../debugsy-logs/hooks/debug-notifications";
-import { getGlobalDebugState } from "../../debugsy-shared/debug-settings";
+import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
 
 /**
  * Browser CLI Dependency Commands

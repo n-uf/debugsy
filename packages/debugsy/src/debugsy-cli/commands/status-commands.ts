@@ -1,5 +1,5 @@
-import { getAllDebugPoints } from "../../debugsy-shared/debug-constants";
-import { getGlobalDebugState } from "../../debugsy-shared/debug-settings";
+import { getAllDebugPoints } from "../../debugsy-space/debugsy-constants";
+import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
 
 /**
  * Browser CLI Status Commands
@@ -19,7 +19,7 @@ export interface StatusCommands {
 export function createStatusCommands(): StatusCommands {
   const defaultStatus = () => {
     const globalState = getGlobalDebugState();
-    const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
+    const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
     const emergencyActive =
       globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
     const allPoints = getAllDebugPoints();
@@ -65,7 +65,7 @@ export function createStatusCommands(): StatusCommands {
   };
 
   const depsStatus = () => {
-    const depState = globalThis.debugsySpace?.getDependencyStatus?.();
+    const depState = globalThis.debugsySpace?.getDepsSettings?.();
 
     if (!depState) {
       console.log(`
@@ -111,7 +111,7 @@ export function createStatusCommands(): StatusCommands {
   const emergencyStatus = () => {
     const emergencyActive =
       globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
-    const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
+    const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
 
     console.log(`
 🚨 Emergency System Status

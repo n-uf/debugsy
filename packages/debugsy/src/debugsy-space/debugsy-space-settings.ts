@@ -1,16 +1,16 @@
 import superjson from "superjson";
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
-import type {
-  DebugPoint,
-  DebugState,
-  DependencyFilter,
-  DependencyLogLevel,
-} from "./debug-constants";
-import { getAllDebugPoints } from "./debug-constants";
+import {
+  type DebugPoint,
+  type DebugsySettings,
+  type DependencyFilter,
+  type DependencyLogLevel,
+  getAllDebugPoints,
+} from "./debugsy-constants";
 
 // Global debug state (shared across all hook instances)
-let globalDebugState: DebugState = {
+let globalDebugState: DebugsySettings = {
   enabled: new Set(),
   console: true,
   visual: true,
@@ -31,7 +31,7 @@ let globalDebugState: DebugState = {
 /**
  * Get the global debug state
  */
-export function getGlobalDebugState(): DebugState {
+export function getGlobalDebugState(): DebugsySettings {
   return globalDebugState;
 }
 
@@ -192,7 +192,7 @@ export const dependencySettingsControls = {
     }
     // Use debounced save like other debug controls
     debouncedSaveDebugSettings();
-    // Notify subscribers for reactive UI updates (like debug-space deps methods)
+    // Notify subscribers for reactive UI updates (like debugsy-space deps methods)
     notifySubscribers();
   },
   setLevel: (level: DependencyLogLevel) => {

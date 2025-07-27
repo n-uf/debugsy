@@ -9,7 +9,7 @@
  */
 
 import { initializationPhase } from "./change-tracking";
-import { getDependencyState } from "./dependency-state";
+import { getDepsSettings } from "./dependency-settings";
 
 /**
  * Enhanced shouldLogDependency function using unified state
@@ -32,7 +32,7 @@ export function shouldLogDependency(
     return false;
   }
 
-  const dependencyState = getDependencyState();
+  const dependencyState = getDepsSettings();
 
   // Global enabled check
   if (!dependencyState.enabled) {

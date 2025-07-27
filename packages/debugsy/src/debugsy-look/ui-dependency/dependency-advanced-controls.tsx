@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import type { DependencyFilter } from "../../debugsy-shared/debug-constants";
-import { useDependencySettings } from "../../debugsy-shared/debug-settings";
+import type { DependencyFilter } from "../../debugsy-space/debugsy-constants";
+import { useDependencySettings } from "../../debugsy-space/debugsy-space-settings";
 
 export interface DebugDependencyAdvancedControlsProps {
   className?: string;
