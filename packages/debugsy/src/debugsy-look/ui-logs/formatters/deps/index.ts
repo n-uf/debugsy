@@ -1,7 +1,7 @@
 /**
- * Dependency Log Formatters - Centralized Exports
+ * Dependency Log Formatters - Clean Exports
  *
- * Enhanced dependency logging with modular component structure
+ * Streamlined dependency logging with delta-focused architecture
  */
 
 // Main formatter components
@@ -12,31 +12,23 @@ export {
   getDependencyLogMeta,
 } from "./dependency-expansion-formatter";
 
-// Utility functions
+// Core utilities
 export {
   calculateDelta,
   extractComponentName,
   formatDelta,
   formatDependencyData,
   getDependencySeverity,
-  getEnhancedObjectDisplay,
   getImpactColor,
   getLogTypeMetadata,
   type DeltaInfo,
 } from "./utils";
 
-// Sub-components (for advanced usage)
+// Primary components
 export { DeltaDisplay, DeltaSummary } from "./components/delta-display";
-export {
-  CompactDiffDisplay,
-  CompactDiffEntry,
-} from "./components/diff-display";
+export { CompactDiffDisplay } from "./components/diff-display";
 export { CompactHelpMessage } from "./components/help-message";
-export {
-  CompactValueRenderer,
-  EnhancedDependencyValueRenderer,
-  ModernValueDisplay,
-} from "./components/value-renderers";
+export { CompactValueRenderer } from "./components/value-renderers";
 
 // Constants
 export { COMPACT_JSON_STYLE, COMPONENT_NAME_REGEX } from "./constants";

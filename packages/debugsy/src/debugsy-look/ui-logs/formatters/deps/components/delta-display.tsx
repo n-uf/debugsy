@@ -120,7 +120,7 @@ export const DeltaDisplay: React.FC<{
 DeltaDisplay.displayName = "DeltaDisplay";
 
 /**
- * Summary delta display for multiple changes
+ * Simplified delta summary for multiple changes
  */
 export const DeltaSummary: React.FC<{
   deltas: DeltaInfo[];
@@ -133,14 +133,6 @@ export const DeltaSummary: React.FC<{
     low: deltas.filter((d) => d.impact === "low").length,
   };
 
-  const typeCounts = {
-    numeric: deltas.filter((d) => d.type === "numeric").length,
-    size: deltas.filter((d) => d.type === "size").length,
-    type: deltas.filter((d) => d.type === "type").length,
-    content: deltas.filter((d) => d.type === "content").length,
-    reference: deltas.filter((d) => d.type === "reference").length,
-  };
-
   const performanceImpact = deltas.some(
     (d) => d.metrics?.performanceImpact === "significant"
   )
@@ -149,70 +141,65 @@ export const DeltaSummary: React.FC<{
       ? "moderate"
       : "minimal";
 
+  // Check for frequent changes specifically
+  const frequentChanges = deltas.filter((d) => d.impact === "high").length;
+
+  // Only show if there are meaningful impacts to highlight
+  const hasSignificantImpacts =
+    impactCounts.high > 0 ||
+    impactCounts.medium > 0 ||
+    performanceImpact !== "minimal";
+
+  if (!hasSignificantImpacts) return null;
+
   return (
     <div
       style={{
         display: "flex",
-        flexWrap: "wrap",
-        gap: SHARED_TOKENS.spacing.xs,
+        alignItems: "center",
+        gap: SHARED_TOKENS.spacing.sm,
         padding: SHARED_TOKENS.spacing.sm,
-        backgroundColor: SHARED_TOKENS.colors.bgSecondary,
-        border: `1px solid ${SHARED_TOKENS.colors.border}`,
+        backgroundColor:
+          impactCounts.high > 0
+            ? "#ef444410"
+            : SHARED_TOKENS.colors.bgSecondary,
+        border: `1px solid ${impactCounts.high > 0 ? "#ef444440" : SHARED_TOKENS.colors.border}`,
         borderRadius: "3px",
         fontSize: "8px",
         fontFamily: SHARED_TOKENS.fonts.mono,
         marginBottom: SHARED_TOKENS.spacing.sm,
       }}
     >
-      {/* Total changes */}
-      <div
-        style={{
-          backgroundColor: SHARED_TOKENS.colors.accent,
-          color: SHARED_TOKENS.colors.text,
-          padding: `2px ${SHARED_TOKENS.spacing.xs}`,
-          borderRadius: "2px",
-          fontWeight: "600",
-        }}
-      >
-        {deltas.length} changes
-      </div>
-
-      {/* Impact breakdown */}
+      {/* Impact summary - only show significant ones */}
       {impactCounts.high > 0 && (
-        <div style={{ color: "#ef4444", fontWeight: "600" }}>
-          🔴 {impactCounts.high} high
+        <div
+          style={{
+            color: "#ef4444",
+            fontWeight: "600",
+            display: "flex",
+            alignItems: "center",
+            gap: "3px",
+          }}
+        >
+          🔴 {impactCounts.high} frequent
         </div>
       )}
+
       {impactCounts.medium > 0 && (
-        <div style={{ color: "#f59e0b", fontWeight: "600" }}>
-          🟡 {impactCounts.medium} med
-        </div>
-      )}
-      {impactCounts.low > 0 && (
-        <div style={{ color: "#22c55e", fontWeight: "600" }}>
-          🟢 {impactCounts.low} low
+        <div
+          style={{
+            color: "#f59e0b",
+            fontWeight: "600",
+            display: "flex",
+            alignItems: "center",
+            gap: "3px",
+          }}
+        >
+          🟡 {impactCounts.medium} unstable
         </div>
       )}
 
-      {/* Type breakdown */}
-      {Object.entries(typeCounts)
-        .filter(([_, count]) => count > 0)
-        .map(([type, count]) => (
-          <div
-            key={type}
-            style={{
-              backgroundColor: SHARED_TOKENS.colors.bgSecondary,
-              color: SHARED_TOKENS.colors.textMuted,
-              padding: `1px ${SHARED_TOKENS.spacing.xs}`,
-              borderRadius: "2px",
-              textTransform: "uppercase",
-            }}
-          >
-            {type}: {count}
-          </div>
-        ))}
-
-      {/* Performance impact */}
+      {/* Performance warning - only for significant impacts */}
       {performanceImpact !== "minimal" && (
         <div
           style={{
@@ -222,9 +209,11 @@ export const DeltaSummary: React.FC<{
             padding: `2px ${SHARED_TOKENS.spacing.xs}`,
             borderRadius: "2px",
             fontWeight: "600",
+            fontSize: "7px",
+            textTransform: "uppercase",
           }}
         >
-          ⚡ {performanceImpact.toUpperCase()} IMPACT
+          ⚡ {performanceImpact} perf impact
         </div>
       )}
     </div>

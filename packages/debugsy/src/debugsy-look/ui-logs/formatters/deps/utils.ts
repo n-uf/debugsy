@@ -24,12 +24,13 @@ export interface DeltaInfo {
 }
 
 /**
- * Calculate enhanced delta information for a change
+ * Calculate enhanced delta information for a change with frequency-based impact
  */
 export const calculateDelta = (
   from: any,
   to: any,
-  propertyName: string
+  propertyName: string,
+  trackingInfo?: any
 ): DeltaInfo | null => {
   // Handle null/undefined cases
   if (from == null && to == null) return null;
@@ -55,12 +56,32 @@ export const calculateDelta = (
   const fromType = typeof from;
   const toType = typeof to;
 
+  // Calculate frequency-based impact from tracking information
+  const getFrequencyBasedImpact = (): "low" | "medium" | "high" => {
+    if (!trackingInfo) return "low";
+
+    // High impact: Frequent changes (⚠️ FREQUENT)
+    if (trackingInfo.isFrequent && !trackingInfo.isStable) {
+      return "high";
+    }
+
+    // Medium impact: Some frequency but not critical
+    if (trackingInfo.count >= 3 && !trackingInfo.isStable) {
+      return "medium";
+    }
+
+    // Low impact: Stable or low count changes (📋 INIT or normal)
+    return "low";
+  };
+
+  const impact = getFrequencyBasedImpact();
+
   // Type change
   if (fromType !== toType) {
     return {
       type: "type",
       delta: `${fromType} → ${toType}`,
-      impact: "high",
+      impact,
       description: `Type changed from ${fromType} to ${toType}`,
       fromValue: from,
       toValue: to,
@@ -75,14 +96,18 @@ export const calculateDelta = (
     return {
       type: "numeric",
       delta: delta > 0 ? `+${delta}` : `${delta}`,
-      impact:
-        percentChange > 50 ? "high" : percentChange > 10 ? "medium" : "low",
+      impact,
       description: `${propertyName} changed by ${delta} (${percentChange.toFixed(1)}%)`,
       fromValue: from,
       toValue: to,
       metrics: {
         sizeChange: delta,
-        performanceImpact: Math.abs(delta) > 1000 ? "significant" : "minimal",
+        performanceImpact:
+          impact === "high"
+            ? "significant"
+            : impact === "medium"
+              ? "moderate"
+              : "minimal",
       },
     };
   }
@@ -96,19 +121,13 @@ export const calculateDelta = (
     return {
       type: "size",
       delta: lengthDelta > 0 ? `+${lengthDelta} chars` : `${lengthDelta} chars`,
-      impact:
-        Math.abs(lengthDelta) > 100
-          ? "high"
-          : Math.abs(lengthDelta) > 20
-            ? "medium"
-            : "low",
+      impact,
       description: `String length changed by ${lengthDelta} characters`,
       fromValue: from,
       toValue: to,
       metrics: {
         sizeChange: lengthDelta,
-        performanceImpact:
-          Math.abs(lengthDelta) > 1000 ? "moderate" : "minimal",
+        performanceImpact: impact === "high" ? "moderate" : "minimal",
       },
     };
   }
@@ -122,20 +141,14 @@ export const calculateDelta = (
     return {
       type: "size",
       delta: lengthDelta > 0 ? `+${lengthDelta} items` : `${lengthDelta} items`,
-      impact:
-        Math.abs(lengthDelta) > 10
-          ? "high"
-          : Math.abs(lengthDelta) > 3
-            ? "medium"
-            : "low",
+      impact,
       description: `Array size changed by ${lengthDelta} items`,
       fromValue: from,
       toValue: to,
       metrics: {
         sizeChange: lengthDelta,
         complexityChange: calculateComplexityChange(from, to),
-        performanceImpact:
-          Math.abs(lengthDelta) > 100 ? "significant" : "minimal",
+        performanceImpact: impact === "high" ? "significant" : "minimal",
       },
     };
   }
@@ -154,12 +167,12 @@ export const calculateDelta = (
       return {
         type: "reference",
         delta: "ref change",
-        impact: "low",
+        impact,
         description: `${propertyName} reference changed (same content)`,
         fromValue: from,
         toValue: to,
         metrics: {
-          performanceImpact: "minimal",
+          performanceImpact: impact === "high" ? "moderate" : "minimal",
         },
       };
     }
@@ -172,12 +185,7 @@ export const calculateDelta = (
           : keyDelta < 0
             ? `${keyDelta} props`
             : "modified",
-      impact:
-        Math.abs(keyDelta) > 5
-          ? "high"
-          : Math.abs(keyDelta) > 1
-            ? "medium"
-            : "low",
+      impact,
       description:
         keyDelta === 0
           ? `${propertyName} properties modified`
@@ -187,12 +195,12 @@ export const calculateDelta = (
       metrics: {
         sizeChange: keyDelta,
         complexityChange: calculateComplexityChange(from, to),
-        performanceImpact: Math.abs(keyDelta) > 10 ? "moderate" : "minimal",
+        performanceImpact: impact === "high" ? "moderate" : "minimal",
       },
     };
   }
 
-  // Function delta
+  // Function delta (reverted to frequency-based impact)
   if (fromType === "function" && toType === "function") {
     const fromString = from.toString();
     const toString = to.toString();
@@ -201,14 +209,14 @@ export const calculateDelta = (
     return {
       type: "reference",
       delta: isSameCode ? "ref change" : "code change",
-      impact: isSameCode ? "low" : "high",
+      impact, // Now frequency-based, not always high
       description: isSameCode
         ? `${propertyName} function reference changed (same code)`
         : `${propertyName} function implementation changed`,
       fromValue: from,
       toValue: to,
       metrics: {
-        performanceImpact: isSameCode ? "minimal" : "moderate",
+        performanceImpact: impact === "high" ? "moderate" : "minimal",
       },
     };
   }
@@ -217,7 +225,7 @@ export const calculateDelta = (
   return {
     type: "content",
     delta: `${from} → ${to}`,
-    impact: "low",
+    impact,
     description: `${propertyName} value changed`,
     fromValue: from,
     toValue: to,
@@ -242,6 +250,15 @@ const calculateComplexityChange = (from: any, to: any): number => {
 };
 
 /**
+ * Format delta for display (simplified)
+ */
+export const formatDelta = (delta: DeltaInfo): string => {
+  const impactIcon =
+    delta.impact === "high" ? "🔴" : delta.impact === "medium" ? "🟡" : "🟢";
+  return `${impactIcon} ${delta.delta}`;
+};
+
+/**
  * Get performance impact color for UI
  */
 export const getImpactColor = (impact: "low" | "medium" | "high"): string => {
@@ -255,15 +272,6 @@ export const getImpactColor = (impact: "low" | "medium" | "high"): string => {
     default:
       return "#6b7280"; // gray
   }
-};
-
-/**
- * Format delta for display
- */
-export const formatDelta = (delta: DeltaInfo): string => {
-  const impactIcon =
-    delta.impact === "high" ? "🔴" : delta.impact === "medium" ? "🟡" : "🟢";
-  return `${impactIcon} ${delta.delta}`;
 };
 
 /**
@@ -389,7 +397,7 @@ export const getDependencySeverity = (log: DebugLogEntry): LogSeverity => {
 };
 
 /**
- * Format dependency change data
+ * Format dependency change data with enhanced tracking information
  */
 export const formatDependencyData = (data: any, logType: string) => {
   if (!data || logType !== "dependency-change" || typeof data !== "object") {
@@ -398,6 +406,10 @@ export const formatDependencyData = (data: any, logType: string) => {
 
   return Object.entries(data)
     .map(([key, change]: [string, any]) => {
+      // Handle both old format ({ from, to }) and new format ({ from, to, tracking })
+      const hasTracking =
+        change && typeof change === "object" && "tracking" in change;
+
       if (
         change &&
         typeof change === "object" &&
@@ -408,12 +420,15 @@ export const formatDependencyData = (data: any, logType: string) => {
           property: key,
           from: change.from,
           to: change.to,
-          type:
-            typeof change.from === "function"
+          type: hasTracking
+            ? change.tracking.changeType
+            : typeof change.from === "function"
               ? "function"
               : typeof change.from === "object"
                 ? "object"
                 : "primitive",
+          // Include tracking information for frequency-based coloring
+          tracking: hasTracking ? change.tracking : undefined,
         };
       }
       return null;

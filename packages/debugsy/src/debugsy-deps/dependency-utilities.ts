@@ -168,10 +168,27 @@ export function logDependencyChanges(
 ): void {
   if (changes.length === 0) return;
 
-  // Summary log
+  // Enhanced summary log with tracking information
+  const enhancedData = Object.fromEntries(
+    changes.map((c) => [
+      c.key,
+      {
+        from: c.change.from,
+        to: c.change.to,
+        // Include tracking information for frequency-based coloring
+        tracking: {
+          count: c.trackingInfo.count,
+          isFrequent: c.trackingInfo.isFrequent,
+          isStable: c.isStable,
+          changeType: c.type,
+        },
+      },
+    ])
+  );
+
   logToDebugSystem(
     `🔄 [${name}] Dependencies changed:`,
-    Object.fromEntries(changes.map((c) => [c.key, c.change])),
+    enhancedData,
     "dependency-change"
   );
 

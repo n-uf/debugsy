@@ -53,14 +53,6 @@ export const DependencyExpansionContent: React.FC<{
     };
   }, [log.message, log.data, log.level]);
 
-  // Clean up: Remove debugging (delta system working)
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      "📊 Dependency expansion with delta calculation for:",
-      dependencyMeta.componentName
-    );
-  }
-
   // RELAXED: More permissive display strategy with superjson safety
   const displayStrategy = useMemo(() => {
     if (!log.data) return { isComplex: false, shouldShow: false };
@@ -153,58 +145,39 @@ export const DependencyExpansionContent: React.FC<{
               >
                 {dependencyMeta.dependencyData.map(
                   (item: any, index: number) => {
-                    // Calculate delta for this specific change
+                    // Calculate delta with tracking information for frequency-based impact
                     const itemDelta = calculateDelta(
                       item.from,
                       item.to,
-                      item.property
+                      item.property,
+                      item.tracking // Pass tracking info for frequency-based coloring
                     );
 
-                    // Calculate diff for this property change
-                    const calculateDiff = () => {
-                      // Handle object-to-object changes with detailed diffs
-                      if (
-                        typeof item.from === "object" &&
-                        item.from !== null &&
-                        typeof item.to === "object" &&
-                        item.to !== null
-                      ) {
-                        const diffs = createObjectDiff(item.from, item.to, 15);
+                    // Calculate diff for object changes (more inclusive)
+                    const needsDetailedDiff =
+                      typeof item.from === "object" &&
+                      typeof item.to === "object" &&
+                      item.from !== null &&
+                      item.to !== null &&
+                      item.from !== item.to; // Any object change
 
-                        if (diffs.length > 0) {
-                          const summary = getDiffSummary(diffs);
-                          return {
-                            diffs,
-                            summary,
-                            type: "object-diff",
-                          };
-                        }
-                      }
-
-                      // For function and primitive changes, create a simple change summary
-                      else if (item.from !== item.to) {
-                        const simpleDiffs = [
-                          {
-                            type: "changed" as const,
-                            key: item.property,
-                            from: item.from,
-                            to: item.to,
-                          },
-                        ];
-
-                        const summary = `${item.type} changed`;
-
-                        return {
-                          diffs: simpleDiffs,
-                          summary,
-                          type: "simple-diff",
-                        };
-                      }
-
-                      return null;
-                    };
-
-                    const diffData = calculateDiff();
+                    const diffData = needsDetailedDiff
+                      ? (() => {
+                          const diffs = createObjectDiff(
+                            item.from,
+                            item.to,
+                            15
+                          );
+                          if (diffs.length > 0) {
+                            return {
+                              diffs,
+                              summary: getDiffSummary(diffs),
+                              type: "object-diff",
+                            };
+                          }
+                          return null;
+                        })()
+                      : null;
 
                     return (
                       <div
@@ -219,7 +192,7 @@ export const DependencyExpansionContent: React.FC<{
                           fontFamily: SHARED_TOKENS.fonts.mono,
                         }}
                       >
-                        {/* Compact Property Header */}
+                        {/* Compact Property Header with frequency indicator */}
                         <div
                           style={{
                             display: "flex",
@@ -269,9 +242,30 @@ export const DependencyExpansionContent: React.FC<{
                           >
                             {item.type}
                           </span>
+
+                          {/* Frequency indicator */}
+                          {item.tracking && (
+                            <span
+                              style={{
+                                fontSize: "8px",
+                                color: item.tracking.isFrequent
+                                  ? "#ef4444"
+                                  : "#6b7280",
+                                fontWeight: "600",
+                              }}
+                            >
+                              (#{item.tracking.count})
+                              {item.tracking.isFrequent && " ⚠️ FREQUENT"}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Diff Display */}
+                        {/* Primary Delta Display - frequency-based coloring */}
+                        {itemDelta && (
+                          <DeltaDisplay delta={itemDelta} showMetrics={true} />
+                        )}
+
+                        {/* Detailed Object Diff - for complex object changes */}
                         {diffData && (
                           <CompactDiffDisplay
                             diffs={diffData.diffs}
@@ -279,28 +273,28 @@ export const DependencyExpansionContent: React.FC<{
                           />
                         )}
 
-                        {/* Delta Information */}
-                        {itemDelta && (
-                          <DeltaDisplay delta={itemDelta} showMetrics={true} />
-                        )}
-
-                        {/* Compact From/To Values */}
+                        {/* From/To Value Display - always show for context */}
                         <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
                             gap: SHARED_TOKENS.spacing.xs,
-                            marginTop: diffData ? SHARED_TOKENS.spacing.sm : 0,
+                            marginTop: SHARED_TOKENS.spacing.sm,
                           }}
                         >
-                          <CompactValueRenderer
-                            value={item.from}
-                            label="from"
-                            type="old"
-                          />
+                          {/* Only show 'from' if it's different from 'to' */}
+                          {item.from !== item.to && (
+                            <CompactValueRenderer
+                              value={item.from}
+                              label="from"
+                              type="old"
+                            />
+                          )}
+
+                          {/* Always show 'to' (target) value */}
                           <CompactValueRenderer
                             value={item.to}
-                            label="to"
+                            label={item.from !== item.to ? "to" : "value"}
                             type="new"
                           />
                         </div>

@@ -14,6 +14,12 @@ export const CompactHelpMessage: React.FC<{
   const helpContent = useMemo(() => {
     switch (logType) {
       case "function-recreation":
+        return {
+          color: SHARED_TOKENS.colors.changed, // Back to normal color, not error
+          icon: "ℹ",
+          text: "🚀📋 = Normal init. ⚠️ FREQUENT = Consider useCallback to prevent re-renders.",
+        };
+
       case "object-recreation":
         return {
           color: SHARED_TOKENS.colors.added,
