@@ -1,3 +1,4 @@
+import { getAllDebugPoints } from "../../debugsy-shared/debug-constants";
 import { getGlobalDebugState } from "../../debugsy-shared/debug-settings";
 
 /**
@@ -17,33 +18,11 @@ export interface StatusCommands {
  */
 export function createStatusCommands(): StatusCommands {
   const defaultStatus = () => {
-    const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
-    const emergencyActive =
-      globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
-
-    console.log(`
-🔍 Debugsy System Status
-
-📊 OVERALL STATE:
-  ${emergencyActive ? "🚨 EMERGENCY MODE ACTIVE" : "✅ Normal Operation"}
-  
-🎛️ DEPENDENCY TRACKING:
-  Status: ${depState.enabled ? "✅ Enabled" : "❌ Disabled"}
-  Level:  ${depState.level || "N/A"}
-  Filter: ${depState.filter || "N/A"}
-
-💡 For detailed status, use:
-  debugsy.status.full()    - Complete system overview
-  debugsy.status.deps()    - Dependency tracking details
-  debugsy.status.emergency() - Emergency system status
-`);
-  };
-
-  const fullStatus = () => {
     const globalState = getGlobalDebugState();
     const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
     const emergencyActive =
       globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
+    const allPoints = getAllDebugPoints();
 
     console.log(`
 🔍 Complete Debugsy System Status
@@ -55,14 +34,10 @@ export function createStatusCommands(): StatusCommands {
   Performance:    ${globalState.performance ? "✅ Enabled" : "❌ Disabled"}
   Total Logs:     ${globalState.logs.length} entries
 
-🎯 ENABLED DEBUG POINTS:
-  ${
-    Array.from(globalState.enabled).length > 0
-      ? Array.from(globalState.enabled)
-          .map((p) => `✓ ${p}`)
-          .join("\n  ")
-      : "❌ No debug points enabled"
-  }
+🎯 DEBUG POINTS:
+  ${allPoints
+    .map((point) => `${globalState.enabled.has(point) ? "✓" : "❌"} ${point}`)
+    .join("\n  ")}
 
 🎛️ DEPENDENCY TRACKING:
   Status:        ${depState.enabled ? "✅ Enabled" : "❌ Disabled"}
@@ -71,7 +46,22 @@ export function createStatusCommands(): StatusCommands {
   Allowed Hooks: ${depState.allowedHooks?.length ? depState.allowedHooks.join(", ") : "all"}
   Excluded Hooks: ${depState.excludedHooks?.length ? depState.excludedHooks.join(", ") : "none"}
   Throttle:      ${depState.throttleMs || 0}ms
+
+🚀 QUICK ACTIONS:
+  debugsy.deps.initAware()    - Enable smart dependency tracking
+  debugsy.deps.verbose()      - Enable detailed tracking  
+  debugsy.emergency.status()  - Check emergency controls
+  debugsy.help()              - Show all available commands
+
+💡 SPECIALIZED STATUS VIEWS:
+  debugsy.status.deps()       - Dependency tracking details only
+  debugsy.status.emergency()  - Emergency system status only
 `);
+  };
+
+  const fullStatus = () => {
+    // Full status is now the same as default status
+    defaultStatus();
   };
 
   const depsStatus = () => {

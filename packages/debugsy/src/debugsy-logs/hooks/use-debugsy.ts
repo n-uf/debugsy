@@ -120,7 +120,8 @@ function createStableDebugsyInterface(
     timeEnd: unified.timeEnd,
 
     // State checking - compute enabled state once for this point
-    enabled: point === "global" ? unified.enabled : unified.isEnabled(point),
+    enabled:
+      point === "global" ? unified.isEnabled("all") : unified.isEnabled(point),
     isEnabled: unified.isEnabled,
     showVisual: unified.showVisual,
 

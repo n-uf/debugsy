@@ -1,4 +1,8 @@
-import { initializeDebugsyCLI, type DebugsyCLIWithHelp } from "../debugsy-cli";
+import {
+  initializeDebugsyCLI,
+  printCLIHelp,
+  type DebugsyCLIWithHelp,
+} from "../debugsy-cli";
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/hooks/health-snapshot";
 import {
@@ -51,10 +55,12 @@ export interface DebugsySpace extends DebugsyCLIWithHelp {
   isConsoleEnabled: () => boolean;
   isVisualEnabled: () => boolean;
   isPerformanceEnabled: () => boolean;
+  showVisual: (point: DebugPoint) => boolean;
 
   // === STATE CONTROL ===
   enable: (point: DebugPoint) => void;
   disable: (point: DebugPoint) => void;
+  toggle: (point: DebugPoint) => void;
   enableAll: () => void;
   disableAll: () => void;
   setConsoleEnabled: (enabled: boolean) => void;
@@ -222,6 +228,11 @@ function createDebugsySpace(): DebugsySpace {
       return globalState.performance;
     },
 
+    showVisual: (point: DebugPoint): boolean => {
+      const globalState = getGlobalDebugState();
+      return globalState.visual && globalState.enabled.has(point);
+    },
+
     // === STATE CONTROL ===
     enable: (point: DebugPoint): void => {
       debugSettingsControls.enable(point);
@@ -230,6 +241,16 @@ function createDebugsySpace(): DebugsySpace {
 
     disable: (point: DebugPoint): void => {
       debugSettingsControls.disable(point);
+      notifySubscribers();
+    },
+
+    toggle: (point: DebugPoint): void => {
+      const globalState = getGlobalDebugState();
+      if (globalState.enabled.has(point)) {
+        debugSettingsControls.disable(point);
+      } else {
+        debugSettingsControls.enable(point);
+      }
       notifySubscribers();
     },
 
@@ -342,8 +363,6 @@ export function initializeDebugsySpace(): void {
     return; // Already initialized
   }
 
-  console.log("🚀 Initializing Unified Surface Debug System...");
-
   // Register superjson custom serializers for React Fiber and DOM elements
   registerSuperjsonCustomSerializers();
 
@@ -380,19 +399,7 @@ export function initializeDebugsySpace(): void {
   (globalThis as any).debugsy = globalThis.debugsySpace;
 
   console.log("✅ Debugsy System initialized");
-  console.log(
-    "🔍 Available methods on debugsy:",
-    Object.keys(globalThis.debugsy)
-  );
-  console.log("🔍 debugsy.help type:", typeof globalThis.debugsy.help);
-  console.log(
-    "💡 Type 'debugsy.help()' in console to see all available commands"
-  );
-}
 
-// Add a global initialization trigger for debugging
-(globalThis as any).initDebugsyManually = () => {
-  console.log("🔧 Manually triggering debugsy initialization...");
-  initializeDebugsySpace();
-  return globalThis.debugsy;
-};
+  // Show the complete CLI help instead of verbose debugging info
+  printCLIHelp();
+}
