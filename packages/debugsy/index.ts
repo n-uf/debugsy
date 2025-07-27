@@ -9,15 +9,7 @@ export {
 } from "./src/shared";
 
 // === DEBUG DEPENDENCY TRACKING ===
-export {
-  circuitBreakerControl,
-  emergencyStop,
-  useCircuitBreakerTracker,
-  useEmergencySafeHook,
-  useRenderTracker,
-  useSafeHook,
-  useWhyDidYouUpdate,
-} from "./src/debug-deps";
+export { useRenderTracker, useWhyDidYouUpdate } from "./src/debug-deps";
 
 // === DEBUG LOGGING SYSTEM ===
 export {
@@ -26,16 +18,16 @@ export {
   DebugDependencyAdvancedControls,
   DebugDependencyControls,
   DebugDisplayPanel,
-  DebugExternalPanel,
   DebugLogsList,
   DebugPanelHeader,
   DebugPointButtons,
   DebugResizePresets,
   DebugStatsPanel,
   DebugStatus,
+  DebugsyPanel,
   sanitizeLogData,
-  useDebug,
   useDebugSubscription,
+  useDebugsy,
 } from "./src/debug-logs";
 
 // === LOG FORMATTERS ===
@@ -67,9 +59,9 @@ export type {
 // === COMPONENT PROP TYPES ===
 export type {
   DebugControlPanelProps,
+  DebugDependencyAdvancedControlsProps,
   DebugDependencyControlsProps,
   DebugDisplayPanelProps,
-  DebugExternalPanelProps,
   DebugLogsListProps,
   DebugPanelHeaderProps,
   DebugPointButtonsProps,
@@ -77,6 +69,7 @@ export type {
   DebugResizePresetsProps,
   DebugStatsPanelProps,
   DebugStatusProps,
+  DebugsyPanelProps,
 } from "./src/debug-logs";
 
 // Object depth utilities

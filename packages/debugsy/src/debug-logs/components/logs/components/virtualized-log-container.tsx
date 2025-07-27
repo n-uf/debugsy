@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { type DepthSetting } from "../../../../shared/object-depth-utils";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
+import type { DebugLogEntry } from "../../../hooks/use-debugsy";
 import { MemoizedLogEntry } from "./memoized-log-entry";
 
 /**

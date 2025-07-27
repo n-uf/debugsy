@@ -6,7 +6,8 @@
  * moved to dedicated json-utilities modules.
  */
 
-// Import JSON utilities from separate modules
+// Import unified debug point configuration
+import { getDebugPointEmoji } from "../../../../shared/debug-constants";
 
 /**
  * Rendering configuration constants for debug logs
@@ -17,36 +18,10 @@ export const LOG_RENDERING_CONFIG = {
 } as const;
 
 /**
- * Debug points mapping for emojis (Event Dispatcher Architecture)
+ * Get emoji for a debug point - unified function from debug-constants
+ * @deprecated Use getDebugPointEmoji directly from debug-constants instead
  */
-export const DEBUG_POINT_EMOJIS: Record<string, string> = {
-  dispatcher: "🎯",
-  "hit-testing": "🔍",
-  routing: "🔗",
-  "surface-interaction": "🌍",
-  "frame-interaction": "📦",
-  "selection-interaction": "📋",
-  "handler-registry": "📝",
-  performance: "⚡",
-  "visual-debug": "👁️",
-  "surface-interactions": "🏠",
-  "surface-dock": "🚢",
-  "frame-metrics": "📏",
-  dependencies: "🧠",
-  health: "🏥",
-  "canvas-events": "🎨",
-  "viewport-changes": "🔍",
-  "auto-layout": "📐",
-  "event-propagation": "📡",
-  "mouse-dispatcher": "🖱️", // Alias for dispatcher
-};
-
-/**
- * Get emoji for a debug point
- */
-export const getPointEmoji = (point: string): string => {
-  return DEBUG_POINT_EMOJIS[point] ?? "📝";
-};
+export const getPointEmoji = getDebugPointEmoji;
 
 /**
  * Formats a debug point name for display (removes prefixes for brevity)

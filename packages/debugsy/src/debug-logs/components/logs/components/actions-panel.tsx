@@ -2,11 +2,11 @@
 
 import React from "react";
 import { type DepthSetting } from "../../../../shared/object-depth-utils";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-} from "../../../hooks/use-debug";
+} from "../../../hooks/debug-notifications";
+import type { DebugLogEntry } from "../../../hooks/use-debugsy";
 import {
   DEFAULT_COPY_CONFIG,
   getButtonTransitionDuration,

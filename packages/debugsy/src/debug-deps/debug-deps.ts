@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { LogLevel } from "../shared/debug-constants";
+import { getGlobalDebugState } from "../shared/debug-settings";
 
 interface ChangedProps {
   [key: string]: {
@@ -12,7 +13,6 @@ interface ChangedProps {
 let notifySubscribers: (() => void) | null = null;
 
 // Import the unified debug system
-import { initializeUnifiedDebugSystem } from "../shared/global-debug-manager";
 
 // Initialize notification system when available
 const initializeNotificationSystem = () => {
@@ -183,32 +183,18 @@ const getDependencyState = () => {
     return globalDebug.getDependencyStatus();
   }
 
-  // Fallback: Try to get state from local debug state system
-  try {
-    // Dynamically import to avoid circular dependencies
-    const { getGlobalDebugState } = require("../shared/debug-state");
-    const debugState = getGlobalDebugState();
-    return (
-      debugState.dependencies || {
-        enabled: false,
-        level: "normal",
-        filter: "all",
-        allowedHooks: null,
-        excludedHooks: [],
-        throttleMs: 100,
-      }
-    );
-  } catch {
-    // Final fallback
-    return {
+  // Fallback: Get state from debug settings system
+  const debugState = getGlobalDebugState();
+  return (
+    debugState.dependencies || {
       enabled: false,
       level: "normal",
       filter: "all",
       allowedHooks: null,
       excludedHooks: [],
       throttleMs: 100,
-    };
-  }
+    }
+  );
 };
 
 // Enhanced dependency change tracking with smarter frequency detection
@@ -593,294 +579,3 @@ export function useRenderTracker(
 
   useWhyDidYouUpdate(name, props);
 }
-
-// Global circuit breaker state (simplified - could be moved to main debug system later)
-const circuitBreakers = new Map<
-  string,
-  {
-    isOpen: boolean;
-    renderCount: number;
-    lastReset: number;
-    threshold: number;
-  }
->();
-
-/**
- * Circuit breaker configuration
- */
-interface CircuitBreakerConfig {
-  maxRenders?: number; // Max renders before opening circuit (default: 15)
-  resetInterval?: number; // Reset interval in ms (default: 5000)
-  autoRestore?: boolean; // Auto-restore after reset interval (default: true)
-  onBreak?: (name: string, renderCount: number) => void;
-  onRestore?: (name: string) => void;
-}
-
-/**
- * Enhanced render tracker with automatic circuit breaker protection
- */
-export function useCircuitBreakerTracker(
-  name: string,
-  props: Record<string, any>,
-  config: CircuitBreakerConfig = {}
-): { isDisabled: boolean; renderCount: number } {
-  const {
-    maxRenders = 15,
-    resetInterval = 5000,
-    autoRestore = true,
-    onBreak,
-    onRestore,
-  } = config;
-
-  const renderCount = useRef(0);
-  const lastWarning = useRef(0);
-
-  renderCount.current += 1;
-
-  // Get or create circuit breaker state
-  if (!circuitBreakers.has(name)) {
-    circuitBreakers.set(name, {
-      isOpen: false,
-      renderCount: 0,
-      lastReset: Date.now(),
-      threshold: maxRenders,
-    });
-  }
-
-  const breaker = circuitBreakers.get(name)!;
-  breaker.renderCount = renderCount.current;
-
-  const now = Date.now();
-
-  // Auto-restore circuit breaker after reset interval
-  if (
-    breaker.isOpen &&
-    autoRestore &&
-    now - breaker.lastReset > resetInterval
-  ) {
-    breaker.isOpen = false;
-    breaker.lastReset = now;
-    renderCount.current = 0; // Reset render count
-    logToDebugSystem(`🔄 [${name}] Circuit breaker auto-restored`);
-    onRestore?.(name);
-  }
-
-  // Check if we should open the circuit breaker
-  if (!breaker.isOpen && renderCount.current > maxRenders) {
-    breaker.isOpen = true;
-    breaker.lastReset = now;
-    logErrorToDebugSystem(
-      `🚨 [${name}] CIRCUIT BREAKER OPEN - Excessive renders detected: ${renderCount.current}`
-    );
-    logErrorToDebugSystem(
-      `🛑 [${name}] Hook disabled to prevent infinite loop`
-    );
-    onBreak?.(name, renderCount.current);
-  }
-
-  // Warn about high render count (but less frequently when circuit is open)
-  if (renderCount.current > 10 && renderCount.current % 5 === 0) {
-    if (now - lastWarning.current > 1000) {
-      if (breaker.isOpen) {
-        logWarnToDebugSystem(
-          `⚠️ [${name}] Hook disabled (renders: ${renderCount.current})`
-        );
-      } else {
-        logWarnToDebugSystem(
-          `⚠️ [${name}] High render count detected: ${renderCount.current}`
-        );
-      }
-      lastWarning.current = now;
-    }
-  }
-
-  // Always call useWhyDidYouUpdate to maintain hook order
-  // The function itself will handle whether to actually track based on circuit state
-  useWhyDidYouUpdate(name, breaker.isOpen ? {} : props);
-
-  return {
-    isDisabled: breaker.isOpen,
-    renderCount: renderCount.current,
-  };
-}
-
-/**
- * Safe hook wrapper that automatically disables when excessive renders detected
- */
-export function useSafeHook<T>(
-  name: string,
-  hookFn: () => T,
-  fallbackValue: T,
-  config: CircuitBreakerConfig = {}
-): T {
-  const { isDisabled } = useCircuitBreakerTracker(name, {}, config);
-
-  if (isDisabled) {
-    logToDebugSystem(
-      `🛑 [${name}] Hook execution skipped (circuit breaker open)`
-    );
-    return fallbackValue;
-  }
-
-  try {
-    return hookFn();
-  } catch (error) {
-    logErrorToDebugSystem(`❌ [${name}] Hook execution failed:`, error);
-    return fallbackValue;
-  }
-}
-
-/**
- * Manual circuit breaker control
- */
-export const circuitBreakerControl = {
-  /**
-   * Check if a circuit breaker is open
-   */
-  isOpen(name: string): boolean {
-    return circuitBreakers.get(name)?.isOpen ?? false;
-  },
-
-  /**
-   * Manually open a circuit breaker
-   */
-  open(name: string): void {
-    if (!circuitBreakers.has(name)) {
-      circuitBreakers.set(name, {
-        isOpen: false,
-        renderCount: 0,
-        lastReset: Date.now(),
-        threshold: 15,
-      });
-    }
-    const breaker = circuitBreakers.get(name)!;
-    breaker.isOpen = true;
-    breaker.lastReset = Date.now();
-    logToDebugSystem(`🛑 [${name}] Circuit breaker manually opened`);
-  },
-
-  /**
-   * Manually close/restore a circuit breaker
-   */
-  close(name: string): void {
-    const breaker = circuitBreakers.get(name);
-    if (breaker) {
-      breaker.isOpen = false;
-      breaker.lastReset = Date.now();
-      logToDebugSystem(`🔄 [${name}] Circuit breaker manually restored`);
-    }
-  },
-
-  /**
-   * Get circuit breaker status
-   */
-  getStatus(name: string) {
-    return circuitBreakers.get(name) ?? null;
-  },
-
-  /**
-   * Reset all circuit breakers
-   */
-  resetAll(): void {
-    circuitBreakers.clear();
-    logToDebugSystem(`🔄 All circuit breakers reset`);
-  },
-
-  /**
-   * List all circuit breakers and their status
-   */
-  listAll(): Array<{ name: string; isOpen: boolean; renderCount: number }> {
-    return Array.from(circuitBreakers.entries()).map(([name, breaker]) => ({
-      name,
-      isOpen: breaker.isOpen,
-      renderCount: breaker.renderCount,
-    }));
-  },
-};
-
-// Global emergency stop
-export const emergencyStop = {
-  isActive: false,
-
-  /**
-   * Activate emergency stop - disables all circuit-breaker protected hooks
-   */
-  activate(): void {
-    this.isActive = true;
-    logErrorToDebugSystem(
-      `🚨 EMERGENCY STOP ACTIVATED - All protected hooks disabled`
-    );
-  },
-
-  /**
-   * Deactivate emergency stop
-   */
-  deactivate(): void {
-    this.isActive = false;
-    circuitBreakers.clear();
-    logToDebugSystem(`✅ Emergency stop deactivated - Hooks restored`);
-  },
-};
-
-/**
- * Emergency-stop aware safe hook wrapper
- */
-export function useEmergencySafeHook<T>(
-  name: string,
-  hookFn: () => T,
-  fallbackValue: T,
-  config: CircuitBreakerConfig = {}
-): T {
-  if (emergencyStop.isActive) {
-    logWarnToDebugSystem(
-      `🚨 [${name}] Hook execution blocked (emergency stop active)`
-    );
-    return fallbackValue;
-  }
-
-  return useSafeHook(name, hookFn, fallbackValue, config);
-}
-
-// Initialize notification system on module load
-initializeNotificationSystem();
-
-// Initialize unified debug system (replaces old surfaceDebug creation)
-initializeUnifiedDebugSystem();
-
-console.log(`
-✅ Surface Dependency Tracking (integrated with unified debug framework)
-
-🎯 PRIMARY PURPOSE: Fix "Maximum update depth exceeded" React errors!
-
-🚀 NEW: Smart initialization detection! No more false warnings during app startup.
-
-🔧 Unified Debug Framework:
-  - Single global object: surfaceDebug
-  - Logs stream to both console AND debug panel
-  - Controlled by DependencyTrackingConfig settings
-  - Available debug points: dependencies, health, performance
-  - Logs visible in DebugExternalPanel and DebugLogsList
-
-🎛️ Console Commands:
-  surfaceDebug.deps.off()           - Disable dependency logs
-  surfaceDebug.deps.quiet()         - Only critical changes
-  surfaceDebug.deps.initAware()     - 🌟 RECOMMENDED: Smart init filtering
-  surfaceDebug.deps.normal()        - Standard dependency tracking
-  surfaceDebug.deps.verbose()       - Detailed dependency tracking
-  surfaceDebug.deps.functionsOnly() - Only function changes
-  surfaceDebug.deps.objectsOnly()   - Only object changes
-  surfaceDebug.deps.unstableOnly()  - Only changing dependencies
-  
-🧪 Test Commands:
-  surfaceDebug.testDependencyTracking() - Verify functionality
-  surfaceDebug.testMockComponent()      - Test mock scenarios
-  
-🚨 Emergency Protection:
-  surfaceDebug.emergency.activate()   - Stop ALL logging immediately
-  surfaceDebug.emergency.deactivate() - Restore normal operation
-  surfaceDebug.emergency.status()     - Check current status
-  
-🎯 During INITIALIZATION (🚀): Normal object changes, only warn if excessive
-🎯 During RUNTIME: ⚠️ FREQUENT warnings point to infinite render culprits!
-📊 NEW: (#3) counters show how many times each dependency has changed
-`);

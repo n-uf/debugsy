@@ -13,10 +13,6 @@ export {
   type DebugDisplayPanelProps,
 } from "./debug-display-panel";
 export {
-  DebugExternalPanel,
-  type DebugExternalPanelProps,
-} from "./debug-external-panel";
-export {
   DebugPanelHeader,
   type DebugPanelHeaderProps,
 } from "./debug-panel-header";
@@ -38,6 +34,10 @@ export {
   type DebugStatsPanelProps,
 } from "./debug-stats-panel";
 export { DebugStatus, type DebugStatusProps } from "./debug-status";
+export {
+  Debugsy as DebugsyPanel,
+  type DebugsyProps as DebugsyPanelProps,
+} from "./debugsy";
 export { DebugLogsList, type DebugLogsListProps } from "./logs/debug-logs-list";
 
 // Logs components

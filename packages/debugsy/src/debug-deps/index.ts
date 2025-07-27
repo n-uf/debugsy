@@ -5,17 +5,18 @@
  * to debug circular re-rendering, ineffective memoization, and render loops.
  */
 
-// Core dependency tracking hooks
-export {
-  useCircuitBreakerTracker,
-  useEmergencySafeHook,
-  useRenderTracker,
-  useSafeHook,
-  useWhyDidYouUpdate,
-} from "./debug-deps";
+// Core dependency tracking functionality
+export { useRenderTracker, useWhyDidYouUpdate } from "./debug-deps";
 
-// Circuit breaker controls
-export { circuitBreakerControl, emergencyStop } from "./debug-deps";
+// UI state management and controls
+export { useDependencyState } from "./debug-deps-controls";
+
+// Types (re-export for convenience)
+export type {
+  DebugLogEntry,
+  DependencyFilter,
+  DependencyLogLevel,
+} from "../shared/debug-constants";
 
 // Test utilities (for development/debugging)
 // Note: Test utilities are available globally via surfaceDebug object

@@ -7,11 +7,11 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { DebugLogEntry } from "../../hooks/use-debug";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-} from "../../hooks/use-debug";
+} from "../../hooks/debug-notifications";
+import type { DebugLogEntry } from "../../hooks/use-debugsy";
 
 // Import extracted components
 import {

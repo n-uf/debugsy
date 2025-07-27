@@ -9,8 +9,8 @@ import type {
   DependencyLogLevel,
   LogLevel,
 } from "./debug-constants";
-import { getDebugEmoji, MAX_STORED_LOGS } from "./debug-constants";
-import { debugStateControls, getGlobalDebugState } from "./debug-state";
+import { getDebugPointEmoji, MAX_STORED_LOGS } from "./debug-constants";
+import { debugSettingsControls, getGlobalDebugState } from "./debug-settings";
 import { registerSuperjsonCustomSerializers } from "./superjson-config";
 
 /**
@@ -232,7 +232,7 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
 
       // Console output if enabled
       if (globalState.console) {
-        const emoji = getDebugEmoji(point);
+        const emoji = getDebugPointEmoji(point);
         const prefix = `${emoji} [${point}]`;
 
         // Use appropriate console method based on log level
@@ -296,12 +296,12 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
 
     // === CONTROL FUNCTIONS ===
     enable: (point: DebugPoint): void => {
-      debugStateControls.enable(point);
+      debugSettingsControls.enable(point);
       notifySubscribers();
     },
 
     disable: (point: DebugPoint): void => {
-      debugStateControls.disable(point);
+      debugSettingsControls.disable(point);
       notifySubscribers();
     },
 
@@ -317,28 +317,28 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
     },
 
     enableAll: (): void => {
-      debugStateControls.enableAll();
+      debugSettingsControls.enableAll();
       notifySubscribers();
     },
 
     disableAll: (): void => {
-      debugStateControls.disableAll();
+      debugSettingsControls.disableAll();
       notifySubscribers();
     },
 
     // === CONFIGURATION ===
     setConsoleEnabled: (enabled: boolean): void => {
-      debugStateControls.setConsoleEnabled(enabled);
+      debugSettingsControls.setConsoleEnabled(enabled);
       notifySubscribers();
     },
 
     setVisualEnabled: (enabled: boolean): void => {
-      debugStateControls.setVisualEnabled(enabled);
+      debugSettingsControls.setVisualEnabled(enabled);
       notifySubscribers();
     },
 
     setPerformanceEnabled: (enabled: boolean): void => {
-      debugStateControls.setPerformanceEnabled(enabled);
+      debugSettingsControls.setPerformanceEnabled(enabled);
       notifySubscribers();
     },
 
@@ -360,7 +360,7 @@ function createUnifiedDebugManager(): UnifiedSurfaceDebug {
     },
 
     clearLogs: (): void => {
-      debugStateControls.clearLogs();
+      debugSettingsControls.clearLogs();
       notifySubscribers();
     },
 

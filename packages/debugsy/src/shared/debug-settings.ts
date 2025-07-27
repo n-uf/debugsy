@@ -6,6 +6,7 @@ import type {
   DependencyFilter,
   DependencyLogLevel,
 } from "./debug-constants";
+import { getAllDebugPoints } from "./debug-constants";
 
 // Global debug state (shared across all hook instances)
 let globalDebugState: DebugState = {
@@ -36,7 +37,7 @@ export function getGlobalDebugState(): DebugState {
 /**
  * Debug configuration from environment or localStorage
  */
-export function initializeDebugState(): void {
+export function initializeDebugSettings(): void {
   if (typeof window === "undefined") return;
 
   // Check for debug configuration in localStorage
@@ -73,26 +74,8 @@ export function initializeDebugState(): void {
       .map((p) => p.trim()) as DebugPoint[];
     debugPoints.forEach((point) => {
       if (point === "all") {
-        // Enable all debug points
-        globalDebugState.enabled = new Set([
-          "dispatcher" as DebugPoint,
-          "hit-testing" as DebugPoint,
-          "routing" as DebugPoint,
-          "surface-interaction" as DebugPoint,
-          "frame-interaction" as DebugPoint,
-          "selection-interaction" as DebugPoint,
-          "handler-registry" as DebugPoint,
-          "performance" as DebugPoint,
-          "visual-debug" as DebugPoint,
-          "surface-interactions" as DebugPoint,
-          "surface-dock" as DebugPoint,
-          "frame-metrics" as DebugPoint,
-          "dependencies" as DebugPoint,
-          "canvas-events" as DebugPoint,
-          "viewport-changes" as DebugPoint,
-          "auto-layout" as DebugPoint,
-          "event-propagation" as DebugPoint,
-        ]);
+        // Enable all debug points using the unified configuration
+        globalDebugState.enabled = new Set(getAllDebugPoints());
       } else {
         globalDebugState.enabled.add(point);
       }
@@ -114,7 +97,7 @@ export function initializeDebugState(): void {
  * Save debug configuration to localStorage
  * UNIFIED: Now uses safeSuperjsonStringify for consistent safe serialization
  */
-export function saveDebugConfig(): void {
+export function saveDebugSettings(): void {
   if (typeof window === "undefined") return;
 
   try {
@@ -135,19 +118,19 @@ export function saveDebugConfig(): void {
 }
 
 /**
- * Debounced version of saveDebugConfig to prevent UI blocking
+ * Debounced version of saveDebugSettings to prevent UI blocking
  * Batches multiple rapid changes into a single localStorage write
  */
 let saveTimeout: NodeJS.Timeout | null = null;
 const SAVE_DEBOUNCE_MS = 100; // 100ms delay for batching
 
-function debouncedSaveDebugConfig(): void {
+function debouncedSaveDebugSettings(): void {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
 
   saveTimeout = setTimeout(() => {
-    saveDebugConfig();
+    saveDebugSettings();
     saveTimeout = null;
   }, SAVE_DEBOUNCE_MS);
 }
@@ -155,34 +138,37 @@ function debouncedSaveDebugConfig(): void {
 /**
  * Debug control functions for global state
  */
-export const debugStateControls = {
+export const debugSettingsControls = {
   enable: (point: DebugPoint) => {
     globalDebugState.enabled.add(point);
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   disable: (point: DebugPoint) => {
     globalDebugState.enabled.delete(point);
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   enableAll: () => {
-    globalDebugState.enabled.add("all");
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    // Enable all actual debug points instead of just adding "all" string
+    getAllDebugPoints().forEach((point) => {
+      globalDebugState.enabled.add(point);
+    });
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   disableAll: () => {
     globalDebugState.enabled.clear();
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   setConsoleEnabled: (enabled: boolean) => {
     globalDebugState.console = enabled;
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   setVisualEnabled: (enabled: boolean) => {
     globalDebugState.visual = enabled;
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   setPerformanceEnabled: (enabled: boolean) => {
     globalDebugState.performance = enabled;
-    debouncedSaveDebugConfig(); // ← Non-blocking, batched persistence
+    debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   clearLogs: () => {
     globalDebugState.logs = [];
@@ -194,7 +180,7 @@ export const debugStateControls = {
  * Dependency tracking controls for global state
  * UNIFIED: Now uses debug point system instead of separate enabled state
  */
-export const dependencyStateControls = {
+export const dependencySettingsControls = {
   setEnabled: (enabled: boolean) => {
     // Use unified debug point system instead of separate enabled state
     if (enabled) {
@@ -203,7 +189,7 @@ export const dependencyStateControls = {
       globalDebugState.enabled.delete("dependencies");
     }
     // Use debounced save like other debug controls
-    debouncedSaveDebugConfig();
+    debouncedSaveDebugSettings();
   },
   setLevel: (level: DependencyLogLevel) => {
     globalDebugState.dependencies.level = level;
@@ -226,4 +212,4 @@ export const dependencyStateControls = {
 };
 
 // Initialize on first import
-initializeDebugState();
+initializeDebugSettings();

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { useDependencyState } from "../../debug-deps/debug-deps-controls";
 import type { DependencyFilter } from "../../shared/debug-constants";
-import { useDependencyState } from "../hooks/use-debug";
 
 export interface DebugDependencyAdvancedControlsProps {
   className?: string;

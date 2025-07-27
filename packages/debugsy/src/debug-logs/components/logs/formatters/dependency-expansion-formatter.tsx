@@ -8,7 +8,7 @@ import {
   getDiffSummary,
   type DiffEntry,
 } from "../../../../shared/object-depth-utils";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
+import type { DebugLogEntry } from "../../../hooks/use-debugsy";
 import { safeJsonStringify } from "../utils/json/json-utilities";
 import { type LogSeverity } from "./default-log-formatter";
 import { formatTime } from "./health-expansion-formatter";

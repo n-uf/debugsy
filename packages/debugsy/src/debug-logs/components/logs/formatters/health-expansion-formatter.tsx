@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
+import type { DebugLogEntry } from "../../../hooks/use-debugsy";
 import { type LogSeverity } from "./default-log-formatter";
 import {
   CompactHeader,

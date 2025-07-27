@@ -4,8 +4,11 @@
  * Core debug infrastructure shared across all debug modules.
  */
 
+// === CORE EXPORTS ===
+
 export * from "./debug-constants";
-export * from "./debug-state";
+export * from "./debug-point-config";
+export * from "./debug-settings";
 export * from "./global-debug-manager";
 export * from "./object-depth-utils";
 export * from "./superjson-config";

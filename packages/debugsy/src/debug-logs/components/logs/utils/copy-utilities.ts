@@ -5,7 +5,7 @@ import {
   type DepthSetting,
   type DiffEntry,
 } from "../../../../shared/object-depth-utils";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
+import type { DebugLogEntry } from "../../../hooks/use-debugsy";
 import { DEFAULT_COPY_CONFIG } from "../config/copy-config";
 import { formatTime } from "../formatters";
 import { safeSuperjsonStringify } from "./json/json-core";

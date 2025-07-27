@@ -1,20 +1,13 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import {
   type DebugLogEntry,
   type DebugPoint,
-  type DependencyFilter,
-  type DependencyLogLevel,
 } from "../../shared/debug-constants";
-import {
-  dependencyStateControls,
-  getGlobalDebugState,
-} from "../../shared/debug-state";
+import { getGlobalDebugState } from "../../shared/debug-settings";
 import {
   clearDebugDisplayContent,
-  notifySubscribers,
   setDebugDisplayContent,
   useDebugDisplayContent,
-  useDebugSubscription,
 } from "./debug-notifications";
 import {
   type HealthMetrics,
@@ -28,19 +21,13 @@ import {
 } from "../../shared/global-debug-manager";
 
 // Re-export types for backward compatibility
-export type { DebugLogEntry, DebugPoint, DependencyFilter, DependencyLogLevel };
-
-/**
- * TypeScript interface for backward compatibility
- * @deprecated Use UnifiedSurfaceDebug instead
- */
-export interface GlobalDebugManager extends UnifiedSurfaceDebug {}
+export type { DebugLogEntry, DebugPoint };
 
 /**
  * Global type declarations to properly type globalThis extensions
  */
 declare global {
-  var __SURFACE_DEBUG_MANAGER: GlobalDebugManager | undefined;
+  var __SURFACE_DEBUG_MANAGER: UnifiedSurfaceDebug | undefined;
   var __SURFACE_EMERGENCY_STOP: {
     active: boolean;
     activate: () => void;
@@ -51,45 +38,17 @@ declare global {
   // REMOVED: var surfaceDebug - now handled by unified system
 }
 
-/**
- * Safe size estimation that handles circular references and complex objects
- * @deprecated Use the unified system instead
- */
-function estimateDataSize(data: any): number {
-  if (!data) return 0;
-
-  // Handle primitives
-  if (typeof data === "string") return data.length;
-  if (typeof data === "number") return 8; // Approximate bytes
-  if (typeof data === "boolean") return 4; // Approximate bytes
-  if (typeof data === "function") return data.toString().length;
-
-  // For objects, avoid JSON.stringify which fails on circular references
-  if (typeof data === "object") {
-    try {
-      // Use a simple heuristic based on keys and structure
-      if (Array.isArray(data)) {
-        return 50 + data.length * 20; // Rough estimate: 50 bytes overhead + 20 per item
-      } else {
-        const keys = Object.keys(data);
-        return 100 + keys.length * 30; // Rough estimate: 100 bytes overhead + 30 per property
-      }
-    } catch {
-      return 500; // Fallback estimate for complex objects
-    }
-  }
-
-  return 50; // Default fallback
-}
-
-// Cache for stable debug objects per debug point
-const stableDebugCache = new Map<DebugPoint | "global", StableDebugInterface>();
+// Cache for stable debugsy objects per debug point
+const stableDebugsyCache = new Map<
+  DebugPoint | "global",
+  StableDebugsyInterface
+>();
 
 /**
- * Stable debug interface without problematic getters
+ * Stable debugsy interface without problematic getters
  * This interface provides the same functionality but with stable references
  */
-interface StableDebugInterface {
+interface StableDebugsyInterface {
   // Core logging - same as UnifiedSurfaceDebug
   log: (
     point: DebugPoint,
@@ -138,11 +97,11 @@ interface StableDebugInterface {
 }
 
 /**
- * Create a stable debug interface for a specific debug point
+ * Create a stable debugsy interface for a specific debug point
  */
-function createStableDebugInterface(
+function createStableDebugsyInterface(
   point: DebugPoint | "global"
-): StableDebugInterface {
+): StableDebugsyInterface {
   // Ensure unified system is initialized
   if (!globalThis.surfaceDebug) {
     initializeUnifiedDebugSystem();
@@ -151,7 +110,7 @@ function createStableDebugInterface(
   const unified = globalThis.surfaceDebug;
 
   // Create stable interface that delegates to unified system
-  const stable: StableDebugInterface = {
+  const stable: StableDebugsyInterface = {
     // Core logging - delegate to unified system
     log: unified.log,
     warn: unified.warn,
@@ -199,79 +158,30 @@ function createStableDebugInterface(
 }
 
 /**
- * Centralized debug hook - now returns stable debug interfaces per point
+ * Centralized debugsy hook - now returns stable debugsy interfaces per point
  * FIXED: Returns stable objects without problematic getters for React dependencies
  */
-export const useDebug = (point: DebugPoint = "all"): StableDebugInterface => {
+export const useDebugsy = (
+  point: DebugPoint = "all"
+): StableDebugsyInterface => {
   // Use useMemo to ensure the same object is returned for the same point
   return useMemo(() => {
     // Check cache first
-    if (stableDebugCache.has(point)) {
-      return stableDebugCache.get(point)!;
+    if (stableDebugsyCache.has(point)) {
+      return stableDebugsyCache.get(point)!;
     }
 
     // Create new stable interface
-    const stable = createStableDebugInterface(point);
+    const stable = createStableDebugsyInterface(point);
 
     // Cache it
-    stableDebugCache.set(point, stable);
+    stableDebugsyCache.set(point, stable);
 
     return stable;
   }, [point]);
 };
 
 // REMOVED: All the old initializeGlobalDebugManager code - now handled by unified system
-
-/**
- * Unified dependency state hook - replaces the old useDependencyState from debug-deps.ts
- * UNIFIED: Now uses debug point system for enabled state
- */
-export const useDependencyState = () => {
-  // Subscribe to debug state changes
-  useDebugSubscription();
-
-  const globalDebugState = getGlobalDebugState();
-
-  const getDependencyLogs = useCallback(() => {
-    return globalDebugState.logs.filter(
-      (log) => log.point === "dependencies"
-    ) as Array<DebugLogEntry & { point: "dependencies" }>;
-  }, [globalDebugState.logs]);
-
-  const setFilter = useCallback((filter: DependencyFilter) => {
-    dependencyStateControls.setFilter(filter);
-    notifySubscribers();
-  }, []);
-
-  const setLogLevel = useCallback((level: DependencyLogLevel) => {
-    dependencyStateControls.setLevel(level);
-    notifySubscribers();
-  }, []);
-
-  const enable = useCallback(() => {
-    dependencyStateControls.setEnabled(true);
-    notifySubscribers();
-  }, []);
-
-  const disable = useCallback(() => {
-    dependencyStateControls.setEnabled(false);
-    notifySubscribers();
-  }, []);
-
-  return {
-    // State - now unified through debug point system
-    enabled: dependencyStateControls.getEnabled(),
-    logLevel: dependencyStateControls.getLevel(),
-    filter: dependencyStateControls.getFilter(),
-    logs: getDependencyLogs(),
-
-    // Controls - same interface, unified implementation
-    enable,
-    disable,
-    setLogLevel,
-    setFilter,
-  };
-};
 
 // Re-export utilities
 export {

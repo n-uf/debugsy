@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useDebugSubscription } from "../hooks/debug-notifications";
-import { useDebug } from "../hooks/use-debug";
+import { useDebugsy } from "../hooks/use-debugsy";
 import { DebugControlPanel } from "./debug-control-panel";
 import { DebugPanelHeader } from "./debug-panel-header";
 import { DebugPanelResizeHandle } from "./debug-panel-resize-handle";
@@ -10,20 +10,20 @@ import { DebugResizePresets } from "./debug-resize-presets";
 import { DebugStatsPanel } from "./debug-stats-panel";
 import { DebugLogsList } from "./logs/debug-logs-list";
 
-export interface DebugExternalPanelProps {
+export interface DebugsyProps {
   closeOnClickOutside?: boolean;
 }
 
 /**
- * External Debug Panel - Full-screen resizable debug console
+ * Debugsy Panel - Full-screen resizable debug console
  * SELF-CONTAINED: Manages its own debug state, logs, and clearing internally
  */
-export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
+export const Debugsy: React.FC<DebugsyProps> = ({
   closeOnClickOutside = false,
 }) => {
   // SELF-CONTAINED: Handle debug state internally
   useDebugSubscription(); // Subscribe to debug state changes
-  const debug = useDebug();
+  const debug = useDebugsy();
 
   // Get logs and clear function from debug system
   const logs = debug.getLogs();
@@ -37,7 +37,7 @@ export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
   const resizeStartHeight = useRef<number>(0);
 
   const onClose = () => {
-    console.log("🚪 Closing debug external panel");
+    console.log("🚪 Closing debugsy panel");
     setIsVisible(false);
   };
 
@@ -157,18 +157,15 @@ export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
 
   const handleClearClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("🗑️ Clearing debug logs from external panel");
+    console.log("🗑️ Clearing debug logs from debugsy panel");
     onClearLogs();
   };
 
   const handleDisplayClick = () => {
-    console.log(
-      "🔄 DebugExternalPanel display click - toggling main content:",
-      {
-        currentHeight: panelHeight,
-        willToggleTo: panelHeight === 0 ? 400 : 0,
-      }
-    );
+    console.log("🔄 DebugsyPanel display click - toggling main content:", {
+      currentHeight: panelHeight,
+      willToggleTo: panelHeight === 0 ? 400 : 0,
+    });
     setPanelHeight(panelHeight === 0 ? 400 : 0);
   };
 
@@ -344,4 +341,4 @@ export const DebugExternalPanel: React.FC<DebugExternalPanelProps> = ({
   );
 };
 
-DebugExternalPanel.displayName = "DebugExternalPanel";
+Debugsy.displayName = "DebugsyPanel";

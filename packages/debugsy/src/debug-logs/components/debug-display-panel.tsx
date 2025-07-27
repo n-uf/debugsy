@@ -2,7 +2,9 @@
 
 import React from "react";
 import { useDebugDisplayContent } from "../hooks/debug-notifications";
-import type { DebugLogEntry } from "../hooks/use-debug";
+import type { DebugLogEntry } from "../hooks/use-debugsy";
+// Import unified debug point configuration
+import { getDebugPointEmoji } from "../../shared/debug-constants";
 
 export interface DebugDisplayPanelProps {
   logs: DebugLogEntry[];
@@ -15,26 +17,6 @@ export interface DebugDisplayPanelProps {
   onDisplayInlineLogsChange?: (display: boolean) => void;
   onDisplayClick?: () => void;
 }
-
-// Debug points mapping for emojis (Event Dispatcher Architecture)
-const DEBUG_POINT_EMOJIS: Record<string, string> = {
-  dispatcher: "🎯",
-  "hit-testing": "🔍",
-  routing: "🔗",
-  "frame-interaction": "📦",
-  "selection-interaction": "📋",
-  "handler-registry": "📝",
-  performance: "⚡",
-  "visual-debug": "👁️",
-  "surface-interactions": "🌍",
-  "surface-dock": "🚢",
-  "frame-metrics": "📏",
-  "canvas-events": "🎨",
-  "viewport-changes": "🔍",
-  "auto-layout": "📐",
-  "event-propagation": "📡",
-  "mouse-dispatcher": "🖱️", // Alias for dispatcher
-};
 
 /**
  * Debug Display Panel - Inline panel only (external panel rendered at Surface level)
@@ -62,7 +44,7 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
   };
 
   const getPointEmoji = (point: string): string => {
-    return DEBUG_POINT_EMOJIS[point] ?? "📝";
+    return getDebugPointEmoji(point as any) ?? "📝";
   };
 
   const toggleExternalPanel = () => {

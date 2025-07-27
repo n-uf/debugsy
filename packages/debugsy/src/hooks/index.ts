@@ -10,7 +10,7 @@
 // Core hooks
 export { useDebugSubscription } from "../debug-logs/hooks/debug-notifications";
 export { captureHealthSnapshot } from "../debug-logs/hooks/health-snapshot";
-export { useDebug } from "../debug-logs/hooks/use-debug";
+export { useDebugsy } from "../debug-logs/hooks/use-debugsy";
 
 // Data sanitization (simplified with superjson)
 export {
@@ -26,4 +26,4 @@ export type {
   DependencyLogLevel,
 } from "../shared/debug-constants";
 
-export type { DebugLogEntry } from "../debug-logs/hooks/use-debug";
+export type { DebugLogEntry } from "../debug-logs/hooks/use-debugsy";

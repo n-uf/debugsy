@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import JsonView from "react18-json-view";
 import "react18-json-view/src/style.css";
-import type { DebugLogEntry } from "../../../hooks/use-debug";
+import type { DebugLogEntry } from "../../../hooks/use-debugsy";
 import { JsonUtils } from "../utils/json/json-utilities";
 
 // OPTIMIZATION: Stable style object to prevent JsonView prop changes

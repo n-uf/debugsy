@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useDebugSubscription } from "../hooks/debug-notifications";
-import { useDebug } from "../hooks/use-debug";
+import { useDebugsy } from "../hooks/use-debugsy";
 import { DebugDependencyControls } from "./debug-dependency-controls";
 import { DebugDisplayPanel } from "./debug-display-panel";
 import {
@@ -55,7 +55,7 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   // SUBSCRIBE to debug state changes so button indicators update
   useDebugSubscription();
 
-  const debug = useDebug();
+  const debug = useDebugsy();
 
   // PERFORMANCE FIX: Memoize expensive operations to prevent cascade re-renders
   const expensiveState = useMemo(
