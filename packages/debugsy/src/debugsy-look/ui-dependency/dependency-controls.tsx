@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useDebugSubscription } from "../../debugsy-logs/hooks/debug-notifications";
 import { useDependencySettings } from "../../debugsy-shared/debug-settings";
 import { DebugDependencyAdvancedControls } from "./dependency-advanced-controls";
 
@@ -21,18 +22,13 @@ export interface DebugDependencyControlsProps {
 export const DebugDependencyControls: React.FC<
   DebugDependencyControlsProps
 > = ({ className = "" }) => {
+  // SUBSCRIBE to debug state changes so button indicators update (like debug point buttons)
+  useDebugSubscription();
+
   const dependencyState = useDependencySettings();
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Adapt new interface to old interface for compatibility with existing handlers
-  const state = {
-    enabled: dependencyState.enabled,
-    level: dependencyState.logLevel,
-    filter: dependencyState.filter,
-    allowedHooks: null as string[] | null, // Not available in new interface
-    excludedHooks: [] as string[], // Not available in new interface
-  };
-
+  // Use reactive state directly instead of static object
   const methods: any = {
     deps: {
       off: dependencyState.disable,
@@ -69,9 +65,9 @@ export const DebugDependencyControls: React.FC<
   const handleDependenciesToggle = () => {
     console.log(
       "🔵 [MainControls] Dependencies toggle, current enabled:",
-      state.enabled
+      dependencyState.enabled
     );
-    if (state.enabled) {
+    if (dependencyState.enabled) {
       dependencyState.disable();
     } else {
       dependencyState.enable();
@@ -96,17 +92,19 @@ export const DebugDependencyControls: React.FC<
     dependencyState.setFilter("unstable-only");
   };
 
-  // Indicator logic based on actual global state
+  // Reactive indicator logic using dependencyState directly
   const getDependenciesColor = () =>
-    state.enabled ? "bg-green-500" : "bg-red-500";
+    dependencyState.enabled ? "bg-green-500" : "bg-red-500";
   const getQuietColor = () =>
-    state.enabled && state.level === "quiet" ? "bg-green-500" : "bg-red-200";
+    dependencyState.enabled && dependencyState.logLevel === "quiet"
+      ? "bg-green-500"
+      : "bg-red-200";
   const getFunctionsColor = () =>
-    state.enabled && state.filter === "functions-only"
+    dependencyState.enabled && dependencyState.filter === "functions-only"
       ? "bg-blue-500"
       : "bg-red-200";
   const getUnstableColor = () =>
-    state.enabled && state.filter === "unstable-only"
+    dependencyState.enabled && dependencyState.filter === "unstable-only"
       ? "bg-yellow-500"
       : "bg-red-200";
 
@@ -123,7 +121,7 @@ export const DebugDependencyControls: React.FC<
             title={
               !isInitialized
                 ? "Debug system not initialized - click to enable"
-                : state.enabled
+                : dependencyState.enabled
                   ? "Click to disable (surfaceDebug.deps.off)"
                   : "Click to enable (surfaceDebug.deps.normal)"
             }

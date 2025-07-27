@@ -1,4 +1,5 @@
 import superjson from "superjson";
+import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
 import type {
   DebugPoint,
@@ -190,14 +191,18 @@ export const dependencySettingsControls = {
     }
     // Use debounced save like other debug controls
     debouncedSaveDebugSettings();
+    // Notify subscribers for reactive UI updates (like debug-space deps methods)
+    notifySubscribers();
   },
   setLevel: (level: DependencyLogLevel) => {
     globalDebugState.dependencies.level = level;
-    // No need to save level changes - they're runtime configuration
+    // Notify subscribers for reactive UI updates
+    notifySubscribers();
   },
   setFilter: (filter: DependencyFilter) => {
     globalDebugState.dependencies.filter = filter;
-    // No need to save filter changes - they're runtime configuration
+    // Notify subscribers for reactive UI updates
+    notifySubscribers();
   },
   // Getters that derive from unified debug point system
   getEnabled: (): boolean => {
