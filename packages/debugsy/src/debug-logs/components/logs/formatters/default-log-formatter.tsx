@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 // Add import for react18-json-view
 import "react18-json-view/src/style.css";
+// Import useLongPress for better touch/mouse interaction
+import { useLongPress } from "@uidotdev/usehooks";
 import type {
   DebugLogEntry,
   LogLevel,
@@ -128,7 +130,6 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
     }) => {
       const [internalExpanded, setInternalExpanded] = useState(false);
       const [copyFeedback, setCopyFeedback] = useState(false);
-      const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
       // Use internal state if no external control provided
       const isCurrentlyExpanded = onToggleExpand
@@ -140,14 +141,43 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
       // Use the log's level as severity if no explicit severity is provided
       const effectiveSeverity = severity || (log.level as LogSeverity);
 
-      // Cleanup timeout on unmount
-      useEffect(() => {
-        return () => {
-          if (clickTimeoutRef.current) {
-            clearTimeout(clickTimeoutRef.current);
+      // Handle long press to copy log entry - uses the same logic as bulk copy
+      const handleLongPressCopy = async () => {
+        try {
+          // Use the EXACT same copy logic as bulk copy in debug-logs-list.tsx
+          // This ensures 100% identical formatting for individual vs bulk operations
+          await copyLogsToClipboard([log], depthSetting);
+
+          // Show visual feedback
+          setCopyFeedback(true);
+          setTimeout(() => setCopyFeedback(false), 1500);
+
+          console.log("📋 Log entry copied to clipboard");
+        } catch (error) {
+          console.error("Failed to copy log entry:", error);
+
+          // Fallback: use the same approach as the main copy logic
+          try {
+            // Note: Still using the unified copy function for consistency
+            const textArea = document.createElement("textarea");
+            // Use formatLogForCopy directly as fallback, same as copyLogsToClipboard internals
+            const { formatLogForCopy } = await import(
+              "../utils/copy-utilities"
+            );
+            textArea.value = formatLogForCopy(log, depthSetting);
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+
+            setCopyFeedback(true);
+            setTimeout(() => setCopyFeedback(false), 1500);
+            console.log("📋 Log entry copied using fallback method");
+          } catch (fallbackError) {
+            console.error("Fallback copy method also failed:", fallbackError);
           }
-        };
-      }, []);
+        }
+      };
 
       // OPTIMIZATION: Combined memoization with log-type-aware enhancements
       // PERFORMANCE: Uses hot registry for zero-overhead metadata lookup
@@ -224,68 +254,19 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
         depthSetting,
       ]);
 
-      // Handle single click with delay to allow double-click to cancel it
-      const handleSingleClick = (event: React.MouseEvent) => {
-        if (!computedProps.shouldShowExpand) return;
-
-        // Clear any existing timeout
-        if (clickTimeoutRef.current) {
-          clearTimeout(clickTimeoutRef.current);
-        }
-
-        // Set a timeout to execute the toggle after a short delay
-        clickTimeoutRef.current = setTimeout(() => {
-          handleToggle();
-          clickTimeoutRef.current = null;
-        }, 250); // 250ms delay to detect double-click
-      };
-
-      // Handle double-click to copy log entry - uses the same logic as bulk copy
-      const handleDoubleClick = async (event: React.MouseEvent) => {
-        event.stopPropagation(); // Prevent triggering expand/collapse
-        event.preventDefault(); // Prevent any default behavior
-
-        // Cancel any pending single click
-        if (clickTimeoutRef.current) {
-          clearTimeout(clickTimeoutRef.current);
-          clickTimeoutRef.current = null;
-        }
-
-        try {
-          // Use the EXACT same copy logic as bulk copy in debug-logs-list.tsx
-          // This ensures 100% identical formatting for individual vs bulk operations
-          await copyLogsToClipboard([log], depthSetting);
-
-          // Show visual feedback
-          setCopyFeedback(true);
-          setTimeout(() => setCopyFeedback(false), 1000);
-
-          console.log("📋 Log entry copied to clipboard");
-        } catch (error) {
-          console.error("Failed to copy log entry:", error);
-
-          // Fallback: use the same approach as the main copy logic
-          try {
-            // Note: Still using the unified copy function for consistency
-            const textArea = document.createElement("textarea");
-            // Use formatLogForCopy directly as fallback, same as copyLogsToClipboard internals
-            const { formatLogForCopy } = await import(
-              "../utils/copy-utilities"
-            );
-            textArea.value = formatLogForCopy(log, depthSetting);
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand("copy");
-            document.body.removeChild(textArea);
-
-            setCopyFeedback(true);
-            setTimeout(() => setCopyFeedback(false), 1000);
-            console.log("📋 Log entry copied using fallback method");
-          } catch (fallbackError) {
-            console.error("Fallback copy method also failed:", fallbackError);
+      // Set up long press for copy functionality (after computedProps is available)
+      const longPressAttrs = useLongPress(handleLongPressCopy, {
+        threshold: 500, // 500ms for long press
+        onStart: () => {
+          // Optional: Could add visual feedback on press start
+        },
+        onCancel: () => {
+          // Normal click behavior - toggle expand/collapse
+          if (computedProps?.shouldShowExpand) {
+            handleToggle();
           }
-        }
-      };
+        },
+      });
 
       // Get severity-based styling
       const severityStyle = useMemo(
@@ -323,11 +304,8 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
                 boxShadow: "0 0 8px #10b98144",
               }),
             }}
-            onClick={
-              computedProps.shouldShowExpand ? handleSingleClick : undefined
-            }
-            onDoubleClick={handleDoubleClick}
-            title="🔸 Single-click to expand | 📋 Double-click to copy log entry"
+            {...longPressAttrs}
+            title="🔸 Click to expand | 📋 Long-press to copy log entry"
           >
             {/* Copy Success Indicator */}
             {copyFeedback && (

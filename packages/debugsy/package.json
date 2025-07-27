@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@types/react-window": "^1.8.8",
+    "@uidotdev/usehooks": "^2.4.1",
     "@workspace/shadcn": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
