@@ -4,7 +4,7 @@ import React from "react";
 import {
   type DebugPoint,
   DEBUG_POINT_CONFIG,
-} from "../../debugsy-space/debugsy-point-config";
+} from "../../debugsy-space/debugsy-point";
 
 export interface DebugPointButtonConfig {
   key: DebugPoint;

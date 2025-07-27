@@ -3,7 +3,7 @@ import type { DebugLogEntry } from "../../../../debugsy-space/debugsy-constants"
 import {
   getLogTypeConfig,
   type DependencyLogType,
-} from "../../../../debugsy-space/debugsy-point-config";
+} from "../../../../debugsy-space/debugsy-point";
 import type { LogSeverity } from "../default-log-formatter";
 import { COMPONENT_NAME_REGEX } from "./constants";
 

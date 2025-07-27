@@ -1,50 +1,22 @@
 // Debug configuration constants
 export const MAX_STORED_LOGS = 10000; // Maximum logs to keep in memory
 
-// Import debug point configuration from dedicated file
-import {
-  DEBUG_POINT_CONFIG,
-  type AllConfiguredLogTypes,
-  type DebugPoint,
-  type DebugPointConfig,
-} from "./debugsy-point-config";
+// Import debug point utilities and types from dedicated module
+import type { DebugPoint, LogType } from "./debugsy-point";
 
-// Re-export for external use
 export {
   DEBUG_POINT_CONFIG,
+  getAllDebugPoints,
+  getDebugPointEmoji,
+  getDebugPointsByCategory,
+  getLogTypeConfig,
+  getLookDebugPoints,
   type DebugPoint,
   type DebugPointConfig,
   type DependencyLogType,
-} from "./debugsy-point-config";
-
-/**
- * Get emoji for debug point category
- * UNIFIED FUNCTION - replaces all getDebugEmoji, getPointEmoji variants
- */
-export function getDebugPointEmoji(point: DebugPoint): string {
-  return DEBUG_POINT_CONFIG[point]?.emoji || "🔧";
-}
-
-/**
- * Get all debug points by category
- */
-export function getDebugPointsByCategory(
-  category: DebugPointConfig["category"]
-): DebugPoint[] {
-  return Object.entries(DEBUG_POINT_CONFIG)
-    .filter(([_, config]) => config.category === category)
-    .map(([point]) => point as DebugPoint);
-}
-
-/**
- * Get all debug points (excluding the special "all" point)
- * Used for enabling all debug points programmatically
- */
-export function getAllDebugPoints(): DebugPoint[] {
-  return Object.keys(DEBUG_POINT_CONFIG)
-    .filter((point) => point !== "all")
-    .map((point) => point as DebugPoint);
-}
+  type LogType,
+  type LogTypeConfig,
+} from "./debugsy-point";
 
 // Dependency tracking types
 export type DependencyLogLevel =
@@ -74,20 +46,6 @@ export interface DependencyTrackingConfig {
 
 // Log severity levels
 export type LogLevel = "info" | "warn" | "error" | "critical" | "success";
-
-// ============================================================================
-// 🎯 LOG TYPE - Automatically inferred from DEBUG_POINT_CONFIG
-// ============================================================================
-
-/**
- * Generic log type union - AUTOMATICALLY INFERRED from debug point configurations
- * 🎯 SINGLE SOURCE OF TRUTH: Add log types to DEBUG_POINT_CONFIG.logTypes only!
- *
- * This type automatically includes:
- * - All logType keys from all debug points in DEBUG_POINT_CONFIG
- * - STRICT: Only explicitly configured log types allowed (no arbitrary strings)
- */
-export type LogType = AllConfiguredLogTypes;
 
 // Debug log entry interface
 export interface DebugLogEntry {
