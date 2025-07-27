@@ -14,14 +14,19 @@ export {
 
 // Utility functions
 export {
+  calculateDelta,
   extractComponentName,
+  formatDelta,
   formatDependencyData,
   getDependencySeverity,
   getEnhancedObjectDisplay,
+  getImpactColor,
   getLogTypeMetadata,
+  type DeltaInfo,
 } from "./utils";
 
 // Sub-components (for advanced usage)
+export { DeltaDisplay, DeltaSummary } from "./components/delta-display";
 export {
   CompactDiffDisplay,
   CompactDiffEntry,

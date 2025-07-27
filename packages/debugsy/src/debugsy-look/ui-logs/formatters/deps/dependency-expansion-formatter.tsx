@@ -14,15 +14,18 @@ import { CompactHeader } from "../shared-components";
 import { SHARED_TOKENS } from "../shared-tokens";
 
 // Local imports
+import { DeltaDisplay, DeltaSummary } from "./components/delta-display";
 import { CompactDiffDisplay } from "./components/diff-display";
 import { CompactHelpMessage } from "./components/help-message";
 import { CompactValueRenderer } from "./components/value-renderers";
 import { COMPACT_JSON_STYLE } from "./constants";
 import {
+  calculateDelta,
   extractComponentName,
   formatDependencyData,
   getDependencySeverity,
   getLogTypeMetadata,
+  type DeltaInfo,
 } from "./utils";
 
 /**
@@ -50,16 +53,12 @@ export const DependencyExpansionContent: React.FC<{
     };
   }, [log.message, log.data, log.level]);
 
-  // Debug dependency data (only in development)
+  // Clean up: Remove debugging (delta system working)
   if (process.env.NODE_ENV === "development") {
-    console.log("📊 Dependency component debug:", {
-      logType: dependencyMeta.logType,
-      hasData: !!log.data,
-      dependencyData: dependencyMeta.dependencyData,
-      dependencyDataLength: Array.isArray(dependencyMeta.dependencyData)
-        ? dependencyMeta.dependencyData.length
-        : "not array",
-    });
+    console.log(
+      "📊 Dependency expansion with delta calculation for:",
+      dependencyMeta.componentName
+    );
   }
 
   // RELAXED: More permissive display strategy with superjson safety
@@ -118,189 +117,201 @@ export const DependencyExpansionContent: React.FC<{
       {/* Dependency Changes Detail with JsonView support */}
       {dependencyMeta.logType === "dependency-change" &&
         dependencyMeta.dependencyData &&
-        Array.isArray(dependencyMeta.dependencyData) && (
-          <div style={{ marginBottom: SHARED_TOKENS.spacing.md }}>
-            <div
-              style={{
-                color: SHARED_TOKENS.colors.accent,
-                fontWeight: "600",
-                marginBottom: SHARED_TOKENS.spacing.sm,
-                fontSize: "10px",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-              }}
-            >
-              Changes ({dependencyMeta.dependencyData.length})
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: SHARED_TOKENS.spacing.sm,
-              }}
-            >
-              {dependencyMeta.dependencyData.map((item: any, index: number) => {
-                // Calculate diff for this property change
-                const calculateDiff = () => {
-                  if (process.env.NODE_ENV === "development") {
-                    console.log(
-                      `🔍 Diff calc for ${item.property}: ${item.type} change`
+        Array.isArray(dependencyMeta.dependencyData) &&
+        (() => {
+          // Calculate deltas for all changes
+          const allDeltas: DeltaInfo[] = dependencyMeta.dependencyData
+            .map((item: any) =>
+              calculateDelta(item.from, item.to, item.property)
+            )
+            .filter(Boolean) as DeltaInfo[];
+
+          return (
+            <div style={{ marginBottom: SHARED_TOKENS.spacing.md }}>
+              <div
+                style={{
+                  color: SHARED_TOKENS.colors.accent,
+                  fontWeight: "600",
+                  marginBottom: SHARED_TOKENS.spacing.sm,
+                  fontSize: "10px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Changes ({dependencyMeta.dependencyData.length})
+              </div>
+
+              {/* Delta Summary */}
+              {allDeltas.length > 0 && <DeltaSummary deltas={allDeltas} />}
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: SHARED_TOKENS.spacing.sm,
+                }}
+              >
+                {dependencyMeta.dependencyData.map(
+                  (item: any, index: number) => {
+                    // Calculate delta for this specific change
+                    const itemDelta = calculateDelta(
+                      item.from,
+                      item.to,
+                      item.property
+                    );
+
+                    // Calculate diff for this property change
+                    const calculateDiff = () => {
+                      // Handle object-to-object changes with detailed diffs
+                      if (
+                        typeof item.from === "object" &&
+                        item.from !== null &&
+                        typeof item.to === "object" &&
+                        item.to !== null
+                      ) {
+                        const diffs = createObjectDiff(item.from, item.to, 15);
+
+                        if (diffs.length > 0) {
+                          const summary = getDiffSummary(diffs);
+                          return {
+                            diffs,
+                            summary,
+                            type: "object-diff",
+                          };
+                        }
+                      }
+
+                      // For function and primitive changes, create a simple change summary
+                      else if (item.from !== item.to) {
+                        const simpleDiffs = [
+                          {
+                            type: "changed" as const,
+                            key: item.property,
+                            from: item.from,
+                            to: item.to,
+                          },
+                        ];
+
+                        const summary = `${item.type} changed`;
+
+                        return {
+                          diffs: simpleDiffs,
+                          summary,
+                          type: "simple-diff",
+                        };
+                      }
+
+                      return null;
+                    };
+
+                    const diffData = calculateDiff();
+
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          background: SHARED_TOKENS.colors.bgSecondary,
+                          border: `1px solid ${SHARED_TOKENS.colors.border}`,
+                          borderRadius: "3px",
+                          padding: SHARED_TOKENS.spacing.md,
+                          marginBottom: SHARED_TOKENS.spacing.sm,
+                          fontSize: "10px",
+                          fontFamily: SHARED_TOKENS.fonts.mono,
+                        }}
+                      >
+                        {/* Compact Property Header */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: SHARED_TOKENS.spacing.sm,
+                            marginBottom: SHARED_TOKENS.spacing.sm,
+                            paddingBottom: SHARED_TOKENS.spacing.xs,
+                            borderBottom: `1px solid ${SHARED_TOKENS.colors.border}`,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              color: (() => {
+                                switch (item.type) {
+                                  case "function":
+                                    return SHARED_TOKENS.colors.changed;
+                                  case "object":
+                                    return SHARED_TOKENS.colors.accent;
+                                  default:
+                                    return SHARED_TOKENS.colors.textSecondary;
+                                }
+                              })(),
+                            }}
+                          >
+                            {item.type === "function"
+                              ? "ƒ"
+                              : item.type === "object"
+                                ? "{}"
+                                : "◦"}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: "600",
+                              color: SHARED_TOKENS.colors.text,
+                            }}
+                          >
+                            {item.property}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "8px",
+                              color: SHARED_TOKENS.colors.textMuted,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {item.type}
+                          </span>
+                        </div>
+
+                        {/* Diff Display */}
+                        {diffData && (
+                          <CompactDiffDisplay
+                            diffs={diffData.diffs}
+                            summary={diffData.summary}
+                          />
+                        )}
+
+                        {/* Delta Information */}
+                        {itemDelta && (
+                          <DeltaDisplay delta={itemDelta} showMetrics={true} />
+                        )}
+
+                        {/* Compact From/To Values */}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: SHARED_TOKENS.spacing.xs,
+                            marginTop: diffData ? SHARED_TOKENS.spacing.sm : 0,
+                          }}
+                        >
+                          <CompactValueRenderer
+                            value={item.from}
+                            label="from"
+                            type="old"
+                          />
+                          <CompactValueRenderer
+                            value={item.to}
+                            label="to"
+                            type="new"
+                          />
+                        </div>
+                      </div>
                     );
                   }
-
-                  // Handle object-to-object changes with detailed diffs
-                  if (
-                    typeof item.from === "object" &&
-                    item.from !== null &&
-                    typeof item.to === "object" &&
-                    item.to !== null
-                  ) {
-                    const diffs = createObjectDiff(item.from, item.to, 15);
-
-                    if (diffs.length > 0) {
-                      const summary = getDiffSummary(diffs);
-                      if (process.env.NODE_ENV === "development") {
-                        console.log(
-                          `✅ Object diff found for ${item.property}: ${diffs.length} changes`
-                        );
-                      }
-                      return {
-                        diffs,
-                        summary,
-                        type: "object-diff",
-                      };
-                    }
-                  }
-
-                  // For function and primitive changes, create a simple change summary
-                  else if (item.from !== item.to) {
-                    const simpleDiffs = [
-                      {
-                        type: "changed" as const,
-                        key: item.property,
-                        from: item.from,
-                        to: item.to,
-                      },
-                    ];
-
-                    const summary = `${item.type} changed`;
-                    if (process.env.NODE_ENV === "development") {
-                      console.log(
-                        `✅ Simple diff created for ${item.property}: ${item.type}`
-                      );
-                    }
-
-                    return {
-                      diffs: simpleDiffs,
-                      summary,
-                      type: "simple-diff",
-                    };
-                  }
-
-                  return null;
-                };
-
-                const diffData = calculateDiff();
-
-                return (
-                  <div
-                    key={index}
-                    style={{
-                      background: SHARED_TOKENS.colors.bgSecondary,
-                      border: `1px solid ${SHARED_TOKENS.colors.border}`,
-                      borderRadius: "3px",
-                      padding: SHARED_TOKENS.spacing.md,
-                      marginBottom: SHARED_TOKENS.spacing.sm,
-                      fontSize: "10px",
-                      fontFamily: SHARED_TOKENS.fonts.mono,
-                    }}
-                  >
-                    {/* Compact Property Header */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: SHARED_TOKENS.spacing.sm,
-                        marginBottom: SHARED_TOKENS.spacing.sm,
-                        paddingBottom: SHARED_TOKENS.spacing.xs,
-                        borderBottom: `1px solid ${SHARED_TOKENS.colors.border}`,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          color: (() => {
-                            switch (item.type) {
-                              case "function":
-                                return SHARED_TOKENS.colors.changed;
-                              case "object":
-                                return SHARED_TOKENS.colors.accent;
-                              default:
-                                return SHARED_TOKENS.colors.textSecondary;
-                            }
-                          })(),
-                        }}
-                      >
-                        {item.type === "function"
-                          ? "ƒ"
-                          : item.type === "object"
-                            ? "{}"
-                            : "◦"}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: "600",
-                          color: SHARED_TOKENS.colors.text,
-                        }}
-                      >
-                        {item.property}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "8px",
-                          color: SHARED_TOKENS.colors.textMuted,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {item.type}
-                      </span>
-                    </div>
-
-                    {/* Diff Display */}
-                    {diffData && (
-                      <CompactDiffDisplay
-                        diffs={diffData.diffs}
-                        summary={diffData.summary}
-                      />
-                    )}
-
-                    {/* Compact From/To Values */}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: SHARED_TOKENS.spacing.xs,
-                        marginTop: diffData ? SHARED_TOKENS.spacing.sm : 0,
-                      }}
-                    >
-                      <CompactValueRenderer
-                        value={item.from}
-                        label="from"
-                        type="old"
-                      />
-                      <CompactValueRenderer
-                        value={item.to}
-                        label="to"
-                        type="new"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       {/* Raw Data for non-dependency-change types with JsonView */}
       {log.data && dependencyMeta.logType !== "dependency-change" && (

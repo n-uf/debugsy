@@ -7,6 +7,266 @@ import type { LogSeverity } from "../default-log-formatter";
 import { COMPONENT_NAME_REGEX } from "./constants";
 
 /**
+ * Enhanced delta information for dependency changes
+ */
+export interface DeltaInfo {
+  type: "numeric" | "size" | "type" | "content" | "reference";
+  delta: number | string;
+  impact: "low" | "medium" | "high";
+  description: string;
+  fromValue?: any;
+  toValue?: any;
+  metrics?: {
+    sizeChange?: number;
+    complexityChange?: number;
+    performanceImpact?: "minimal" | "moderate" | "significant";
+  };
+}
+
+/**
+ * Calculate enhanced delta information for a change
+ */
+export const calculateDelta = (
+  from: any,
+  to: any,
+  propertyName: string
+): DeltaInfo | null => {
+  // Handle null/undefined cases
+  if (from == null && to == null) return null;
+  if (from == null) {
+    return {
+      type: "content",
+      delta: "added",
+      impact: "medium",
+      description: `${propertyName} was added`,
+      toValue: to,
+    };
+  }
+  if (to == null) {
+    return {
+      type: "content",
+      delta: "removed",
+      impact: "medium",
+      description: `${propertyName} was removed`,
+      fromValue: from,
+    };
+  }
+
+  const fromType = typeof from;
+  const toType = typeof to;
+
+  // Type change
+  if (fromType !== toType) {
+    return {
+      type: "type",
+      delta: `${fromType} → ${toType}`,
+      impact: "high",
+      description: `Type changed from ${fromType} to ${toType}`,
+      fromValue: from,
+      toValue: to,
+    };
+  }
+
+  // Numeric delta
+  if (fromType === "number" && toType === "number") {
+    const delta = to - from;
+    const percentChange = from !== 0 ? Math.abs(delta / from) * 100 : 100;
+
+    return {
+      type: "numeric",
+      delta: delta > 0 ? `+${delta}` : `${delta}`,
+      impact:
+        percentChange > 50 ? "high" : percentChange > 10 ? "medium" : "low",
+      description: `${propertyName} changed by ${delta} (${percentChange.toFixed(1)}%)`,
+      fromValue: from,
+      toValue: to,
+      metrics: {
+        sizeChange: delta,
+        performanceImpact: Math.abs(delta) > 1000 ? "significant" : "minimal",
+      },
+    };
+  }
+
+  // String delta
+  if (fromType === "string" && toType === "string") {
+    const fromLength = from.length;
+    const toLength = to.length;
+    const lengthDelta = toLength - fromLength;
+
+    return {
+      type: "size",
+      delta: lengthDelta > 0 ? `+${lengthDelta} chars` : `${lengthDelta} chars`,
+      impact:
+        Math.abs(lengthDelta) > 100
+          ? "high"
+          : Math.abs(lengthDelta) > 20
+            ? "medium"
+            : "low",
+      description: `String length changed by ${lengthDelta} characters`,
+      fromValue: from,
+      toValue: to,
+      metrics: {
+        sizeChange: lengthDelta,
+        performanceImpact:
+          Math.abs(lengthDelta) > 1000 ? "moderate" : "minimal",
+      },
+    };
+  }
+
+  // Array delta
+  if (Array.isArray(from) && Array.isArray(to)) {
+    const fromLength = from.length;
+    const toLength = to.length;
+    const lengthDelta = toLength - fromLength;
+
+    return {
+      type: "size",
+      delta: lengthDelta > 0 ? `+${lengthDelta} items` : `${lengthDelta} items`,
+      impact:
+        Math.abs(lengthDelta) > 10
+          ? "high"
+          : Math.abs(lengthDelta) > 3
+            ? "medium"
+            : "low",
+      description: `Array size changed by ${lengthDelta} items`,
+      fromValue: from,
+      toValue: to,
+      metrics: {
+        sizeChange: lengthDelta,
+        complexityChange: calculateComplexityChange(from, to),
+        performanceImpact:
+          Math.abs(lengthDelta) > 100 ? "significant" : "minimal",
+      },
+    };
+  }
+
+  // Object delta
+  if (fromType === "object" && toType === "object") {
+    const fromKeys = Object.keys(from || {});
+    const toKeys = Object.keys(to || {});
+    const keyDelta = toKeys.length - fromKeys.length;
+
+    // Check if it's a reference change (different objects with same structure)
+    const isReferenceChange =
+      from !== to && JSON.stringify(from) === JSON.stringify(to);
+
+    if (isReferenceChange) {
+      return {
+        type: "reference",
+        delta: "ref change",
+        impact: "low",
+        description: `${propertyName} reference changed (same content)`,
+        fromValue: from,
+        toValue: to,
+        metrics: {
+          performanceImpact: "minimal",
+        },
+      };
+    }
+
+    return {
+      type: "size",
+      delta:
+        keyDelta > 0
+          ? `+${keyDelta} props`
+          : keyDelta < 0
+            ? `${keyDelta} props`
+            : "modified",
+      impact:
+        Math.abs(keyDelta) > 5
+          ? "high"
+          : Math.abs(keyDelta) > 1
+            ? "medium"
+            : "low",
+      description:
+        keyDelta === 0
+          ? `${propertyName} properties modified`
+          : `${propertyName} ${keyDelta > 0 ? "gained" : "lost"} ${Math.abs(keyDelta)} properties`,
+      fromValue: from,
+      toValue: to,
+      metrics: {
+        sizeChange: keyDelta,
+        complexityChange: calculateComplexityChange(from, to),
+        performanceImpact: Math.abs(keyDelta) > 10 ? "moderate" : "minimal",
+      },
+    };
+  }
+
+  // Function delta
+  if (fromType === "function" && toType === "function") {
+    const fromString = from.toString();
+    const toString = to.toString();
+    const isSameCode = fromString === toString;
+
+    return {
+      type: "reference",
+      delta: isSameCode ? "ref change" : "code change",
+      impact: isSameCode ? "low" : "high",
+      description: isSameCode
+        ? `${propertyName} function reference changed (same code)`
+        : `${propertyName} function implementation changed`,
+      fromValue: from,
+      toValue: to,
+      metrics: {
+        performanceImpact: isSameCode ? "minimal" : "moderate",
+      },
+    };
+  }
+
+  // Boolean/primitive delta
+  return {
+    type: "content",
+    delta: `${from} → ${to}`,
+    impact: "low",
+    description: `${propertyName} value changed`,
+    fromValue: from,
+    toValue: to,
+    metrics: {
+      performanceImpact: "minimal",
+    },
+  };
+};
+
+/**
+ * Calculate complexity change between two values
+ */
+const calculateComplexityChange = (from: any, to: any): number => {
+  const getComplexity = (value: any): number => {
+    if (value == null) return 0;
+    if (typeof value !== "object") return 1;
+    if (Array.isArray(value)) return value.length;
+    return Object.keys(value).length;
+  };
+
+  return getComplexity(to) - getComplexity(from);
+};
+
+/**
+ * Get performance impact color for UI
+ */
+export const getImpactColor = (impact: "low" | "medium" | "high"): string => {
+  switch (impact) {
+    case "low":
+      return "#22c55e"; // green
+    case "medium":
+      return "#f59e0b"; // yellow
+    case "high":
+      return "#ef4444"; // red
+    default:
+      return "#6b7280"; // gray
+  }
+};
+
+/**
+ * Format delta for display
+ */
+export const formatDelta = (delta: DeltaInfo): string => {
+  const impactIcon =
+    delta.impact === "high" ? "🔴" : delta.impact === "medium" ? "🟡" : "🟢";
+  return `${impactIcon} ${delta.delta}`;
+};
+
+/**
  * Enhanced trackable object display with modern formatting
  */
 export const getEnhancedObjectDisplay = (

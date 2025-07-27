@@ -12,23 +12,8 @@ export const CompactDiffDisplay: React.FC<{
   diffs: DiffEntry[];
   summary: string;
 }> = React.memo(({ diffs, summary }) => {
-  if (process.env.NODE_ENV === "development") {
-    console.log("🏗️ CompactDiffDisplay called with:", {
-      diffsLength: diffs.length,
-      summary,
-      diffs,
-    });
-  }
-
   if (diffs.length === 0) {
-    if (process.env.NODE_ENV === "development") {
-      console.log("❌ CompactDiffDisplay: No diffs to display");
-    }
     return null;
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("✅ CompactDiffDisplay: Rendering diff display");
   }
 
   return (
