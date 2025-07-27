@@ -202,7 +202,10 @@ export const DebugDependencyControls: React.FC<
   };
 
   return (
-    <div className={`border-l border-gray-200 pl-4 ${className}`}>
+    <div
+      className={`pl-4 ${className}`}
+      style={{ borderLeft: "1px solid #d1d5db" }}
+    >
       <div className="flex flex-col shrink-0" style={{ gap: "0px" }}>
         {/* Row 1: Deps | Quiet */}
         <div className="flex items-center gap-0.5 h-[20px]">
@@ -297,10 +300,16 @@ export const DebugDependencyControls: React.FC<
 
       {/* Enhanced Advanced Controls Panel with improved layout */}
       {showAdvanced && (
-        <div className="mt-2 border-t border-gray-200 pt-2">
-          <div className="bg-gray-50 border border-gray-200 rounded-md overflow-hidden">
+        <div className="mt-2 pt-2" style={{ borderTop: "1px solid #d1d5db" }}>
+          <div
+            className="bg-gray-50 rounded-md overflow-hidden"
+            style={{ border: "1px solid #d1d5db" }}
+          >
             {/* Advanced Panel Header */}
-            <div className="bg-gray-100 px-2 py-1 border-b border-gray-200">
+            <div
+              className="bg-gray-100 px-2 py-1"
+              style={{ borderBottom: "1px solid #d1d5db" }}
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-700">
                   Advanced Controls

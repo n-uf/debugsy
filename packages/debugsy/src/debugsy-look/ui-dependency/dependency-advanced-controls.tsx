@@ -109,7 +109,7 @@ export const DebugDependencyAdvancedControls: React.FC<
   const activeButtonStyle: React.CSSProperties = {
     ...buttonStyle,
     backgroundColor: "#3b82f6",
-    borderColor: "#2563eb",
+    border: "1px solid #2563eb", // Use shorthand instead of mixing with borderColor
     color: "white",
     boxShadow: "0 0 0 1px rgba(59, 130, 246, 0.3)",
   };
