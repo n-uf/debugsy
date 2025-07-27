@@ -12,7 +12,7 @@ import type {
   LogLevel,
   LogType,
 } from "../debugsy-shared/debug-constants";
-import { initializeUnifiedDebugSystem } from "../debugsy-shared/debug-space";
+import { initializeDebugsySpace } from "../debugsy-shared/debug-space";
 
 /**
  * Unified Debugsy Logger for Dependencies
@@ -25,10 +25,10 @@ import { initializeUnifiedDebugSystem } from "../debugsy-shared/debug-space";
  */
 class DependencyLogger {
   private ensureDebugsy() {
-    if (!globalThis.surfaceDebug) {
-      initializeUnifiedDebugSystem();
+    if (!globalThis.debugsySpace) {
+      initializeDebugsySpace();
     }
-    return globalThis.surfaceDebug;
+    return globalThis.debugsySpace;
   }
 
   log(

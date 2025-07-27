@@ -1,11 +1,11 @@
 // === SHARED CORE SYSTEM ===
 export {
-  initializeUnifiedDebugSystem,
+  initializeDebugsySpace as initializeUnifiedDebugSystem,
   type DebugPoint,
   type DependencyFilter,
   type DependencyLogLevel,
   type LogLevel,
-  type DebugSpace as UnifiedSurfaceDebug,
+  type DebugsySpace as UnifiedSurfaceDebug,
 } from "./src/debugsy-shared";
 
 // === DEBUG DEPENDENCY TRACKING ===
@@ -13,7 +13,6 @@ export { useRenderTracker, useWhyDidYouUpdate } from "./src/debugsy-deps";
 
 // === DEBUG LOGGING SYSTEM ===
 export {
-  captureHealthSnapshot,
   DebugControlPanel,
   DebugDependencyAdvancedControls,
   DebugDependencyControls,
@@ -24,6 +23,7 @@ export {
   DebugResizePresets,
   DebugStatsPanel,
   DebugsyPanel,
+  captureHealthSnapshot,
   sanitizeLogData,
   useDebugSubscription,
   useDebugsy,
@@ -34,15 +34,15 @@ export {
   DefaultLogFormatter,
   DependencyExpansionContent,
   FORMATTER_REGISTRY,
+  HealthExpansionContent,
+  SanitizedDataExpansionContent,
   getDependencyLogMeta,
   getExpansionContent,
   getHealthLogMeta,
   getLogTypeMeta,
   getRegisteredFormatterTypes,
   getSanitizedDataLogMeta,
-  HealthExpansionContent,
   registerFormatter,
-  SanitizedDataExpansionContent,
   type FormatterConfig,
   type FormatterMeta,
   type LogSeverity,

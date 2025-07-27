@@ -172,6 +172,7 @@ export const debugSettingsControls = {
     debouncedSaveDebugSettings(); // ← Non-blocking, batched persistence
   },
   clearLogs: () => {
+    console.log("[debugsy] Clearing logs");
     globalDebugState.logs = [];
     // No need to save config for log clearing - it's transient state
   },

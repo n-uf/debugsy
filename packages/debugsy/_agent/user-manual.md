@@ -666,10 +666,10 @@ const ProblematicComponent = ({ data, onUpdate, config }) => {
 
 ```javascript
 // In browser console - stops ALL debugging immediately
-__SURFACE_EMERGENCY_STOP.activate();
+__DEBUGSY_EMERGENCY_STOP.activate();
 
 // Later, when you're ready to debug again
-__SURFACE_EMERGENCY_STOP.deactivate();
+__DEBUGSY_EMERGENCY_STOP.deactivate();
 surfaceDebug.deps.on();
 ```
 
@@ -772,9 +772,9 @@ Global kill switch for all debug operations.
 
 ```javascript
 // Emergency controls
-__SURFACE_EMERGENCY_STOP.activate(); // Stop all debugging
-__SURFACE_EMERGENCY_STOP.deactivate(); // Restore normal operation
-__SURFACE_EMERGENCY_STOP.status(); // Check current status
+__DEBUGSY_EMERGENCY_STOP.activate(); // Stop all debugging
+__DEBUGSY_EMERGENCY_STOP.deactivate(); // Restore normal operation
+__DEBUGSY_EMERGENCY_STOP.status(); // Check current status
 ```
 
 ### **Safe Hook Wrapper**
@@ -903,9 +903,9 @@ surfaceDebug.deps.loopRisks(); // Functions + unstable objects
 
 ```javascript
 // Emergency stop (disables all debugging)
-__SURFACE_EMERGENCY_STOP.activate();
-__SURFACE_EMERGENCY_STOP.deactivate();
-__SURFACE_EMERGENCY_STOP.status();
+__DEBUGSY_EMERGENCY_STOP.activate();
+__DEBUGSY_EMERGENCY_STOP.deactivate();
+__DEBUGSY_EMERGENCY_STOP.status();
 ```
 
 ### **Circuit Breaker Management**
@@ -1083,7 +1083,7 @@ const PerformantComponent = (props) => {
 
 3. **Emergency stop**:
    ```javascript
-   __SURFACE_EMERGENCY_STOP.activate(); // Nuclear option
+   __DEBUGSY_EMERGENCY_STOP.activate(); // Nuclear option
    ```
 
 ### **Console Errors**

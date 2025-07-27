@@ -12,7 +12,7 @@ import type {
   DependencyLogLevel,
 } from "../debugsy-shared/debug-constants";
 import { getGlobalDebugState } from "../debugsy-shared/debug-settings";
-import { initializeUnifiedDebugSystem } from "../debugsy-shared/debug-space";
+import { initializeDebugsySpace } from "../debugsy-shared/debug-space";
 
 export interface DependencyState {
   enabled: boolean;
@@ -29,12 +29,12 @@ export interface DependencyState {
  */
 export const getDependencyState = (): DependencyState => {
   // Ensure unified system is available
-  if (!globalThis.surfaceDebug) {
-    initializeUnifiedDebugSystem();
+  if (!globalThis.debugsySpace) {
+    initializeDebugsySpace();
   }
 
   // Use unified system's dependency status
-  const unifiedStatus = globalThis.surfaceDebug.getDependencyStatus();
+  const unifiedStatus = globalThis.debugsySpace.getDependencyStatus();
   if (unifiedStatus) {
     return unifiedStatus;
   }

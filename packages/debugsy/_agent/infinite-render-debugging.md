@@ -8,9 +8,9 @@ If you're experiencing infinite loops **right now**, use these emergency command
 
 ```javascript
 // Open DevTools Console and run:
-__SURFACE_EMERGENCY_STOP.activate(); // 🚨 Stop all infinite loops immediately
-__SURFACE_EMERGENCY_STOP.status(); // 🔍 Check current status
-__SURFACE_EMERGENCY_STOP.deactivate(); // ✅ Restore normal operation when ready
+__DEBUGSY_EMERGENCY_STOP.activate(); // 🚨 Stop all infinite loops immediately
+__DEBUGSY_EMERGENCY_STOP.status(); // 🔍 Check current status
+__DEBUGSY_EMERGENCY_STOP.deactivate(); // ✅ Restore normal operation when ready
 ```
 
 ### **What This Does**

@@ -456,7 +456,7 @@ If you're still stuck:
 1. **Create a minimal reproduction** with just the essential parts
 2. **Share the console output** from `useWhyDidYouUpdate`
 3. **Check the causality pattern** against the common patterns above
-4. **Use emergency stop** if needed: `__SURFACE_EMERGENCY_STOP.activate()`
+4. **Use emergency stop** if needed: `__DEBUGSY_EMERGENCY_STOP.activate()`
 
 Remember: The `⚠️ FREQUENT` warning is your best friend - it points directly to the problematic dependency causing the infinite loop!
 

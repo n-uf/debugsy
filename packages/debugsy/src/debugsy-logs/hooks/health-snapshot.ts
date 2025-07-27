@@ -77,7 +77,7 @@ export function collectHealthMetrics(
 ): HealthMetrics {
   const timestamp = new Date().toISOString();
   const uptime = Date.now() - (performance.timeOrigin || Date.now());
-  const emergencyStop = (globalThis as any).__SURFACE_EMERGENCY_STOP;
+  const emergencyStop = (globalThis as any).__DEBUGSY_EMERGENCY_STOP;
 
   // Gather dependency tracking and infinite render debugging metrics
   const dependencyTrackingMetrics = {

@@ -38,7 +38,7 @@ surfaceDebug.deps.functionsOnly(); // Only function changes
 surfaceDebug.deps.unstableOnly(); // Only frequent changes
 
 // Emergency stop
-__SURFACE_EMERGENCY_STOP.activate();
+__DEBUGSY_EMERGENCY_STOP.activate();
 ```
 
 ### **React Hooks (Quick Copy)**
@@ -181,8 +181,8 @@ circuitBreakerControl.close("ComponentName"); // Manual restore
 circuitBreakerControl.resetAll(); // Reset all
 
 // EMERGENCY
-__SURFACE_EMERGENCY_STOP.activate(); // Stop all
-__SURFACE_EMERGENCY_STOP.status(); // Check status
+__DEBUGSY_EMERGENCY_STOP.activate(); // Stop all
+__DEBUGSY_EMERGENCY_STOP.status(); // Check status
 
 // TESTING
 surfaceDebug.testDependencyTracking(); // Test if working
@@ -237,7 +237,7 @@ import type {
 | `useWhyDidYouUpdate` not working    | `surfaceDebug.deps.on()`                                  |
 | No dependency logs                  | `testDependencyTracking()`                                |
 | Too much noise                      | `surfaceDebug.deps.quiet()`                               |
-| Performance issues                  | `__SURFACE_EMERGENCY_STOP.activate()`                     |
+| Performance issues                  | `__DEBUGSY_EMERGENCY_STOP.activate()`                     |
 | Module not found                    | Check import path                                         |
 | Global undefined                    | Import debugsy in app root                                |
 
@@ -275,7 +275,7 @@ import type {
 🚨 EMERGENCY STOP ACTIVATED - All debug logging disabled
 ```
 
-**Fix**: `__SURFACE_EMERGENCY_STOP.deactivate()`
+**Fix**: `__DEBUGSY_EMERGENCY_STOP.deactivate()`
 
 ---
 

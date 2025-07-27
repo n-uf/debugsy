@@ -28,7 +28,7 @@ export function shouldLogDependency(
   isStable: boolean
 ): boolean {
   // Emergency stop check
-  if ((globalThis as any).__SURFACE_EMERGENCY_STOP?.active) {
+  if ((globalThis as any).__DEBUGSY_EMERGENCY_STOP?.active) {
     return false;
   }
 

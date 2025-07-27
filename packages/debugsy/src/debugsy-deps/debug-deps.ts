@@ -53,7 +53,7 @@ export function useWhyDidYouUpdate(
   // Check if we should do any work (but hooks are already called)
   const shouldTrack =
     dependencyState.enabled &&
-    !(globalThis as any).__SURFACE_EMERGENCY_STOP?.active;
+    !(globalThis as any).__DEBUGSY_EMERGENCY_STOP?.active;
 
   useEffect(() => {
     // Early exit if tracking is disabled, but still update previousProps

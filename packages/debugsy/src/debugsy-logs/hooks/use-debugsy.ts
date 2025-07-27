@@ -16,8 +16,8 @@ import {
 
 // Import the unified system
 import {
-  initializeUnifiedDebugSystem,
-  type DebugSpace,
+  initializeDebugsySpace,
+  type DebugsySpace,
 } from "../../debugsy-shared/debug-space";
 
 // Re-export types for backward compatibility
@@ -27,14 +27,14 @@ export type { DebugLogEntry, DebugPoint };
  * Global type declarations to properly type globalThis extensions
  */
 declare global {
-  var __SURFACE_DEBUG_MANAGER: DebugSpace | undefined;
-  var __SURFACE_EMERGENCY_STOP: {
+  var __SURFACE_DEBUG_MANAGER: DebugsySpace | undefined;
+  var __DEBUGSY_EMERGENCY_STOP: {
     active: boolean;
     activate: () => void;
     deactivate: () => void;
     status: () => void;
   };
-  var __debugSanitizationLogged: boolean | undefined;
+  var __debugsySanitizationLogged: boolean | undefined;
   // REMOVED: var surfaceDebug - now handled by unified system
 }
 
@@ -103,11 +103,11 @@ function createStableDebugsyInterface(
   point: DebugPoint | "global"
 ): StableDebugsyInterface {
   // Ensure unified system is initialized
-  if (!globalThis.surfaceDebug) {
-    initializeUnifiedDebugSystem();
+  if (!globalThis.debugsySpace) {
+    initializeDebugsySpace();
   }
 
-  const unified = globalThis.surfaceDebug;
+  const unified = globalThis.debugsySpace;
 
   // Create stable interface that delegates to unified system
   const stable: StableDebugsyInterface = {

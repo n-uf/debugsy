@@ -1,15 +1,13 @@
+import { initializeDebugsyCLI, type DebugsyCLIWithHelp } from "../debugsy-cli";
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/hooks/health-snapshot";
-import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
 import {
-  type DebugLogEntry,
-  type DebugPoint,
-  DependencyFilter,
-  DependencyLogLevel,
   getDebugPointEmoji,
   LogLevel,
   LogType,
   MAX_STORED_LOGS,
+  type DebugLogEntry,
+  type DebugPoint,
 } from "./debug-constants";
 import { debugSettingsControls, getGlobalDebugState } from "./debug-settings";
 import { registerSuperjsonCustomSerializers } from "./superjson-config";
@@ -18,7 +16,7 @@ import { registerSuperjsonCustomSerializers } from "./superjson-config";
  * Unified Global Debug Manager Interface
  * Combines functionality from both debug-deps.ts and use-debug.ts
  */
-export interface DebugSpace {
+export interface DebugsySpace extends DebugsyCLIWithHelp {
   // === CORE LOGGING (from use-debug.ts) ===
   log: (
     point: DebugPoint,
@@ -49,18 +47,16 @@ export interface DebugSpace {
   timeEnd: (point: DebugPoint, label: string) => void;
 
   // === STATE CHECKING ===
-  enabled: boolean; // Backward compatibility - overall enabled state
   isEnabled: (point: DebugPoint) => boolean;
-  showVisual: (point: DebugPoint) => boolean;
+  isConsoleEnabled: () => boolean;
+  isVisualEnabled: () => boolean;
+  isPerformanceEnabled: () => boolean;
 
-  // === CONTROL FUNCTIONS ===
+  // === STATE CONTROL ===
   enable: (point: DebugPoint) => void;
   disable: (point: DebugPoint) => void;
-  toggle: (point: DebugPoint) => void;
   enableAll: () => void;
   disableAll: () => void;
-
-  // === CONFIGURATION ===
   setConsoleEnabled: (enabled: boolean) => void;
   setVisualEnabled: (enabled: boolean) => void;
   setPerformanceEnabled: (enabled: boolean) => void;
@@ -69,61 +65,22 @@ export interface DebugSpace {
   getLogs: () => DebugLogEntry[];
   clearLogs: () => void;
 
-  // === STATE ACCESS (from debug-deps.ts) ===
-  getDebugState: () => any; // Simplified to avoid import issues
-  getDependencyStatus: () => {
-    enabled: boolean;
-    level: DependencyLogLevel;
-    filter: DependencyFilter;
-    allowedHooks: string[] | null;
-    excludedHooks: string[];
-    throttleMs: number;
-  };
+  // === STATE ACCESS ===
+  getDebugState: () => any;
+  getDependencyStatus: () => any;
+  state: any; // Getter for current state
 
-  // === CURRENT STATE GETTER ===
-  state: {
-    enabled: DebugPoint[];
-    console: boolean;
-    visual: boolean;
-    performance: boolean;
-  };
-
-  // === CONVENIENCE METHODS (from debug-deps.ts) ===
-  deps: {
-    off: () => void;
-    on: () => void;
-    quiet: () => void;
-    initAware: () => void; // Custom method, not bound to type
-    normal: () => void;
-    verbose: () => void;
-    debug: () => void;
-    functionsOnly: () => void;
-    objectsOnly: () => void;
-    unstableOnly: () => void;
-  };
-
-  // === TESTING UTILITIES (from debug-deps.ts) ===
-  testDependencyTracking: () => boolean;
-  testMockComponent: () => boolean;
-
-  // === HEALTH MONITORING ===
-  captureHealthSnapshot: () => any; // HealthMetrics type
-
-  // === EMERGENCY CONTROLS ===
-  emergency: {
-    activate: () => void;
-    deactivate: () => void;
-    status: () => void;
-  };
+  // CLI commands are now inherited from DebugsyCLIWithHelp
 }
 
 /**
  * Global type declarations for the unified system
  */
 declare global {
-  var surfaceDebug: DebugSpace;
-  var __debugSanitizationLogged: boolean | undefined;
-  var __SURFACE_EMERGENCY_STOP: {
+  var debugsySpace: DebugsySpace;
+  var debugsy: DebugsySpace; // Convenient alias
+  var __debugsySanitizationLogged: boolean | undefined;
+  var __DEBUGSY_EMERGENCY_STOP: {
     active: boolean;
     activate: () => void;
     deactivate: () => void;
@@ -132,56 +89,21 @@ declare global {
 }
 
 /**
- * Safe size estimation that handles circular references and complex objects
- * UNIFIED: Now uses safeSuperjsonStringify for consistent safe serialization
- *
- * @param obj Object to estimate size for
- * @returns Size in bytes (approximate)
- */
-function estimateObjectSize(obj: any): number {
-  if (obj === null || obj === undefined) {
-    return 8; // Rough estimate for null/undefined
-  }
-
-  if (typeof obj === "string") {
-    return obj.length * 2; // UTF-16 encoding
-  }
-
-  if (typeof obj === "number" || typeof obj === "boolean") {
-    return 8; // Rough estimate
-  }
-
-  if (typeof obj !== "object") {
-    return 16; // Default for other primitives
-  }
-
-  try {
-    // Use unified safe superjson wrapper to safely serialize, then estimate size
-    const serialized = safeSuperjsonStringify(obj);
-    return serialized.length * 2; // UTF-16 encoding estimate
-  } catch (error) {
-    // Fallback estimation for objects that can't be serialized
-    console.warn(
-      "Failed to estimate object size with safeSuperjsonStringify:",
-      error
-    );
-    return 1000; // Conservative fallback estimate
-  }
-}
-
-/**
  * Create the unified global debug manager
  * This replaces both the debug-deps.ts and use-debug.ts global objects
  */
-function createUnifiedDebugManager(): DebugSpace {
+function createDebugsySpace(): DebugsySpace {
   // Memoization for expensive getters to prevent performance issues
-  let memoizedState: any = null;
-  let memoizedLogs: DebugLogEntry[] = [];
-  let lastStateChange = 0;
+  let memoizedLogs: DebugLogEntry[] | null = null;
   let lastLogsChange = 0;
+  let memoizedState: any = null;
+  let lastStateChange = 0;
 
-  const manager: DebugSpace = {
-    // === CORE LOGGING FUNCTIONS ===
+  // Register superjson serializers for complex object logging
+  registerSuperjsonCustomSerializers();
+
+  const coreManager = {
+    // === CORE LOGGING (from use-debug.ts) ===
     log: (
       point: DebugPoint,
       message: string,
@@ -189,50 +111,46 @@ function createUnifiedDebugManager(): DebugSpace {
       level: LogLevel = "info",
       logType?: LogType
     ): void => {
-      if (!manager.isEnabled(point)) return;
+      const globalState = getGlobalDebugState();
 
-      // Create log entry with optional logType
+      if (!globalState.enabled.has(point) && point !== "health") {
+        return;
+      }
+
       const logEntry: DebugLogEntry = {
         timestamp: Date.now(),
-        level,
         point,
+        level,
         message,
         data,
-        sessionId: "default", // Placeholder, will be replaced by actual sessionId
-        logType, // Include logType if provided
+        sessionId: "default", // Add required sessionId
+        logType, // Optional logType
       };
 
-      // Add to logs with size management
-      const globalState = getGlobalDebugState();
       globalState.logs.push(logEntry);
 
-      // Maintain max log size
       if (globalState.logs.length > MAX_STORED_LOGS) {
-        globalState.logs.splice(0, globalState.logs.length - MAX_STORED_LOGS);
+        globalState.logs = globalState.logs.slice(-MAX_STORED_LOGS);
       }
 
-      // Console output (if enabled)
       if (globalState.console) {
         const emoji = getDebugPointEmoji(point);
-        const prefix = `${emoji} ${point}:`;
+        const timestamp = new Date(logEntry.timestamp).toLocaleTimeString();
+        const prefix = `[${timestamp}] ${emoji} [${point}]`;
 
-        switch (level) {
-          case "warn":
-            console.warn(prefix, message, data);
-            break;
-          case "error":
-            console.error(prefix, message, data);
-            break;
-          case "critical":
-            console.error(`🚨 CRITICAL ${prefix}`, message, data);
-            break;
-          case "success":
-            console.log(`✅ ${prefix}`, message, data);
-            break;
-          default:
-            console.log(prefix, message, data);
+        const logMethod =
+          level === "error" || level === "critical"
+            ? console.error
+            : console.log;
+
+        if (data) {
+          logMethod(prefix, message, data);
+        } else {
+          logMethod(prefix, message);
         }
       }
+
+      notifySubscribers();
     },
 
     warn: (
@@ -241,7 +159,7 @@ function createUnifiedDebugManager(): DebugSpace {
       data?: any,
       logType?: LogType
     ): void => {
-      manager.log(point, message, data, "warn", logType);
+      coreManager.log(point, message, data, "warn", logType);
     },
 
     error: (
@@ -250,7 +168,7 @@ function createUnifiedDebugManager(): DebugSpace {
       data?: any,
       logType?: LogType
     ): void => {
-      manager.log(point, message, data, "error", logType);
+      coreManager.log(point, message, data, "error", logType);
     },
 
     critical: (
@@ -259,41 +177,52 @@ function createUnifiedDebugManager(): DebugSpace {
       data?: any,
       logType?: LogType
     ): void => {
-      manager.log(point, message, data, "critical", logType);
+      coreManager.log(point, message, data, "critical", logType);
     },
 
     time: (point: DebugPoint, label: string): void => {
       const globalState = getGlobalDebugState();
-      if (!globalState.performance || !manager.isEnabled(point)) return;
-      console.time(`[${point}] ${label}`);
+      const key = `${point}-${label}`;
+      globalState.timers.set(key, Date.now());
     },
 
     timeEnd: (point: DebugPoint, label: string): void => {
       const globalState = getGlobalDebugState();
-      if (!globalState.performance || !manager.isEnabled(point)) return;
-      console.timeEnd(`[${point}] ${label}`);
+      const key = `${point}-${label}`;
+      const startTime = globalState.timers.get(key);
+
+      if (startTime) {
+        const duration = Date.now() - startTime;
+        coreManager.log(point, `⏱️ ${label}: ${duration}ms`, undefined, "info");
+        globalState.timers.delete(key);
+      }
     },
 
     // === STATE CHECKING ===
-    get enabled(): boolean {
-      const globalState = getGlobalDebugState();
-      return globalState.enabled.size > 0; // Any debug points enabled
-    },
-
     isEnabled: (point: DebugPoint): boolean => {
       // Health debug point is always enabled
       if (point === "health") return true;
 
       const globalState = getGlobalDebugState();
-      return globalState.enabled.has(point) || globalState.enabled.has("all");
+      return globalState.enabled.has(point);
     },
 
-    showVisual: (point: DebugPoint): boolean => {
+    isConsoleEnabled: (): boolean => {
       const globalState = getGlobalDebugState();
-      return globalState.visual && manager.isEnabled(point);
+      return globalState.console;
     },
 
-    // === CONTROL FUNCTIONS ===
+    isVisualEnabled: (): boolean => {
+      const globalState = getGlobalDebugState();
+      return globalState.visual;
+    },
+
+    isPerformanceEnabled: (): boolean => {
+      const globalState = getGlobalDebugState();
+      return globalState.performance;
+    },
+
+    // === STATE CONTROL ===
     enable: (point: DebugPoint): void => {
       debugSettingsControls.enable(point);
       notifySubscribers();
@@ -302,17 +231,6 @@ function createUnifiedDebugManager(): DebugSpace {
     disable: (point: DebugPoint): void => {
       debugSettingsControls.disable(point);
       notifySubscribers();
-    },
-
-    toggle: (point: DebugPoint): void => {
-      const globalState = getGlobalDebugState();
-      const isCurrentlyEnabled = globalState.enabled.has(point);
-
-      if (isCurrentlyEnabled) {
-        manager.disable(point);
-      } else {
-        manager.enable(point);
-      }
     },
 
     enableAll: (): void => {
@@ -325,7 +243,6 @@ function createUnifiedDebugManager(): DebugSpace {
       notifySubscribers();
     },
 
-    // === CONFIGURATION ===
     setConsoleEnabled: (enabled: boolean): void => {
       debugSettingsControls.setConsoleEnabled(enabled);
       notifySubscribers();
@@ -369,7 +286,7 @@ function createUnifiedDebugManager(): DebugSpace {
     getDependencyStatus: () => {
       const state = getGlobalDebugState();
       return {
-        enabled: state.enabled.has("dependencies"), // Use unified debug point system
+        enabled: state.enabled.has("dependencies"),
         level: state.dependencies.level,
         filter: state.dependencies.filter,
         allowedHooks: state.dependencies.allowedHooks,
@@ -400,187 +317,28 @@ function createUnifiedDebugManager(): DebugSpace {
       return memoizedState;
     },
 
-    // === CONVENIENCE METHODS (from debug-deps.ts) ===
-    deps: {
-      off: () => {
-        const state = getGlobalDebugState();
-        state.enabled.delete("dependencies"); // Use unified debug point system
-        console.log("🔇 Dependency tracking disabled");
-        notifySubscribers();
-      },
-      on: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        console.log("🔊 Dependency tracking enabled");
-        notifySubscribers();
-      },
-      quiet: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.level = "quiet";
-        console.log("🔇 Dependency tracking: quiet mode (critical only)");
-        notifySubscribers();
-      },
-      initAware: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.level = "normal"; // Use valid DependencyLogLevel
-        // TODO: Add custom initialization awareness logic if needed
-        console.log(
-          "🚀 Dependency tracking: init-aware mode (smart initialization filtering)"
-        );
-        notifySubscribers();
-      },
-      normal: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.level = "normal";
-        console.log("🔊 Dependency tracking: normal mode");
-        notifySubscribers();
-      },
-      verbose: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.level = "verbose";
-        console.log("📢 Dependency tracking: verbose mode");
-        notifySubscribers();
-      },
-      debug: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.level = "debug";
-        console.log("🐛 Dependency tracking: debug mode (maximum detail)");
-        notifySubscribers();
-      },
-      functionsOnly: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.filter = "functions-only";
-        console.log("📝 Dependency tracking: functions only");
-        notifySubscribers();
-      },
-      objectsOnly: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.filter = "objects-only";
-        console.log("🔗 Dependency tracking: objects only");
-        notifySubscribers();
-      },
-      unstableOnly: () => {
-        const state = getGlobalDebugState();
-        state.enabled.add("dependencies"); // Use unified debug point system
-        state.dependencies.filter = "unstable-only";
-        console.log("⚠️ Dependency tracking: unstable only");
-        notifySubscribers();
-      },
-    },
-
-    // === TESTING UTILITIES ===
-    testDependencyTracking: (): boolean => {
-      console.log("🧪 Testing useWhyDidYouUpdate functionality...");
-
-      // Check if global surfaceDebug object exists
-      if (!globalThis.surfaceDebug) {
-        console.error("❌ Global surfaceDebug object not found");
-        return false;
-      }
-
-      console.log("✅ Global surfaceDebug object found");
-
-      // Check if getDependencyStatus method exists
-      if (!globalThis.surfaceDebug.getDependencyStatus) {
-        console.error("❌ getDependencyStatus method not found");
-        return false;
-      }
-
-      console.log("✅ getDependencyStatus method found");
-
-      // Test dependency status
-      const depStatus = globalThis.surfaceDebug.getDependencyStatus();
-      console.log("📋 Current dependency status:", depStatus);
-
-      // Test if dependency tracking is enabled
-      if (!depStatus.enabled) {
-        console.warn("⚠️ Dependency tracking is currently disabled");
-        console.log("🔧 Enabling dependency tracking...");
-        globalThis.surfaceDebug.deps.on();
-        const newStatus = globalThis.surfaceDebug.getDependencyStatus();
-        console.log("📋 Updated dependency status:", newStatus);
-      }
-
-      console.log("\n✅ useWhyDidYouUpdate should now be working!");
-      console.log("📝 To test in components:");
-      console.log(
-        "   1. Add useWhyDidYouUpdate('MyComponent', props) to any component"
-      );
-      console.log("   2. Change props and watch for dependency change logs");
-      console.log("   3. Use surfaceDebug.deps.verbose() for more detail");
-
-      return true;
-    },
-
-    testMockComponent: (): boolean => {
-      console.log("\n🧪 Testing with mock component scenario...");
-
-      const depState = globalThis.surfaceDebug?.getDependencyStatus?.();
-
-      console.log(
-        `📊 Dependency state: enabled=${depState?.enabled}, level=${depState?.level}`
-      );
-
-      if (depState?.enabled) {
-        console.log(
-          "✅ Dependency tracking is active - useWhyDidYouUpdate should work"
-        );
-        console.log(
-          "🔄 Try adding useWhyDidYouUpdate('ComponentName', props) to a component with changing props"
-        );
-      } else {
-        console.log("❌ Dependency tracking is disabled");
-        console.log("💡 Run: surfaceDebug.deps.on() to enable");
-      }
-
-      return depState?.enabled || false;
-    },
-
     // === HEALTH MONITORING ===
     captureHealthSnapshot: () => {
-      return captureHealthSnapshotCore(getGlobalDebugState(), manager.log);
-    },
-
-    // === EMERGENCY CONTROLS ===
-    emergency: {
-      activate: () => {
-        console.error(
-          "🚨 EMERGENCY STOP ACTIVATED - All Surface debug logging disabled"
-        );
-        globalThis.__SURFACE_EMERGENCY_STOP.active = true;
-      },
-      deactivate: () => {
-        console.log("✅ Emergency stop deactivated - Debug logging restored");
-        globalThis.__SURFACE_EMERGENCY_STOP.active = false;
-      },
-      status: () => {
-        const depState = globalThis.surfaceDebug?.getDependencyStatus?.() || {};
-        console.log("🔍 Surface Debug Status:", {
-          emergencyActive: globalThis.__SURFACE_EMERGENCY_STOP.active,
-          dependencyTracking: depState.enabled,
-          level: depState.level,
-          filter: depState.filter,
-        });
-      },
+      return captureHealthSnapshotCore(getGlobalDebugState(), coreManager.log);
     },
   };
 
-  return manager;
+  // Create the CLI interface with all commands
+  const cliInterface = initializeDebugsyCLI(coreManager);
+
+  // Combine core manager with CLI interface
+  return {
+    ...coreManager,
+    ...cliInterface,
+  };
 }
 
 /**
  * Initialize the unified global debug system
  * This replaces both debug-deps.ts and use-debug.ts initialization
  */
-export function initializeUnifiedDebugSystem(): void {
-  if (globalThis.surfaceDebug) {
+export function initializeDebugsySpace(): void {
+  if (globalThis.debugsySpace) {
     return; // Already initialized
   }
 
@@ -590,23 +348,23 @@ export function initializeUnifiedDebugSystem(): void {
   registerSuperjsonCustomSerializers();
 
   // Initialize emergency stop
-  if (!globalThis.__SURFACE_EMERGENCY_STOP) {
-    globalThis.__SURFACE_EMERGENCY_STOP = {
+  if (!globalThis.__DEBUGSY_EMERGENCY_STOP) {
+    globalThis.__DEBUGSY_EMERGENCY_STOP = {
       active: false,
       activate: () => {
         console.error(
           "🚨 EMERGENCY STOP ACTIVATED - All Surface debug logging disabled"
         );
-        globalThis.__SURFACE_EMERGENCY_STOP.active = true;
+        globalThis.__DEBUGSY_EMERGENCY_STOP.active = true;
       },
       deactivate: () => {
         console.log("✅ Emergency stop deactivated - Debug logging restored");
-        globalThis.__SURFACE_EMERGENCY_STOP.active = false;
+        globalThis.__DEBUGSY_EMERGENCY_STOP.active = false;
       },
       status: () => {
-        const depState = globalThis.surfaceDebug?.getDependencyStatus?.() || {};
+        const depState = globalThis.debugsySpace?.getDependencyStatus?.() || {};
         console.log("🔍 Surface Debug Status:", {
-          emergencyActive: globalThis.__SURFACE_EMERGENCY_STOP.active,
+          emergencyActive: globalThis.__DEBUGSY_EMERGENCY_STOP.active,
           dependencyTracking: depState.enabled,
           level: depState.level,
           filter: depState.filter,
@@ -616,45 +374,25 @@ export function initializeUnifiedDebugSystem(): void {
   }
 
   // Create the unified debug manager
-  globalThis.surfaceDebug = createUnifiedDebugManager();
+  globalThis.debugsySpace = createDebugsySpace();
 
-  console.log("✅ Unified Surface Debug System initialized");
+  // Create convenient alias for easier access
+  (globalThis as any).debugsy = globalThis.debugsySpace;
 
-  console.log(`
-✅ Surface Debug System (Unified)
-
-🎯 PRIMARY PURPOSE: Fix "Maximum update depth exceeded" React errors!
-
-🚀 NEW: Smart initialization detection! No more false warnings during app startup.
-
-🔧 Unified Debug Framework:
-  - Single global object: surfaceDebug
-  - Logs stream to both console AND debug panel
-  - Controlled by DependencyTrackingConfig settings
-  - Available debug points: dependencies, health, performance
-  - Logs visible in DebugExternalPanel and DebugLogsList
-
-🎛️ Console Commands:
-  surfaceDebug.deps.off()           - Disable dependency logs
-  surfaceDebug.deps.quiet()         - Only critical changes
-  surfaceDebug.deps.initAware()     - 🌟 RECOMMENDED: Smart init filtering
-  surfaceDebug.deps.normal()        - Standard dependency tracking
-  surfaceDebug.deps.verbose()       - Detailed dependency tracking
-  surfaceDebug.deps.functionsOnly() - Only function changes
-  surfaceDebug.deps.objectsOnly()   - Only object changes
-  surfaceDebug.deps.unstableOnly()  - Only changing dependencies
-  
-🧪 Test Commands:
-  surfaceDebug.testDependencyTracking() - Verify functionality
-  surfaceDebug.testMockComponent()      - Test mock scenarios
-  
-🚨 Emergency Protection:
-  surfaceDebug.emergency.activate()   - Stop ALL logging immediately
-  surfaceDebug.emergency.deactivate() - Restore normal operation
-  surfaceDebug.emergency.status()     - Check current status
-  
-🎯 During INITIALIZATION (🚀): Normal object changes, only warn if excessive
-🎯 During RUNTIME: ⚠️ FREQUENT warnings point to infinite render culprits!
-📊 NEW: (#3) counters show how many times each dependency has changed
-`);
+  console.log("✅ Debugsy System initialized");
+  console.log(
+    "🔍 Available methods on debugsy:",
+    Object.keys(globalThis.debugsy)
+  );
+  console.log("🔍 debugsy.help type:", typeof globalThis.debugsy.help);
+  console.log(
+    "💡 Type 'debugsy.help()' in console to see all available commands"
+  );
 }
+
+// Add a global initialization trigger for debugging
+(globalThis as any).initDebugsyManually = () => {
+  console.log("🔧 Manually triggering debugsy initialization...");
+  initializeDebugsySpace();
+  return globalThis.debugsy;
+};
