@@ -7,7 +7,11 @@
  * - Ensures unified system initialization
  */
 
-import type { LogLevel } from "../debugsy-shared/debug-constants";
+import type {
+  DependencyLogType,
+  LogLevel,
+  LogType,
+} from "../debugsy-shared/debug-constants";
 import { initializeUnifiedDebugSystem } from "../debugsy-shared/debug-space";
 
 /**
@@ -27,33 +31,38 @@ class DependencyLogger {
     return globalThis.surfaceDebug;
   }
 
-  log(message: string, data?: any, level: LogLevel = "info"): void {
+  log(
+    message: string,
+    data?: any,
+    level: LogLevel = "info",
+    logType?: LogType
+  ): void {
     const debugsy = this.ensureDebugsy();
     switch (level) {
       case "warn":
-        debugsy.warn("dependencies", message, data);
+        debugsy.warn("dependencies", message, data, logType);
         break;
       case "error":
-        debugsy.error("dependencies", message, data);
+        debugsy.error("dependencies", message, data, logType);
         break;
       case "critical":
-        debugsy.critical("dependencies", message, data);
+        debugsy.critical("dependencies", message, data, logType);
         break;
       default:
-        debugsy.log("dependencies", message, data, level);
+        debugsy.log("dependencies", message, data, level, logType);
     }
   }
 
-  warn(message: string, data?: any): void {
-    this.log(message, data, "warn");
+  warn(message: string, data?: any, logType?: LogType): void {
+    this.log(message, data, "warn", logType);
   }
 
-  error(message: string, data?: any): void {
-    this.log(message, data, "error");
+  error(message: string, data?: any, logType?: LogType): void {
+    this.log(message, data, "error", logType);
   }
 
-  critical(message: string, data?: any): void {
-    this.log(message, data, "critical");
+  critical(message: string, data?: any, logType?: LogType): void {
+    this.log(message, data, "critical", logType);
   }
 }
 
@@ -61,14 +70,27 @@ class DependencyLogger {
 export const dependencyLogger = new DependencyLogger();
 
 // Simplified logging API using unified debugsy system
-export const logToDebugSystem = (message: string, data?: any): void => {
-  dependencyLogger.log(message, data);
+// Note: These functions accept generic LogType but are typically used with DependencyLogType
+export const logToDebugSystem = (
+  message: string,
+  data?: any,
+  logType?: DependencyLogType
+): void => {
+  dependencyLogger.log(message, data, "info", logType);
 };
 
-export const logWarnToDebugSystem = (message: string, data?: any): void => {
-  dependencyLogger.warn(message, data);
+export const logWarnToDebugSystem = (
+  message: string,
+  data?: any,
+  logType?: DependencyLogType
+): void => {
+  dependencyLogger.warn(message, data, logType);
 };
 
-export const logErrorToDebugSystem = (message: string, data?: any): void => {
-  dependencyLogger.error(message, data);
+export const logErrorToDebugSystem = (
+  message: string,
+  data?: any,
+  logType?: DependencyLogType
+): void => {
+  dependencyLogger.error(message, data, logType);
 };

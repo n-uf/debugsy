@@ -131,18 +131,18 @@ export function logPropChange(name: string, propChange: PropChange): void {
     const message = `📝 [${name}] ${key}: function changed${counterIndicator} (function → function)${phaseIndicator}${stabilityIndicator}`;
 
     if (shouldWarn) {
-      logWarnToDebugSystem(message);
+      logWarnToDebugSystem(message, undefined, "function-recreation");
     } else {
-      logToDebugSystem(message);
+      logToDebugSystem(message, undefined, "function-recreation");
     }
   } else if (type === "object") {
     const message = `📦 [${name}] ${key}: object changed${counterIndicator}${phaseIndicator}${stabilityIndicator}`;
     const logFn = shouldWarn ? logWarnToDebugSystem : logToDebugSystem;
 
     if (dependencyState.level === "debug") {
-      logFn(message, { from, to });
+      logFn(message, { from, to }, "object-recreation");
     } else {
-      logFn(message);
+      logFn(message, undefined, "object-recreation");
     }
   } else {
     // Primitive changes (only in verbose/debug mode)
@@ -152,7 +152,8 @@ export function logPropChange(name: string, propChange: PropChange): void {
     ) {
       logToDebugSystem(
         `🔧 [${name}] ${key}: ${fromType} → ${toType}${counterIndicator}${phaseIndicator}`,
-        { from, to }
+        { from, to },
+        "primitive-change"
       );
     }
   }
@@ -170,7 +171,8 @@ export function logDependencyChanges(
   // Summary log
   logToDebugSystem(
     `🔄 [${name}] Dependencies changed:`,
-    Object.fromEntries(changes.map((c) => [c.key, c.change]))
+    Object.fromEntries(changes.map((c) => [c.key, c.change])),
+    "dependency-change"
   );
 
   // Detailed logs for each change

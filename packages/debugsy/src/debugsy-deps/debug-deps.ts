@@ -110,7 +110,9 @@ export function useRenderTracker(
     if (now - lastWarning.current > 1000) {
       // Throttle warnings to once per second
       logWarnToDebugSystem(
-        `⚠️ [${name}] High render count detected: ${renderCount.current}`
+        `⚠️ [${name}] High render count detected: ${renderCount.current}`,
+        undefined,
+        "render-warning"
       );
       lastWarning.current = now;
     }

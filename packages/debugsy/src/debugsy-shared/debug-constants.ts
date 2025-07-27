@@ -4,6 +4,7 @@ export const MAX_STORED_LOGS = 10000; // Maximum logs to keep in memory
 // Import debug point configuration from dedicated file
 import {
   DEBUG_POINT_CONFIG,
+  type AllConfiguredLogTypes,
   type DebugPoint,
   type DebugPointConfig,
 } from "./debug-point-config";
@@ -13,6 +14,7 @@ export {
   DEBUG_POINT_CONFIG,
   type DebugPoint,
   type DebugPointConfig,
+  type DependencyLogType,
 } from "./debug-point-config";
 
 /**
@@ -101,6 +103,20 @@ export interface DependencyTrackingConfig {
 // Log severity levels
 export type LogLevel = "info" | "warn" | "error" | "critical" | "success";
 
+// ============================================================================
+// 🎯 LOG TYPE - Automatically inferred from DEBUG_POINT_CONFIG
+// ============================================================================
+
+/**
+ * Generic log type union - AUTOMATICALLY INFERRED from debug point configurations
+ * 🎯 SINGLE SOURCE OF TRUTH: Add log types to DEBUG_POINT_CONFIG.logTypes only!
+ *
+ * This type automatically includes:
+ * - All logType keys from all debug points in DEBUG_POINT_CONFIG
+ * - STRICT: Only explicitly configured log types allowed (no arbitrary strings)
+ */
+export type LogType = AllConfiguredLogTypes;
+
 // Debug log entry interface
 export interface DebugLogEntry {
   timestamp: number;
@@ -109,6 +125,7 @@ export interface DebugLogEntry {
   message: string;
   data?: any;
   sessionId: string;
+  logType?: LogType; // Automatically inferred from all debug point configurations
 }
 
 // Debug state interface

@@ -1,15 +1,16 @@
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/hooks/health-snapshot";
-import { sanitizeLogData } from "../debugsy-logs/logic/log-data-sanitization";
 import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
-import type {
-  DebugLogEntry,
-  DebugPoint,
+import {
+  type DebugLogEntry,
+  type DebugPoint,
   DependencyFilter,
   DependencyLogLevel,
+  getDebugPointEmoji,
   LogLevel,
+  LogType,
+  MAX_STORED_LOGS,
 } from "./debug-constants";
-import { getDebugPointEmoji, MAX_STORED_LOGS } from "./debug-constants";
 import { debugSettingsControls, getGlobalDebugState } from "./debug-settings";
 import { registerSuperjsonCustomSerializers } from "./superjson-config";
 
@@ -23,11 +24,27 @@ export interface DebugSpace {
     point: DebugPoint,
     message: string,
     data?: any,
-    level?: LogLevel
+    level?: LogLevel,
+    logType?: LogType
   ) => void;
-  warn: (point: DebugPoint, message: string, data?: any) => void;
-  error: (point: DebugPoint, message: string, data?: any) => void;
-  critical: (point: DebugPoint, message: string, data?: any) => void;
+  warn: (
+    point: DebugPoint,
+    message: string,
+    data?: any,
+    logType?: LogType
+  ) => void;
+  error: (
+    point: DebugPoint,
+    message: string,
+    data?: any,
+    logType?: LogType
+  ) => void;
+  critical: (
+    point: DebugPoint,
+    message: string,
+    data?: any,
+    logType?: LogType
+  ) => void;
   time: (point: DebugPoint, label: string) => void;
   timeEnd: (point: DebugPoint, label: string) => void;
 
@@ -169,98 +186,80 @@ function createUnifiedDebugManager(): DebugSpace {
       point: DebugPoint,
       message: string,
       data?: any,
-      level: LogLevel = "info"
+      level: LogLevel = "info",
+      logType?: LogType
     ): void => {
       if (!manager.isEnabled(point)) return;
 
-      const globalState = getGlobalDebugState();
-
-      // SAFETY: Sanitize data to prevent browser freezing from heavy objects
-      let sanitizedData = data;
-      if (data !== undefined) {
-        try {
-          // Use superjson-based sanitization for all complex objects
-          if (typeof data === "object" && data !== null) {
-            sanitizedData = sanitizeLogData(data);
-
-            // Log sanitization stats for debugging (only once per session to avoid spam)
-            if (!globalThis.__debugSanitizationLogged) {
-              console.log(
-                `🧹 [debugsy] Data sanitization active for heavy objects. Point: ${point}`,
-                {
-                  originalSize: estimateObjectSize(data),
-                  sanitizedSize: estimateObjectSize(sanitizedData),
-                  timeTaken: (sanitizedData as any).__sanitizationTime + "ms",
-                }
-              );
-              globalThis.__debugSanitizationLogged = true;
-            }
-          }
-        } catch (error) {
-          // Fallback: If sanitization fails, use safe fallback
-          console.warn(
-            `⚠️ [debugsy] Failed to sanitize data for ${point}:`,
-            error
-          );
-          sanitizedData = {
-            __sanitizationFailed: true,
-            __error: error instanceof Error ? error.message : "Unknown error",
-            __originalType: typeof data,
-            __safePreview: String(data).substring(0, 100) + "...",
-          };
-        }
-      }
-
-      // Store log entry with sanitized data
+      // Create log entry with optional logType
       const logEntry: DebugLogEntry = {
         timestamp: Date.now(),
         level,
         point,
         message,
-        data: sanitizedData,
-        sessionId: "default",
+        data,
+        sessionId: "default", // Placeholder, will be replaced by actual sessionId
+        logType, // Include logType if provided
       };
 
-      // Add to logs array (keep last MAX_STORED_LOGS)
-      globalState.logs = [
-        ...globalState.logs.slice(-(MAX_STORED_LOGS - 1)),
-        logEntry,
-      ];
+      // Add to logs with size management
+      const globalState = getGlobalDebugState();
+      globalState.logs.push(logEntry);
 
-      // Schedule notification for next frame to avoid render-time updates
-      notifySubscribers();
+      // Maintain max log size
+      if (globalState.logs.length > MAX_STORED_LOGS) {
+        globalState.logs.splice(0, globalState.logs.length - MAX_STORED_LOGS);
+      }
 
-      // Console output if enabled
+      // Console output (if enabled)
       if (globalState.console) {
         const emoji = getDebugPointEmoji(point);
-        const prefix = `${emoji} [${point}]`;
+        const prefix = `${emoji} ${point}:`;
 
-        // Use appropriate console method based on log level
-        const consoleMethod =
-          level === "error" || level === "critical"
-            ? console.error
-            : level === "warn"
-              ? console.warn
-              : console.log;
-
-        if (data !== undefined) {
-          consoleMethod(prefix, message, data);
-        } else {
-          consoleMethod(prefix, message);
+        switch (level) {
+          case "warn":
+            console.warn(prefix, message, data);
+            break;
+          case "error":
+            console.error(prefix, message, data);
+            break;
+          case "critical":
+            console.error(`🚨 CRITICAL ${prefix}`, message, data);
+            break;
+          case "success":
+            console.log(`✅ ${prefix}`, message, data);
+            break;
+          default:
+            console.log(prefix, message, data);
         }
       }
     },
 
-    warn: (point: DebugPoint, message: string, data?: any): void => {
-      manager.log(point, message, data, "warn");
+    warn: (
+      point: DebugPoint,
+      message: string,
+      data?: any,
+      logType?: LogType
+    ): void => {
+      manager.log(point, message, data, "warn", logType);
     },
 
-    error: (point: DebugPoint, message: string, data?: any): void => {
-      manager.log(point, message, data, "error");
+    error: (
+      point: DebugPoint,
+      message: string,
+      data?: any,
+      logType?: LogType
+    ): void => {
+      manager.log(point, message, data, "error", logType);
     },
 
-    critical: (point: DebugPoint, message: string, data?: any): void => {
-      manager.log(point, message, data, "critical");
+    critical: (
+      point: DebugPoint,
+      message: string,
+      data?: any,
+      logType?: LogType
+    ): void => {
+      manager.log(point, message, data, "critical", logType);
     },
 
     time: (point: DebugPoint, label: string): void => {

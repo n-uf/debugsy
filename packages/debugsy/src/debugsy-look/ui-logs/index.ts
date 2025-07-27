@@ -12,11 +12,11 @@ export { DebugLogsList } from "./debug-logs-list";
 
 // JSON utilities (superjson-based)
 export {
+  JsonUtils,
   benchmarkSerialization,
   formatDataForDisplay,
   formatJsonTooltip,
   getDisplayStrategy,
-  JsonUtils,
   performanceJsonStringify,
   safeJsonStringify,
 } from "./utils/json/json-utilities";
@@ -26,18 +26,18 @@ export { copyLogsToClipboard, formatLogForCopy } from "./utils/copy-utilities";
 
 // Log utilities
 export {
+  LOG_RENDERING_CONFIG,
+  LOG_STYLES,
   formatPointName,
   getLogEntryBackgroundColor,
   getLogsTruncationInfo,
   getPointEmoji,
-  LOG_RENDERING_CONFIG,
-  LOG_STYLES,
   prepareLogsForRendering,
 } from "./utils/log-utilities";
 
 // Component exports
 export { DefaultExpandedContent } from "./formatters/default-expansion-content";
-export { DependencyExpansionContent } from "./formatters/dependency-expansion-formatter";
+export { DependencyExpansionContent } from "./formatters/deps";
 export { HealthExpansionContent } from "./formatters/health-expansion-formatter";
 export { SanitizedDataExpansionContent } from "./formatters/sanitized-data-expansion-formatter";
 

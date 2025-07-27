@@ -1,4 +1,4 @@
-import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../../debugsy-shared/debug-constants";
 import {
   createObjectDiff,
   getDiffSummary,
@@ -8,6 +8,7 @@ import {
 } from "../../../debugsy-shared/object-depth-utils";
 import { DEFAULT_COPY_CONFIG } from "../config/copy-config";
 import { formatTime } from "../formatters";
+import { extractComponentName, getLogTypeMetadata } from "../formatters/deps";
 import { safeSuperjsonStringify } from "./json/json-core";
 
 /**
@@ -42,30 +43,6 @@ const getSimpleObjectDisplay = (value: any): string => {
   }
 
   return String(value);
-};
-
-/**
- * Extract component name from log message
- */
-const COMPONENT_NAME_REGEX = /\[([^\]]+)\]/;
-const extractComponentName = (message: string): string => {
-  const match = message.match(COMPONENT_NAME_REGEX);
-  return match?.[1] ?? "Unknown";
-};
-
-/**
- * Parse dependency log type from message
- */
-const parseDependencyLogType = (message: string): string => {
-  if (message.includes("Dependencies changed:")) return "dependency-change";
-  if (message.includes("function changed")) return "function-recreation";
-  if (message.includes("object changed")) return "object-recreation";
-  if (message.includes("High render count detected")) return "render-warning";
-  if (message.includes("CIRCUIT BREAKER")) return "circuit-breaker";
-  if (message.includes("EMERGENCY STOP")) return "emergency-stop";
-  if (message.includes("Hook execution")) return "hook-execution";
-  if (message.includes("→")) return "primitive-change";
-  return "unknown";
 };
 
 /**
@@ -537,7 +514,8 @@ ${safeSuperjsonStringify(processObjectForDisplay(metrics, depthSetting))}`;
   // Special formatting for dependency logs with diff information
   if (log.point === "dependencies") {
     const componentName = extractComponentName(log.message);
-    const logType = parseDependencyLogType(log.message);
+    const logTypeMeta = getLogTypeMetadata(log);
+    const logType = logTypeMeta.type;
 
     if (logType === "dependency-change" && log.data) {
       const dependencyChanges = formatDependencyDataForCopy(log.data, logType);

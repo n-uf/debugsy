@@ -1,13 +1,10 @@
 import React from "react";
-import type { DebugLogEntry } from "../../../debugsy-logs/hooks/use-debugsy";
+import type { DebugLogEntry } from "../../../debugsy-shared/debug-constants";
 import type { LogSeverity } from "./default-log-formatter";
 
 // Direct imports for all formatters - simple and performant
 import { DefaultExpandedContent } from "./default-expansion-content";
-import {
-  DependencyExpansionContent,
-  getDependencyLogMeta,
-} from "./dependency-expansion-formatter";
+import { DependencyExpansionContent, getDependencyLogMeta } from "./deps";
 import {
   HealthExpansionContent,
   getHealthLogMeta,

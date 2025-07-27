@@ -5,35 +5,25 @@
  * with automatic routing and expandable content support.
  */
 
-// Core formatters
-export { DefaultExpandedContent } from "./default-expansion-content";
+// Enhanced log formatters with expansion capabilities
 export { DefaultLogFormatter } from "./default-log-formatter";
-
-// Specialized formatters
 export {
   DependencyExpansionContent,
+  DependencyLogFormatter,
   getDependencyLogMeta,
-} from "./dependency-expansion-formatter";
-
+} from "./deps";
 export {
   HealthExpansionContent,
   formatTime,
   getHealthLogMeta,
 } from "./health-expansion-formatter";
-
 export {
   SanitizedDataExpansionContent,
   getSanitizedDataLogMeta,
 } from "./sanitized-data-expansion-formatter";
 
-// Formatter system
-export {
-  FORMATTER_REGISTRY,
-  getExpansionContent,
-  getLogTypeMeta,
-  getRegisteredFormatterTypes,
-  registerFormatter,
-} from "./formatter-routing";
+// Formatter routing
+export { FORMATTER_REGISTRY, getExpansionContent } from "./formatter-routing";
 
 // Type exports
 export type {

@@ -6,6 +6,14 @@
  */
 
 /**
+ * Log type metadata for specific log types within a debug point
+ */
+export interface LogTypeConfig {
+  icon: string;
+  description?: string;
+}
+
+/**
  * Unified Debug Point Configuration
  * Single source of truth for all debug point metadata
  */
@@ -16,6 +24,7 @@ export interface DebugPointConfig {
   category: "core" | "interaction" | "performance" | "system";
   priority?: number; // For interaction handlers
   look?: boolean; // Whether to show in main control panel (defaults to true for non-system)
+  logTypes?: Record<string, LogTypeConfig>; // Custom log type configurations for this debug point
 }
 
 /**
@@ -125,7 +134,41 @@ export const DEBUG_POINT_CONFIG = {
     description: "React hook dependency tracking and optimization",
     label: "Deps",
     category: "performance" as const,
-    look: false, // Specialized debugging
+    look: false, // Specialized debugging - has its own detailed formatter
+    logTypes: {
+      "dependency-change": {
+        icon: "🔄",
+        description: "Dependencies changed in a component",
+      },
+      "function-recreation": {
+        icon: "📝",
+        description: "Function reference changed",
+      },
+      "object-recreation": {
+        icon: "📦",
+        description: "Object reference changed",
+      },
+      "primitive-change": {
+        icon: "🔧",
+        description: "Primitive value changed",
+      },
+      "render-warning": {
+        icon: "⚠️",
+        description: "High render count detected",
+      },
+      "circuit-breaker": {
+        icon: "🚨",
+        description: "Circuit breaker activated",
+      },
+      "emergency-stop": {
+        icon: "🛑",
+        description: "Emergency stop activated",
+      },
+      "hook-execution": {
+        icon: "🪝",
+        description: "Hook execution tracking",
+      },
+    },
   },
   health: {
     emoji: "🏥",
@@ -169,6 +212,41 @@ export const DEBUG_POINT_CONFIG = {
  */
 export type DebugPoint = keyof typeof DEBUG_POINT_CONFIG;
 
+// ============================================================================
+// 🎯 LOG TYPE INFERENCE - Automatically derive types from configuration
+// ============================================================================
+
+/**
+ * Extract log type keys from a debug point configuration
+ */
+export type ExtractLogTypes<T> = T extends { logTypes: infer U }
+  ? U extends Record<infer K, any>
+    ? K
+    : never
+  : never;
+
+/**
+ * Extract all log types from all debug point configurations
+ * This automatically creates a union of all logType keys defined in DEBUG_POINT_CONFIG
+ */
+export type AllConfiguredLogTypes = {
+  [K in keyof typeof DEBUG_POINT_CONFIG]: ExtractLogTypes<
+    (typeof DEBUG_POINT_CONFIG)[K]
+  >;
+}[keyof typeof DEBUG_POINT_CONFIG];
+
+/**
+ * Legacy type aliases for backwards compatibility
+ * These are now automatically inferred subsets of the main LogType
+ */
+export type DependencyLogType = ExtractLogTypes<
+  (typeof DEBUG_POINT_CONFIG)["dependencies"]
+>;
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
 /**
  * Get debug points by category for organized display
  */
@@ -192,4 +270,15 @@ export const getLookDebugPoints = (): DebugPoint[] => {
       return config.look ?? defaultShow;
     })
     .map(([key, _]) => key as DebugPoint);
+};
+
+/**
+ * Get log type configuration for a specific debug point and log type
+ */
+export const getLogTypeConfig = (
+  point: DebugPoint,
+  logType: string
+): LogTypeConfig | null => {
+  const pointConfig = DEBUG_POINT_CONFIG[point] as DebugPointConfig;
+  return pointConfig.logTypes?.[logType] || null;
 };
