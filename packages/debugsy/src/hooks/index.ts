@@ -8,22 +8,22 @@
  */
 
 // Core hooks
-export { useDebugSubscription } from "../debug-logs/hooks/debug-notifications";
-export { captureHealthSnapshot } from "../debug-logs/hooks/health-snapshot";
-export { useDebugsy } from "../debug-logs/hooks/use-debugsy";
+export { useDebugSubscription } from "../debugsy-logs/hooks/debug-notifications";
+export { captureHealthSnapshot } from "../debugsy-logs/hooks/health-snapshot";
+export { useDebugsy } from "../debugsy-logs/hooks/use-debugsy";
 
 // Data sanitization (simplified with superjson)
 export {
   SANITIZATION_CONFIG,
   sanitizeLogData,
   sanitizeLogDataAdvanced,
-} from "../debug-logs/utils/log-data-sanitization";
+} from "../debugsy-logs/logic/log-data-sanitization";
 
 // Type exports
 export type {
   DebugPoint,
   DependencyFilter,
   DependencyLogLevel,
-} from "../shared/debug-constants";
+} from "../debugsy-shared/debug-constants";
 
-export type { DebugLogEntry } from "../debug-logs/hooks/use-debugsy";
+export type { DebugLogEntry } from "../debugsy-logs/hooks/use-debugsy";

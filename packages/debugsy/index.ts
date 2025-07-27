@@ -5,11 +5,11 @@ export {
   type DependencyFilter,
   type DependencyLogLevel,
   type LogLevel,
-  type UnifiedSurfaceDebug,
-} from "./src/shared";
+  type DebugSpace as UnifiedSurfaceDebug,
+} from "./src/debugsy-shared";
 
 // === DEBUG DEPENDENCY TRACKING ===
-export { useRenderTracker, useWhyDidYouUpdate } from "./src/debug-deps";
+export { useRenderTracker, useWhyDidYouUpdate } from "./src/debugsy-deps";
 
 // === DEBUG LOGGING SYSTEM ===
 export {
@@ -23,12 +23,11 @@ export {
   DebugPointButtons,
   DebugResizePresets,
   DebugStatsPanel,
-  DebugStatus,
   DebugsyPanel,
   sanitizeLogData,
   useDebugSubscription,
   useDebugsy,
-} from "./src/debug-logs";
+} from "./src/debugsy-logs";
 
 // === LOG FORMATTERS ===
 export {
@@ -47,14 +46,14 @@ export {
   type FormatterConfig,
   type FormatterMeta,
   type LogSeverity,
-} from "./src/debug-logs";
+} from "./src/debugsy-logs";
 
 // === TYPE EXPORTS ===
 export type {
   DebugLogEntry,
   HealthMetrics,
   HealthSnapshotConfig,
-} from "./src/debug-logs";
+} from "./src/debugsy-logs";
 
 // === COMPONENT PROP TYPES ===
 export type {
@@ -68,9 +67,8 @@ export type {
   DebugPointConfig,
   DebugResizePresetsProps,
   DebugStatsPanelProps,
-  DebugStatusProps,
   DebugsyPanelProps,
-} from "./src/debug-logs";
+} from "./src/debugsy-logs";
 
 // Object depth utilities
 export {
@@ -86,4 +84,4 @@ export {
   testStringMode,
   type DepthSetting,
   type DiffEntry,
-} from "./src/shared/object-depth-utils";
+} from "./src/debugsy-shared/object-depth-utils";
