@@ -1,105 +1,55 @@
 /**
- * Debug Dependencies Module
+ * Debugsy Deps - Enhanced React Hook Dependency Tracking
  *
- * REFACTORED: Split into focused responsibility modules with extracted utilities
+ * UNIFIED ARCHITECTURE: Complete integration with debugsy system
+ * - State management via unified debugsy space
+ * - Logging through unified debugsy channels
+ * - UI controls through unified control panels
+ * - Settings persistence through unified storage
  *
- * ARCHITECTURE: Dependencies as Debugsy Extension
- * - Core debugsy handles all logging, state management, and UI integration
- * - Dependencies module focuses only on React-specific tracking logic
- * - Clean separation of concerns with modular design and utility extraction
+ * PERFORMANCE OPTIMIZATIONS:
+ * - Throttled logging to prevent UI blocking
+ * - Smart filtering based on app lifecycle phase
+ * - Emergency stop mechanism for runaway render loops
+ * - Efficient change detection with early bailouts
  *
- * MODULE ORGANIZATION:
- * - dependency-logger.ts: Unified logging system delegation
- * - dependency-state.ts: State access and management
- * - change-tracking.ts: Frequency detection and initialization tracking
- * - dependency-filters.ts: Filtering logic for what to log
- * - dependency-utilities.ts: Utility functions for change analysis and logging
- * - debug-deps.ts: Main React hooks orchestration
- *
- * Provides React hook dependency tracking and performance monitoring tools
- * to debug circular re-rendering, ineffective memoization, and render loops.
+ * DEBUGGING FEATURES:
+ * - Detailed change analysis with type discrimination
+ * - Render loop detection with progressive warnings
+ * - Hook-specific filtering for targeted debugging
+ * - Initialization-aware filtering for better UX during app startup
  */
 
-// Core dependency tracking functionality
+// Core tracking hooks - primary interface
 export { useRenderTracker, useWhyDidYouUpdate } from "./use-deps";
 
-// Logging system
+// Logging system - unified with debugsy
+export { logToDebugSystem as logDepsChange } from "./deps-logger";
+
+// Settings and state access
+export { getDepsSettings } from "./deps-settings";
+
+// Filtering utilities
 export {
-  dependencyLogger,
-  logErrorToDebugSystem,
-  logToDebugSystem,
-  logWarnToDebugSystem,
-} from "./deps-logger";
+  shouldLogChangeType,
+  shouldLogLevel,
+  shouldTrackHook,
+} from "./deps-filters";
 
-// State management
-export {
-  getDepsSettings as getDependencyState,
-  type DepsSettings as DependencyState,
-} from "./deps-settings";
+// Change analysis utilities
+export { analyzeChanges, detectChangeType } from "./logic/change-utils";
 
-// Change tracking and frequency detection
-export {
-  initializationPhase,
-  trackDependencyChange,
-  type ChangeTrackingInfo,
-} from "./logic/change-tracking";
+// Initialization phase tracking
+export { initializationPhase } from "./logic/change-tracking";
 
-// Filtering logic
-export { shouldLogDependency } from "./deps-filters";
+// React hook for settings - from unified space
+export { useDepsSettings as useDepsState } from "../debugsy-space/debugsy-space-settings";
 
-// Utility functions for change analysis and logging
-export {
-  analyzeChanges,
-  detectChangeType,
-  getChangeIndicators,
-  logDependencyChanges,
-  logPropChange,
-  type PropChange,
-} from "./logic/change-utils";
-
-// UI state management and controls (for backward compatibility)
-// Re-export the dependency state management functionality
-export { useDependencySettings as useDependencyState } from "../debugsy-space/debugsy-space-settings";
-
-// Re-export core types for backward compatibility and convenience
+// Type re-exports from debugsy space
 export type {
-  DependencyFilter,
-  DependencyLogLevel,
-  DependencyTrackingConfig,
+  DepsConfig,
+  DepsFilter,
+  DepsLogLevel,
+  DepsSettings,
+  DepsTrackingConfig,
 } from "../debugsy-space/debugsy-constants";
-
-/**
- * ✅ UTILITY EXTRACTION COMPLETE: Extracted Complex Logic from useWhyDidYouUpdate
- *
- * ACCOMPLISHED:
- * 1. ✅ Created dependency-utilities.ts with extracted utility functions
- * 2. ✅ Simplified useWhyDidYouUpdate by 80+ lines to focus on React logic only
- * 3. ✅ Improved testability with isolated utility functions
- * 4. ✅ Enhanced code reusability across different hook implementations
- * 5. ✅ Better separation between React hooks and analysis logic
- * 6. ✅ Maintained all existing functionality and behavior
- * 7. ✅ Added comprehensive type definitions for better TypeScript support
- * 8. ✅ Created focused utility functions with single responsibilities
- *
- * UTILITY FUNCTIONS:
- * - detectChangeType(): Determine change type (function/object/primitive)
- * - analyzeChanges(): Analyze all prop changes and filter what to log
- * - getChangeIndicators(): Generate severity and indicator information
- * - logPropChange(): Log a single prop change with formatting
- * - logDependencyChanges(): Log all changes with summary and details
- *
- * MODULE RESPONSIBILITIES:
- * - dependency-logger.ts (75 lines): Logging delegation to unified debugsy
- * - dependency-state.ts (53 lines): State access and management
- * - change-tracking.ts (126 lines): Frequency detection and phase tracking
- * - dependency-filters.ts (98 lines): Filtering and decision logic
- * - dependency-utilities.ts (175 lines): Utility functions for change analysis
- * - debug-deps.ts (95 lines): Clean React hooks orchestration
- *
- * BENEFITS:
- * - 🎯 Cleaner React hooks focused only on React-specific logic
- * - 🧹 Better testability with isolated utility functions
- * - 🔄 Improved code reusability and maintainability
- * - 📚 Enhanced documentation with focused responsibilities
- * - ⚡ Easier debugging and development with clear separation
- */

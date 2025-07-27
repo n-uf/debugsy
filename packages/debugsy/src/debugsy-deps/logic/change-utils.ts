@@ -8,7 +8,7 @@
  * - Structured change logging with severity detection
  */
 
-import { shouldLogDependency } from "../deps-filters";
+import { shouldLogChangeType, shouldTrackHook } from "../deps-filters";
 import { logToDebugSystem, logWarnToDebugSystem } from "../deps-logger";
 import { getDepsSettings } from "../deps-settings";
 import {
@@ -67,7 +67,10 @@ export function analyzeChanges(
       const trackingInfo = trackDependencyChange(name, key, changeType);
       const isStable = !trackingInfo.isFrequent;
 
-      if (shouldLogDependency(name, changeType, isStable)) {
+      // Apply filtering logic
+      const changeTypeString = isStable ? changeType : "unstable";
+
+      if (shouldTrackHook(name) && shouldLogChangeType(changeTypeString)) {
         changesToLog.push({
           key,
           change: { from, to },

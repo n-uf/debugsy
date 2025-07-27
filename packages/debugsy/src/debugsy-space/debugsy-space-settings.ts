@@ -4,8 +4,8 @@ import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-
 import {
   type DebugPoint,
   type DebugsySettings,
-  type DependencyFilter,
-  type DependencyLogLevel,
+  type DepsFilter,
+  type DepsLogLevel,
   getAllDebugPoints,
 } from "./debugsy-constants";
 
@@ -18,10 +18,10 @@ let globalDebugState: DebugsySettings = {
   logs: [],
   timers: new Map(),
   visualMessages: [],
-  dependencies: {
+  deps: {
     // REMOVED: enabled - now derived from debug point system
-    level: "normal" as DependencyLogLevel,
-    filter: "all" as DependencyFilter,
+    level: "normal" as DepsLogLevel,
+    filter: "all" as DepsFilter,
     allowedHooks: null,
     excludedHooks: [],
     throttleMs: 100,
@@ -179,10 +179,10 @@ export const debugSettingsControls = {
 };
 
 /**
- * Dependency tracking controls for global state
+ * Deps tracking controls for global state
  * UNIFIED: Now uses debug point system instead of separate enabled state
  */
-export const dependencySettingsControls = {
+export const depsSettingsControls = {
   setEnabled: (enabled: boolean) => {
     // Use unified debug point system instead of separate enabled state
     if (enabled) {
@@ -195,13 +195,13 @@ export const dependencySettingsControls = {
     // Notify subscribers for reactive UI updates (like debugsy-space deps methods)
     notifySubscribers();
   },
-  setLevel: (level: DependencyLogLevel) => {
-    globalDebugState.dependencies.level = level;
+  setLevel: (level: DepsLogLevel) => {
+    globalDebugState.deps.level = level;
     // Notify subscribers for reactive UI updates
     notifySubscribers();
   },
-  setFilter: (filter: DependencyFilter) => {
-    globalDebugState.dependencies.filter = filter;
+  setFilter: (filter: DepsFilter) => {
+    globalDebugState.deps.filter = filter;
     // Notify subscribers for reactive UI updates
     notifySubscribers();
   },
@@ -209,11 +209,11 @@ export const dependencySettingsControls = {
   getEnabled: (): boolean => {
     return globalDebugState.enabled.has("dependencies");
   },
-  getLevel: (): DependencyLogLevel => {
-    return globalDebugState.dependencies.level;
+  getLevel: (): DepsLogLevel => {
+    return globalDebugState.deps.level;
   },
-  getFilter: (): DependencyFilter => {
-    return globalDebugState.dependencies.filter;
+  getFilter: (): DepsFilter => {
+    return globalDebugState.deps.filter;
   },
 };
 
@@ -221,27 +221,27 @@ export const dependencySettingsControls = {
 initializeDebugSettings();
 
 /**
- * Simple React hook for dependency settings - replaces debug-deps-settings.ts
- * Provides reactive interface to dependencySettingsControls
+ * React hook for deps settings
+ * Provides reactive interface to depsSettingsControls
  */
 import { useCallback } from "react";
 
-export const useDependencySettings = () => {
-  const getDependencyLogs = useCallback(() => {
+export const useDepsSettings = () => {
+  const getDepsLogs = useCallback(() => {
     return globalDebugState.logs.filter((log) => log.point === "dependencies");
   }, [globalDebugState.logs]);
 
   return {
     // State - directly from unified system
-    enabled: dependencySettingsControls.getEnabled(),
-    logLevel: dependencySettingsControls.getLevel(),
-    filter: dependencySettingsControls.getFilter(),
-    logs: getDependencyLogs(),
+    enabled: depsSettingsControls.getEnabled(),
+    logLevel: depsSettingsControls.getLevel(),
+    filter: depsSettingsControls.getFilter(),
+    logs: getDepsLogs(),
 
     // Actions - direct delegation to unified controls
-    enable: () => dependencySettingsControls.setEnabled(true),
-    disable: () => dependencySettingsControls.setEnabled(false),
-    setLogLevel: dependencySettingsControls.setLevel,
-    setFilter: dependencySettingsControls.setFilter,
+    enable: () => depsSettingsControls.setEnabled(true),
+    disable: () => depsSettingsControls.setEnabled(false),
+    setLogLevel: depsSettingsControls.setLevel,
+    setFilter: depsSettingsControls.setFilter,
   };
 };

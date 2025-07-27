@@ -1,8 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
-import {
-  type DebugDisplayContent,
-  type DebugDisplayState,
-} from "../../debugsy-space/debugsy-constants";
+import { useEffect, useReducer } from "react";
 
 // Subscribers for state changes
 const subscribers = new Set<() => void>();
@@ -102,74 +98,6 @@ export function useDebugSubscription(): void {
     return unsubscribe;
   }, []);
 }
-
-// Global display state for debug UI feedback
-let debugDisplayState: DebugDisplayState = {
-  content: null,
-};
-
-// Display listeners
-let displayListeners: Set<() => void> = new Set();
-
-/**
- * Set debug display content for UI feedback
- */
-export const setDebugDisplayContent = (
-  content: Omit<DebugDisplayContent, "timestamp"> | null
-) => {
-  if (content) {
-    debugDisplayState.content = {
-      ...content,
-      timestamp: Date.now(),
-    };
-
-    // Auto-clear if duration is specified
-    if (content.duration && content.duration > 0) {
-      setTimeout(() => {
-        clearDebugDisplayContent();
-      }, content.duration);
-    }
-  } else {
-    debugDisplayState.content = null;
-  }
-
-  // Notify all listeners
-  displayListeners.forEach((listener) => listener());
-};
-
-/**
- * Clear debug display content
- */
-export const clearDebugDisplayContent = () => {
-  debugDisplayState.content = null;
-  displayListeners.forEach((listener) => listener());
-};
-
-/**
- * Hook to manage debug display content
- */
-export const useDebugDisplayContent = () => {
-  const [content, setContent] = useState<DebugDisplayContent | null>(
-    debugDisplayState.content
-  );
-
-  useEffect(() => {
-    const listener = () => {
-      setContent(debugDisplayState.content);
-    };
-
-    displayListeners.add(listener);
-    return () => {
-      displayListeners.delete(listener);
-    };
-  }, []);
-
-  return {
-    content,
-    setContent: setDebugDisplayContent,
-    clearContent: clearDebugDisplayContent,
-  };
-};
 
 /**
  * Debug performance timing utilities

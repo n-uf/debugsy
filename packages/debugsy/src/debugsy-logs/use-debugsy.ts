@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import {
+  clearDebugDisplayContent,
+  setDebugDisplayContent,
+} from "../debugsy-look/ui-display/debug-display-state";
+import {
   type DebugLogEntry,
   type DebugPoint,
 } from "../debugsy-space/debugsy-constants";
-import {
-  clearDebugDisplayContent,
-  setDebugDisplayContent,
-} from "./hooks/debug-notifications";
 import {
   type HealthMetrics,
   type HealthSnapshotConfig,

@@ -1,96 +1,88 @@
 /**
- * Dependency Filtering Logic
+ * Deps Filters - Filtering Logic for Dependency Tracking
  *
  * RESPONSIBILITY: Determine what dependency changes should be logged
- * - Level-based filtering (silent, quiet, normal, verbose, debug)
- * - Type-based filtering (functions, objects, primitives)
- * - Hook-based filtering (allowed/excluded hooks)
- * - Emergency stop and initialization-aware logic
+ * - Hook filtering (which hooks to track)
+ * - Log level filtering (verbose vs minimal)
+ * - Change type filtering (functions vs objects vs primitives)
+ *
+ * ARCHITECTURE:
+ * - Pure functions for filtering logic
+ * - Unified state access via getDepsSettings
+ * - No React dependencies for testability
  */
 
 import { getDepsSettings } from "./deps-settings";
-import { initializationPhase } from "./logic/change-tracking";
 
 /**
- * Enhanced shouldLogDependency function using unified state
- *
- * Determines whether a dependency change should be logged based on:
- * - Global enabled state
- * - Emergency stop status
- * - Hook allow/exclude lists
- * - Log level settings
- * - Change type and stability
- * - App initialization phase
+ * Check if a hook should be tracked based on current filter settings
  */
-export function shouldLogDependency(
-  hookName: string,
-  changeType: "function" | "object" | "primitive",
-  isStable: boolean
-): boolean {
-  // Emergency stop check
-  if ((globalThis as any).__DEBUGSY_EMERGENCY_STOP?.active) {
+export function shouldTrackHook(hookName: string): boolean {
+  const depsState = getDepsSettings();
+
+  // Global disable check
+  if (!depsState.enabled) {
     return false;
   }
 
-  const dependencyState = getDepsSettings();
-
-  // Global enabled check
-  if (!dependencyState.enabled) {
-    return false;
-  }
-
-  // Hook filtering
-  if (dependencyState.allowedHooks) {
-    if (!dependencyState.allowedHooks.includes(hookName)) {
+  // Allowed hooks whitelist check
+  if (depsState.allowedHooks) {
+    if (!depsState.allowedHooks.includes(hookName)) {
       return false;
     }
   }
 
-  if (dependencyState.excludedHooks.includes(hookName)) {
+  // Excluded hooks blacklist check
+  if (depsState.excludedHooks.includes(hookName)) {
     return false;
   }
 
-  // Level filtering - simplified for unified system
-  switch (dependencyState.level) {
+  return true;
+}
+
+/**
+ * Check if a specific log level should be logged
+ */
+export function shouldLogLevel(severity: "info" | "warn" | "error"): boolean {
+  const depsState = getDepsSettings();
+
+  switch (depsState.level) {
     case "silent":
       return false;
     case "quiet":
-      // Only show functions and potential loop risks
-      return changeType === "function" || !isStable;
+      return severity === "error";
     case "normal":
-      // Show functions and objects, hide primitives unless unstable
-      // Enhanced with initialization-aware logic for better UX
-      const phase = initializationPhase.getPhase();
-      if (changeType === "function") return true;
-      if (changeType === "object") {
-        // During init: only show if really frequent, during runtime: show if unstable
-        return phase === "runtime" ? !isStable : false;
-      }
-      return !isStable; // Primitives only if unstable
+      return severity === "warn" || severity === "error";
     case "verbose":
-      // Show everything
       return true;
     case "debug":
-      // Show everything with extra detail
+      return true;
+    default:
       return true;
   }
+}
 
-  // Type filtering
-  switch (dependencyState.filter) {
+/**
+ * Check if a specific change type should be logged based on filter settings
+ */
+export function shouldLogChangeType(
+  changeType: "function" | "object" | "primitive" | "unstable"
+): boolean {
+  const depsState = getDepsSettings();
+
+  switch (depsState.filter) {
+    case "all":
+      return true;
     case "functions-only":
       return changeType === "function";
     case "objects-only":
       return changeType === "object";
     case "unstable-only":
-      return !isStable;
+      return changeType === "unstable";
     case "stable-only":
-      return isStable;
+      return changeType !== "unstable";
     case "loop-risks":
-      // Functions and frequently changing objects
-      return (
-        changeType === "function" || (changeType === "object" && !isStable)
-      );
-    case "all":
+      return changeType === "function" || changeType === "unstable";
     default:
       return true;
   }

@@ -2,7 +2,7 @@ import type { DebugLogEntry } from "../../../../debugsy-space/debugsy-constants"
 
 import {
   getLogTypeConfig,
-  type DependencyLogType,
+  type LogType,
 } from "../../../../debugsy-space/debugsy-point";
 import type { LogSeverity } from "../default-log-formatter";
 import { COMPONENT_NAME_REGEX } from "./constants";
@@ -364,7 +364,7 @@ export const getEnhancedObjectDisplay = (
 export const getLogTypeMetadata = (
   log: DebugLogEntry
 ): {
-  type: DependencyLogType | "unknown";
+  type: LogType | "unknown";
   icon: string;
 } => {
   // Use debug point configuration (primary approach)
@@ -372,7 +372,7 @@ export const getLogTypeMetadata = (
     const config = getLogTypeConfig(log.point, log.logType);
     if (config) {
       return {
-        type: log.logType as DependencyLogType,
+        type: log.logType as LogType,
         icon: config.icon,
       };
     }

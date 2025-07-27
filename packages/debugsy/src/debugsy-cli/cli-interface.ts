@@ -1,6 +1,12 @@
 import {
-  createDepsCommands,
-  type DepsCommands,
+  enableDepsDebug,
+  enableDepsNormal,
+  enableDepsQuiet,
+  enableDepsVerbose,
+  resetDepsTracking,
+  setDepsFunctionsOnly,
+  setDepsObjectsOnly,
+  setDepsUnstableOnly,
 } from "./commands/deps-commands";
 import {
   createEmergencyCommands,
@@ -30,7 +36,16 @@ export interface DebugsyCLI {
   status: StatusCommands;
 
   // === DEPENDENCY CONTROL ===
-  deps: DepsCommands;
+  deps: {
+    quiet: () => void;
+    normal: () => void;
+    verbose: () => void;
+    debug: () => void;
+    functionsOnly: () => void;
+    objectsOnly: () => void;
+    unstableOnly: () => void;
+    reset: () => void;
+  };
 
   // === EMERGENCY CONTROLS ===
   emergency: EmergencyCommands;
@@ -48,7 +63,16 @@ export interface DebugsyCLI {
  */
 export function createDebugsyCLI(coreManager: any): DebugsyCLI {
   const statusCommands = createStatusCommands();
-  const depsCommands = createDepsCommands();
+  const depsCommands = {
+    quiet: enableDepsQuiet,
+    normal: enableDepsNormal,
+    verbose: enableDepsVerbose,
+    debug: enableDepsDebug,
+    functionsOnly: setDepsFunctionsOnly,
+    objectsOnly: setDepsObjectsOnly,
+    unstableOnly: setDepsUnstableOnly,
+    reset: resetDepsTracking,
+  };
   const emergencyCommands = createEmergencyCommands();
   const testCommands = createTestCommands();
 

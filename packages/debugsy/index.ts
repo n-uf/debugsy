@@ -2,8 +2,8 @@
 export {
   initializeDebugsySpace as initializeUnifiedDebugSystem,
   type DebugPoint,
-  type DependencyFilter,
-  type DependencyLogLevel,
+  type DepsFilter,
+  type DepsLogLevel,
   type LogLevel,
   type DebugsySpace as UnifiedSurfaceDebug,
 } from "./src/debugsy-space";

@@ -1,20 +1,20 @@
 /**
- * Debug Dependencies - React Hook Dependency Tracking
+ * Debug Deps - React Hook Dependency Tracking
  *
  * MIGRATED: Now uses unified debugsy logging system as core logger
  * REFACTORED: Split into focused responsibility modules + extracted utilities
  *
- * ARCHITECTURE: Dependencies as Debugsy Extension
+ * ARCHITECTURE: Deps as Debugsy Extension
  * - Core debugsy handles all logging, state management, and UI integration
- * - Dependencies module focuses only on React-specific tracking logic
+ * - Deps module focuses only on React-specific tracking logic
  * - Clean separation of concerns with unified interface
  *
  * MODULES:
- * - dependency-logger.ts: Unified logging system
- * - dependency-state.ts: State access and management
+ * - deps-logger.ts: Unified logging system
+ * - deps-state.ts: State access and management
  * - change-tracking.ts: Frequency detection and initialization tracking
- * - dependency-filters.ts: Filtering logic for what to log
- * - dependency-utilities.ts: Utility functions for change analysis and logging
+ * - deps-filters.ts: Filtering logic for what to log
+ * - deps-utilities.ts: Utility functions for change analysis and logging
  * - debug-deps.ts (this file): React hooks orchestration
  *
  * Provides enhanced dependency tracking for React hooks to debug:
@@ -27,10 +27,10 @@
 import { useEffect, useRef } from "react";
 import { logWarnToDebugSystem } from "./deps-logger";
 import { getDepsSettings } from "./deps-settings";
-import { analyzeChanges, logDependencyChanges } from "./logic/change-utils";
+import { analyzeChanges } from "./logic/change-utils";
 
 /**
- * Enhanced dependency tracking that respects unified debug controls
+ * Enhanced deps tracking that respects unified debug controls
  * REFACTORED: Extracted complex utility logic for better maintainability
  *
  * Features:
@@ -48,75 +48,86 @@ export function useWhyDidYouUpdate(
   const previousProps = useRef<Record<string, any> | undefined>(undefined);
   const lastLogTime = useRef(0);
 
-  const dependencyState = getDepsSettings();
+  // Get current deps state - AFTER hooks are called
+  const depsState = getDepsSettings();
 
-  // Check if we should do any work (but hooks are already called)
-  const shouldTrack =
-    dependencyState.enabled &&
-    !(globalThis as any).__DEBUGSY_EMERGENCY_STOP?.active;
+  // Early return if deps tracking disabled - but AFTER calling hooks
+  if (
+    !depsState.enabled ||
+    !props ||
+    typeof props !== "object" ||
+    Object.keys(props).length === 0
+  ) {
+    return;
+  }
+
+  // Throttling check using current state
+  const now = Date.now();
+  const currentDepsState = getDepsSettings();
+
+  // Respect throttling settings from current state
+  if (now - lastLogTime.current < currentDepsState.throttleMs) {
+    return;
+  }
 
   useEffect(() => {
-    // Early exit if tracking is disabled, but still update previousProps
-    if (!shouldTrack) {
+    // Skip on first render (no previous props to compare)
+    if (previousProps.current === undefined) {
       previousProps.current = props;
       return;
     }
 
-    const currentDependencyState = getDepsSettings();
+    // Use extracted utility for change analysis and logging
+    analyzeChanges(name, previousProps.current, props);
 
-    // Throttling
-    const now = Date.now();
-    if (now - lastLogTime.current < currentDependencyState.throttleMs) {
-      previousProps.current = props;
-      return;
-    }
-
-    if (previousProps.current) {
-      // Use extracted utility to analyze changes
-      const changesToLog = analyzeChanges(name, previousProps.current, props);
-
-      // Use extracted utility to log changes
-      if (changesToLog.length > 0) {
-        logDependencyChanges(name, changesToLog);
-        lastLogTime.current = now;
-      }
-    }
-
+    // Update for next render
     previousProps.current = props;
-  }); // Deliberately no deps - we want this to run on every render to track changes
+    lastLogTime.current = now;
+  });
 }
 
 /**
- * Enhanced version that tracks render count and warns about excessive renders
- *
- * Features:
- * - Automatic render count tracking
- * - Excessive render warnings (every 10 renders after threshold)
- * - Throttled warnings to prevent spam
- * - Delegates to useWhyDidYouUpdate for dependency analysis
+ * Simplified render tracking hook
+ * Tracks render frequency and logs warnings for excessive renders
  */
 export function useRenderTracker(
-  name: string,
-  props: Record<string, any>
+  componentName: string,
+  threshold: number = 10
 ): void {
+  // Hook calls first
   const renderCount = useRef(0);
-  const lastWarning = useRef(0);
+  const startTime = useRef<number>(Date.now());
 
-  renderCount.current += 1;
-
-  // Warn every 10 renders after threshold
-  if (renderCount.current > 10 && renderCount.current % 10 === 0) {
-    const now = Date.now();
-    if (now - lastWarning.current > 1000) {
-      // Throttle warnings to once per second
-      logWarnToDebugSystem(
-        `⚠️ [${name}] High render count detected: ${renderCount.current}`,
-        undefined,
-        "render-warning"
-      );
-      lastWarning.current = now;
-    }
+  // State check after hooks
+  const depsState = getDepsSettings();
+  if (!depsState.enabled) {
+    return;
   }
 
-  useWhyDidYouUpdate(name, props);
+  useEffect(() => {
+    renderCount.current += 1;
+
+    // Log warning if excessive renders detected
+    if (renderCount.current >= threshold) {
+      const timeElapsed = Date.now() - startTime.current;
+      const renderRate = renderCount.current / (timeElapsed / 1000);
+
+      logWarnToDebugSystem(
+        `${componentName} has rendered ${renderCount.current} times in ${timeElapsed}ms (${renderRate.toFixed(
+          2
+        )} renders/sec). This may indicate a render loop.`,
+        {
+          component: componentName,
+          renderCount: renderCount.current,
+          timeElapsed,
+          renderRate,
+          threshold,
+        }
+      );
+
+      // Reset counter to prevent spam
+      renderCount.current = 0;
+      startTime.current = Date.now();
+    }
+  });
 }

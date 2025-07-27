@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useDebugSubscription } from "../../debugsy-logs/hooks/debug-notifications";
-import { useDependencySettings } from "../../debugsy-space/debugsy-space-settings";
+import React from "react";
+import { useDepsSettings } from "../../debugsy-space/debugsy-space-settings";
 import { DebugDependencyAdvancedControls } from "./dependency-advanced-controls";
 
 export interface DebugDependencyControlsProps {
@@ -23,10 +22,10 @@ export const DebugDependencyControls: React.FC<
   DebugDependencyControlsProps
 > = ({ className = "" }) => {
   // SUBSCRIBE to debug state changes so button indicators update (like debug point buttons)
-  useDebugSubscription();
+  // useDebugSubscription(); // This line was removed as per the new_code, as per the new_code.
 
-  const dependencyState = useDependencySettings();
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const dependencyState = useDepsSettings();
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   // Use reactive state directly instead of static object
   const methods: any = {

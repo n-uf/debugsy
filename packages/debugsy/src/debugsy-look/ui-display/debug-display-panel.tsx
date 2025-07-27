@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useDebugDisplayContent } from "../../debugsy-logs/hooks/debug-notifications";
 import type { DebugLogEntry } from "../../debugsy-logs/use-debugsy";
+import { useDebugDisplayContent } from "./debug-display-state";
 // Import unified debug point configuration
 import { getDebugPointEmoji } from "../../debugsy-space/debugsy-constants";
 

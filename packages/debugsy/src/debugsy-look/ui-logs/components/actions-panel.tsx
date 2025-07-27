@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
+import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
+import { type DepthSetting } from "../../../shared/object-depth-utils";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-} from "../../../debugsy-logs/hooks/debug-notifications";
-import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
-import { type DepthSetting } from "../../../shared/object-depth-utils";
+} from "../../ui-display/debug-display-state";
 import {
   DEFAULT_COPY_CONFIG,
   getButtonTransitionDuration,

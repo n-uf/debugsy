@@ -3,6 +3,8 @@
  * Provides testing functionality for the debugsy browser console interface
  */
 
+import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
+
 export interface TestCommands {
   testDependencyTracking: () => boolean;
   testMockComponent: () => boolean;
@@ -56,7 +58,9 @@ export function createTestCommands(): TestCommands {
 
       // Test enabling dependency tracking
       console.log("🔄 Testing dependency tracking toggle...");
-      globalThis.debugsySpace.deps.on();
+      // Enable deps tracking for test
+      const state = getGlobalDebugState();
+      state.enabled.add("dependencies");
       const newStatus = globalThis.debugsySpace.getDepsSettings();
 
       console.log(`

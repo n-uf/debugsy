@@ -4,6 +4,9 @@ export const MAX_STORED_LOGS = 10000; // Maximum logs to keep in memory
 // Import debug point utilities and types from dedicated module
 import type { DebugPoint, LogType } from "./debugsy-point";
 
+// Import deps tracking types from dedicated module
+import type { DepsTrackingConfig } from "./debugsy-deps-types";
+
 export {
   DEBUG_POINT_CONFIG,
   getAllDebugPoints,
@@ -13,36 +16,18 @@ export {
   getLookDebugPoints,
   type DebugPoint,
   type DebugPointConfig,
-  type DependencyLogType,
   type LogType,
   type LogTypeConfig,
 } from "./debugsy-point";
 
-// Dependency tracking types
-export type DependencyLogLevel =
-  | "silent"
-  | "quiet"
-  | "normal"
-  | "verbose"
-  | "debug";
-
-export type DependencyFilter =
-  | "all"
-  | "functions-only"
-  | "objects-only"
-  | "unstable-only"
-  | "stable-only"
-  | "loop-risks";
-
-// Dependency tracking configuration
-export interface DependencyTrackingConfig {
-  // REMOVED: enabled - now derived from debug point system (globalState.enabled.has("dependencies"))
-  level: DependencyLogLevel;
-  filter: DependencyFilter;
-  allowedHooks: string[] | null;
-  excludedHooks: string[];
-  throttleMs: number;
-}
+// Re-export deps types
+export {
+  type DepsConfig,
+  type DepsFilter,
+  type DepsLogLevel,
+  type DepsSettings,
+  type DepsTrackingConfig,
+} from "./debugsy-deps-types";
 
 // Log severity levels
 export type LogLevel = "info" | "warn" | "error" | "critical" | "success";
@@ -73,17 +58,5 @@ export interface DebugsySettings {
     timestamp: number;
     duration: number;
   }>;
-  dependencies: DependencyTrackingConfig;
-}
-
-// Debug display content types
-export interface DebugDisplayContent {
-  message: string;
-  type?: "info" | "success" | "warning" | "error";
-  duration?: number; // Auto-clear after duration (ms), 0 for manual clear
-  timestamp: number;
-}
-
-export interface DebugDisplayState {
-  content: DebugDisplayContent | null;
+  deps: DepsTrackingConfig; // Updated naming from "dependencies" to "deps"
 }

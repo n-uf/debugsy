@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import type { DependencyFilter } from "../../debugsy-space/debugsy-constants";
-import { useDependencySettings } from "../../debugsy-space/debugsy-space-settings";
+import type { DepsFilter } from "../../debugsy-space/debugsy-constants";
+import { useDepsSettings } from "../../debugsy-space/debugsy-space-settings";
 
 export interface DebugDependencyAdvancedControlsProps {
   className?: string;
@@ -21,7 +21,7 @@ export interface DebugDependencyAdvancedControlsProps {
 export const DebugDependencyAdvancedControls: React.FC<
   DebugDependencyAdvancedControlsProps
 > = ({ className = "", showToggle = true, isVisible, onVisibilityChange }) => {
-  const dependencyState = useDependencySettings();
+  const dependencyState = useDepsSettings();
   const [internalShowAdvanced, setInternalShowAdvanced] = useState(false);
 
   // Use external visibility control if provided, otherwise use internal state
@@ -68,7 +68,7 @@ export const DebugDependencyAdvancedControls: React.FC<
     dependencyState.setLogLevel("verbose");
   };
 
-  const handleFilterChange = (filter: DependencyFilter) => {
+  const handleFilterChange = (filter: DepsFilter) => {
     console.log(
       `🔧 [AdvancedControls] Setting dependency filter to: ${filter}`
     );

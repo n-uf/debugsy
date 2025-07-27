@@ -48,14 +48,6 @@ export type AllConfiguredLogTypes = {
  */
 export type LogType = AllConfiguredLogTypes;
 
-/**
- * Legacy type aliases for backwards compatibility
- * These are now automatically inferred subsets of the main LogType
- */
-export type DependencyLogType = ExtractLogTypes<
-  (typeof DEBUG_POINT_CONFIG)["dependencies"]
->;
-
 // ============================================================================
 // RE-EXPORTS
 // ============================================================================

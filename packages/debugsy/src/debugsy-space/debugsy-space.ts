@@ -1,8 +1,9 @@
+// Import CLI utilities for browser console integration
 import {
-  initializeDebugsyCLI,
+  createFullDebugsyCLI,
   printCLIHelp,
   type DebugsyCLIWithHelp,
-} from "../debugsy-cli";
+} from "../debugsy-cli/cli-interface";
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
 import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/hooks/health-snapshot";
 import { registerSuperjsonCustomSerializers } from "../shared/superjson-config";
@@ -20,11 +21,11 @@ import {
 } from "./debugsy-space-settings";
 
 /**
- * Unified Global Debug Manager Interface
- * Combines functionality from both debug-deps.ts and use-debug.ts
+ * Core Debug Manager Interface
+ * Focused on debug functionality without CLI concerns
  */
-export interface DebugsySpace extends DebugsyCLIWithHelp {
-  // === CORE LOGGING (from use-debug.ts) ===
+export interface DebugsySpace {
+  // === CORE LOGGING ===
   log: (
     point: DebugPoint,
     message: string,
@@ -79,15 +80,22 @@ export interface DebugsySpace extends DebugsyCLIWithHelp {
   getDepsSettings: () => any;
   state: any; // Getter for current state
 
-  // CLI commands are now inherited from DebugsyCLIWithHelp
+  // === HEALTH MONITORING ===
+  captureHealthSnapshot: () => any;
 }
+
+/**
+ * Combined Interface for Browser Console
+ * Composition of core debug functionality + CLI commands
+ */
+export interface DebugsySpaceWithCLI extends DebugsySpace, DebugsyCLIWithHelp {}
 
 /**
  * Global type declarations for the unified system
  */
 declare global {
   var debugsySpace: DebugsySpace;
-  var debugsy: DebugsySpace; // Convenient alias
+  var debugsy: DebugsySpaceWithCLI; // Convenient alias with CLI
   var __debugsySanitizationLogged: boolean | undefined;
   var __DEBUGSY_EMERGENCY_STOP: {
     active: boolean;
@@ -98,8 +106,8 @@ declare global {
 }
 
 /**
- * Create the unified global debug manager
- * This replaces both the debug-deps.ts and use-debug.ts global objects
+ * Create the core debug manager (without CLI)
+ * This is the clean separation between debug functionality and CLI
  */
 function createDebugsySpace(): DebugsySpace {
   // Memoization for expensive getters to prevent performance issues
@@ -111,56 +119,57 @@ function createDebugsySpace(): DebugsySpace {
   // Register superjson serializers for complex object logging
   registerSuperjsonCustomSerializers();
 
-  const coreManager = {
-    // === CORE LOGGING (from use-debug.ts) ===
-    log: (
-      point: DebugPoint,
-      message: string,
-      data?: any,
-      level: LogLevel = "info",
-      logType?: LogType
-    ): void => {
-      const globalState = getGlobalDebugState();
+  // Core log function that will be reused by other methods
+  const coreLog = (
+    point: DebugPoint,
+    message: string,
+    data?: any,
+    level: LogLevel = "info",
+    logType?: LogType
+  ): void => {
+    const globalState = getGlobalDebugState();
 
-      if (!globalState.enabled.has(point) && point !== "health") {
-        return;
+    if (!globalState.enabled.has(point) && point !== "health") {
+      return;
+    }
+
+    const logEntry: DebugLogEntry = {
+      timestamp: Date.now(),
+      point,
+      level,
+      message,
+      data,
+      sessionId: "default",
+      logType,
+    };
+
+    globalState.logs.push(logEntry);
+
+    if (globalState.logs.length > MAX_STORED_LOGS) {
+      globalState.logs = globalState.logs.slice(-MAX_STORED_LOGS);
+    }
+
+    if (globalState.console) {
+      const emoji = getDebugPointEmoji(point);
+      const timestamp = new Date(logEntry.timestamp).toLocaleTimeString();
+      const prefix = `[${timestamp}] ${emoji} [${point}]`;
+
+      const logMethod =
+        level === "error" || level === "critical" ? console.error : console.log;
+
+      if (data) {
+        logMethod(prefix, message, data);
+      } else {
+        logMethod(prefix, message);
       }
+    }
 
-      const logEntry: DebugLogEntry = {
-        timestamp: Date.now(),
-        point,
-        level,
-        message,
-        data,
-        sessionId: "default", // Add required sessionId
-        logType, // Optional logType
-      };
+    notifySubscribers();
+  };
 
-      globalState.logs.push(logEntry);
-
-      if (globalState.logs.length > MAX_STORED_LOGS) {
-        globalState.logs = globalState.logs.slice(-MAX_STORED_LOGS);
-      }
-
-      if (globalState.console) {
-        const emoji = getDebugPointEmoji(point);
-        const timestamp = new Date(logEntry.timestamp).toLocaleTimeString();
-        const prefix = `[${timestamp}] ${emoji} [${point}]`;
-
-        const logMethod =
-          level === "error" || level === "critical"
-            ? console.error
-            : console.log;
-
-        if (data) {
-          logMethod(prefix, message, data);
-        } else {
-          logMethod(prefix, message);
-        }
-      }
-
-      notifySubscribers();
-    },
+  return {
+    // === CORE LOGGING ===
+    log: coreLog,
 
     warn: (
       point: DebugPoint,
@@ -168,7 +177,7 @@ function createDebugsySpace(): DebugsySpace {
       data?: any,
       logType?: LogType
     ): void => {
-      coreManager.log(point, message, data, "warn", logType);
+      coreLog(point, message, data, "warn", logType);
     },
 
     error: (
@@ -177,7 +186,7 @@ function createDebugsySpace(): DebugsySpace {
       data?: any,
       logType?: LogType
     ): void => {
-      coreManager.log(point, message, data, "error", logType);
+      coreLog(point, message, data, "error", logType);
     },
 
     critical: (
@@ -186,7 +195,7 @@ function createDebugsySpace(): DebugsySpace {
       data?: any,
       logType?: LogType
     ): void => {
-      coreManager.log(point, message, data, "critical", logType);
+      coreLog(point, message, data, "critical", logType);
     },
 
     time: (point: DebugPoint, label: string): void => {
@@ -202,7 +211,7 @@ function createDebugsySpace(): DebugsySpace {
 
       if (startTime) {
         const duration = Date.now() - startTime;
-        coreManager.log(point, `⏱️ ${label}: ${duration}ms`, undefined, "info");
+        coreLog(point, `⏱️ ${label}: ${duration}ms`, undefined, "info");
         globalState.timers.delete(key);
       }
     },
@@ -311,11 +320,11 @@ function createDebugsySpace(): DebugsySpace {
       const state = getGlobalDebugState();
       return {
         enabled: state.enabled.has("dependencies"),
-        level: state.dependencies.level,
-        filter: state.dependencies.filter,
-        allowedHooks: state.dependencies.allowedHooks,
-        excludedHooks: state.dependencies.excludedHooks,
-        throttleMs: state.dependencies.throttleMs,
+        level: state.deps.level,
+        filter: state.deps.filter,
+        allowedHooks: state.deps.allowedHooks,
+        excludedHooks: state.deps.excludedHooks,
+        throttleMs: state.deps.throttleMs,
       };
     },
 
@@ -343,23 +352,14 @@ function createDebugsySpace(): DebugsySpace {
 
     // === HEALTH MONITORING ===
     captureHealthSnapshot: () => {
-      return captureHealthSnapshotCore(getGlobalDebugState(), coreManager.log);
+      return captureHealthSnapshotCore(getGlobalDebugState(), coreLog);
     },
-  };
-
-  // Create the CLI interface with all commands
-  const cliInterface = initializeDebugsyCLI(coreManager);
-
-  // Combine core manager with CLI interface
-  return {
-    ...coreManager,
-    ...cliInterface,
   };
 }
 
 /**
  * Initialize the unified global debug system
- * This replaces both debug-deps.ts and use-debug.ts initialization
+ * Now properly separates core debug functionality from CLI
  */
 export function initializeDebugsySpace(): void {
   if (globalThis.debugsySpace) {
@@ -395,14 +395,20 @@ export function initializeDebugsySpace(): void {
     };
   }
 
-  // Create the unified debug manager
+  // Create the core debug manager (clean separation of concerns)
   globalThis.debugsySpace = createDebugsySpace();
 
-  // Create convenient alias for easier access
-  (globalThis as any).debugsy = globalThis.debugsySpace;
+  // Create the CLI interface that uses the core debug manager
+  const cliInterface = createFullDebugsyCLI(globalThis.debugsySpace);
+
+  // Create convenient alias that combines core + CLI for browser console
+  (globalThis as any).debugsy = {
+    ...globalThis.debugsySpace,
+    ...cliInterface,
+  } as DebugsySpaceWithCLI;
 
   console.log("✅ Debugsy System initialized");
 
-  // Show the complete CLI help instead of verbose debugging info
+  // Show the complete CLI help
   printCLIHelp();
 }

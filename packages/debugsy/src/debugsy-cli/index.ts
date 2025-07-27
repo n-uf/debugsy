@@ -18,24 +18,16 @@
  *   debugsy.deps.verbose()   - Enable detailed dependency tracking
  */
 
-// Main CLI interface
+// === COMMAND MODULES ===
 export {
-  createDebugsyCLI,
-  createFullDebugsyCLI,
-  printCLIHelp,
-  type DebugsyCLI,
-  type DebugsyCLIWithHelp,
-} from "./cli-interface";
-
-// Individual command modules (for advanced usage)
-export {
-  createStatusCommands,
-  type StatusCommands,
-} from "./commands/status-commands";
-
-export {
-  createDepsCommands,
-  type DepsCommands,
+  enableDepsDebug,
+  enableDepsNormal,
+  enableDepsQuiet,
+  enableDepsVerbose,
+  resetDepsTracking,
+  setDepsFunctionsOnly,
+  setDepsObjectsOnly,
+  setDepsUnstableOnly,
 } from "./commands/deps-commands";
 
 export {

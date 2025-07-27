@@ -1,278 +1,208 @@
-import { notifySubscribers } from "../../debugsy-logs/hooks/debug-notifications";
+/**
+ * Deps Commands - CLI Interface for Dependency Tracking
+ *
+ * Provides command-line control over dependency tracking features:
+ * - Enable/disable tracking
+ * - Set log levels (quiet, normal, verbose, debug)
+ * - Configure filters (functions-only, objects-only, unstable-only)
+ * - View current settings and status
+ */
+
 import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
 
 /**
- * Browser CLI Dependency Commands
- * Provides dependency tracking control for the debugsy browser console interface
+ * Enable deps tracking with quiet level
  */
+export function enableDepsQuiet(): string {
+  try {
+    const state = getGlobalDebugState();
 
-export interface DepsCommands {
-  off: () => void;
-  on: () => void;
-  quiet: () => void;
-  initAware: () => void;
-  normal: () => void;
-  verbose: () => void;
-  debug: () => void;
-  functionsOnly: () => void;
-  objectsOnly: () => void;
-  unstableOnly: () => void;
+    // Enable deps tracking
+    state.enabled.add("dependencies");
+
+    // Set quiet level
+    state.deps.level = "quiet";
+
+    return `✅ Deps tracking enabled (quiet level)
+    
+📊 Current Settings:
+    Enabled: ✅ Yes
+    Level:   quiet (errors and function changes only)
+    Filter:  ${state.deps.filter}
+    
+💡 Use 'deps-normal' or 'deps-verbose' for more detailed tracking`;
+  } catch (error) {
+    return `❌ Failed to enable deps tracking: ${error}`;
+  }
 }
 
 /**
- * Creates the dependency commands interface
+ * Enable deps tracking with normal level
  */
-export function createDepsCommands(): DepsCommands {
-  return {
-    off: () => {
-      const state = getGlobalDebugState();
-      state.enabled.delete("dependencies");
-      console.log(`
-🎛️ Dependency Tracking Control
+export function enableDepsNormal(): string {
+  try {
+    const state = getGlobalDebugState();
 
-🔇 DEPENDENCY TRACKING DISABLED
-   All dependency change logging has been stopped.
-   
-💡 TO RE-ENABLE:
-   debugsy.deps.on()        - Basic tracking
-   debugsy.deps.verbose()   - Detailed tracking
-   debugsy.deps.initAware() - Smart init filtering
-`);
-      notifySubscribers();
-    },
+    // Enable deps tracking
+    state.enabled.add("dependencies");
 
-    on: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      console.log(`
-🎛️ Dependency Tracking Control
+    // Set normal level
+    state.deps.level = "normal"; // Use valid DepsLogLevel
 
-✅ DEPENDENCY TRACKING ENABLED
-   React hooks will now log dependency changes to console.
-   
-🎯 WHAT TO EXPECT:
-   • useCallback/useMemo dependency changes
-   • useEffect dependency warnings
-   • Component prop changes (when using useWhyDidYouUpdate)
-   
-🔧 ADJUST VERBOSITY:
-   debugsy.deps.quiet()     - Only critical changes
-   debugsy.deps.verbose()   - Detailed analysis
-   debugsy.deps.debug()     - Maximum detail
-`);
-      notifySubscribers();
-    },
+    return `✅ Deps tracking enabled (normal level)
+    
+📊 Current Settings:
+    Enabled: ✅ Yes  
+    Level:   normal (warns + errors, functions + unstable objects)
+    Filter:  ${state.deps.filter}
+    
+💡 Use 'deps-verbose' for maximum detail or 'deps-quiet' for minimal output`;
+  } catch (error) {
+    return `❌ Failed to enable deps tracking: ${error}`;
+  }
+}
 
-    quiet: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.level = "quiet";
-      console.log(`
-🎛️ Dependency Tracking Control
+/**
+ * Reset deps tracking to default normal level
+ */
+export function resetDepsTracking(): string {
+  try {
+    const state = getGlobalDebugState();
 
-🤫 QUIET MODE ACTIVATED
-   Only critical dependency changes will be logged.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  Quiet (critical only)
-   Filter: All dependencies
-   
-🔧 OTHER LEVELS:
-   debugsy.deps.normal()    - Standard tracking
-   debugsy.deps.verbose()   - Detailed tracking
-   debugsy.deps.debug()     - Maximum detail
-`);
-      notifySubscribers();
-    },
+    // Enable and reset to normal
+    state.enabled.add("dependencies");
+    state.deps.level = "normal";
 
-    initAware: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.level = "normal"; // Use valid DependencyLogLevel
-      console.log(`
-🎛️ Dependency Tracking Control
+    return `🔄 Deps tracking reset to normal level
+    
+📊 Current Settings:
+    Enabled: ✅ Yes
+    Level:   normal (balanced output)
+    Filter:  ${state.deps.filter}
+    
+💡 This is the recommended setting for most debugging scenarios`;
+  } catch (error) {
+    return `❌ Failed to reset deps tracking: ${error}`;
+  }
+}
 
-🚀 INIT-AWARE MODE ACTIVATED
-   Smart filtering of initialization-related changes.
-   
-✨ INIT-AWARE FEATURES:
-   • Reduced noise during component mounting
-   • Focuses on runtime dependency issues
-   • Ideal for identifying infinite render loops
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  Normal (init-aware)
-   Filter: All dependencies
-   
-💡 RECOMMENDED FOR:
-   • Debugging "Maximum update depth exceeded" errors
-   • Finding parasitic re-renders
-   • Production-like dependency tracking
-`);
-      notifySubscribers();
-    },
+/**
+ * Enable deps tracking with verbose level
+ */
+export function enableDepsVerbose(): string {
+  try {
+    const state = getGlobalDebugState();
 
-    normal: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.level = "normal";
-      console.log(`
-🎛️ Dependency Tracking Control
+    // Enable deps tracking
+    state.enabled.add("dependencies");
 
-📊 NORMAL MODE ACTIVATED
-   Standard dependency change reporting.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  Normal
-   Filter: All dependencies
-   
-🎯 NORMAL MODE PROVIDES:
-   • Balanced detail level
-   • Most common dependency issues
-   • Good signal-to-noise ratio
-`);
-      notifySubscribers();
-    },
+    // Set verbose level
+    state.deps.level = "verbose";
 
-    verbose: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.level = "verbose";
-      console.log(`
-🎛️ Dependency Tracking Control
+    return `✅ Deps tracking enabled (verbose level)
+    
+📊 Current Settings:
+    Enabled: ✅ Yes
+    Level:   verbose (shows all dependency changes)
+    Filter:  ${state.deps.filter}
+    
+⚠️  Verbose mode generates significant output - use for targeted debugging`;
+  } catch (error) {
+    return `❌ Failed to enable verbose deps tracking: ${error}`;
+  }
+}
 
-📢 VERBOSE MODE ACTIVATED
-   Detailed dependency change analysis.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  Verbose (detailed)
-   Filter: All dependencies
-   
-🔍 VERBOSE MODE INCLUDES:
-   • All dependency changes
-   • Before/after value comparisons
-   • Detailed change analysis
-   • Hook-specific information
-   
-⚠️  NOTE: May produce significant console output
-`);
-      notifySubscribers();
-    },
+/**
+ * Enable deps tracking with debug level (maximum detail)
+ */
+export function enableDepsDebug(): string {
+  try {
+    const state = getGlobalDebugState();
 
-    debug: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.level = "debug";
-      console.log(`
-🎛️ Dependency Tracking Control
+    // Enable deps tracking
+    state.enabled.add("dependencies");
 
-🐛 DEBUG MODE ACTIVATED
-   Maximum detail for debugging dependency issues.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  Debug (maximum detail)
-   Filter: All dependencies
-   
-🔍 DEBUG MODE INCLUDES:
-   • Every dependency change
-   • Internal hook states
-   • Timing information
-   • Stack traces (when relevant)
-   • Performance metrics
-   
-⚠️  WARNING: Very verbose output - use sparingly!
-`);
-      notifySubscribers();
-    },
+    // Set debug level
+    state.deps.level = "debug";
 
-    functionsOnly: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.filter = "functions-only";
-      console.log(`
-🎛️ Dependency Tracking Control
+    return `🔬 Deps tracking enabled (debug level)
+    
+📊 Current Settings:
+    Enabled: ✅ Yes
+    Level:   debug (maximum detail + internal diagnostics)
+    Filter:  ${state.deps.filter}
+    
+🚨 Debug mode generates extensive output - use only for deep analysis`;
+  } catch (error) {
+    return `❌ Failed to enable debug deps tracking: ${error}`;
+  }
+}
 
-⚙️ FUNCTIONS FILTER ACTIVATED
-   Only function/callback changes will be logged.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  ${state.dependencies.level}
-   Filter: Functions only
-   
-🎯 FUNCTIONS FILTER TRACKS:
-   • useCallback dependency changes
-   • Function prop changes
-   • Event handler modifications
-   • Memoized function updates
-   
-💡 USEFUL FOR:
-   • Debugging callback-related re-renders
-   • Function dependency issues
-`);
-      notifySubscribers();
-    },
+/**
+ * Set deps filter to functions-only
+ */
+export function setDepsFunctionsOnly(): string {
+  try {
+    const state = getGlobalDebugState();
 
-    objectsOnly: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.filter = "objects-only";
-      console.log(`
-🎛️ Dependency Tracking Control
+    // Update filter
+    state.deps.filter = "functions-only";
 
-📦 OBJECTS FILTER ACTIVATED
-   Only object/array changes will be logged.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  ${state.dependencies.level}
-   Filter: Objects only
-   
-🎯 OBJECTS FILTER TRACKS:
-   • Object prop changes
-   • Array dependency modifications
-   • State object updates
-   • Complex data structure changes
-   
-💡 USEFUL FOR:
-   • Debugging object reference issues
-   • Tracking state mutations
-`);
-      notifySubscribers();
-    },
+    return `🎯 Deps filter set to functions-only
+    
+📊 Current Settings:
+    Enabled: ${state.enabled.has("dependencies") ? "✅ Yes" : "❌ No"}
+    Level:  ${state.deps.level}
+    Filter: functions-only (shows only function reference changes)
+    
+💡 Ideal for debugging memoization issues and callback dependencies`;
+  } catch (error) {
+    return `❌ Failed to set functions-only filter: ${error}`;
+  }
+}
 
-    unstableOnly: () => {
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
-      state.dependencies.filter = "unstable-only";
-      console.log(`
-🎛️ Dependency Tracking Control
+/**
+ * Set deps filter to objects-only
+ */
+export function setDepsObjectsOnly(): string {
+  try {
+    const state = getGlobalDebugState();
 
-⚠️ UNSTABLE FILTER ACTIVATED
-   Only frequently changing dependencies will be logged.
-   
-📊 CURRENT SETTINGS:
-   Status: ✅ Enabled
-   Level:  ${state.dependencies.level}
-   Filter: Unstable only
-   
-🎯 UNSTABLE FILTER TRACKS:
-   • Dependencies that change frequently
-   • Potential infinite loop sources
-   • Unstable object references
-   • Problematic re-renders
-   
-💡 IDEAL FOR:
-   • Finding infinite render loops
-   • Identifying parasitic activity
-   • Performance debugging
-`);
-      notifySubscribers();
-    },
-  };
+    // Update filter
+    state.deps.filter = "objects-only";
+
+    return `📦 Deps filter set to objects-only
+    
+📊 Current Settings:
+    Enabled: ${state.enabled.has("dependencies") ? "✅ Yes" : "❌ No"}
+    Level:  ${state.deps.level}
+    Filter: objects-only (shows only object reference changes)
+    
+💡 Useful for debugging props and complex state dependencies`;
+  } catch (error) {
+    return `❌ Failed to set objects-only filter: ${error}`;
+  }
+}
+
+/**
+ * Set deps filter to unstable-only (frequently changing items)
+ */
+export function setDepsUnstableOnly(): string {
+  try {
+    const state = getGlobalDebugState();
+
+    // Update filter
+    state.deps.filter = "unstable-only";
+
+    return `⚡ Deps filter set to unstable-only
+    
+📊 Current Settings:
+    Enabled: ${state.enabled.has("dependencies") ? "✅ Yes" : "❌ No"}
+    Level:  ${state.deps.level}
+    Filter: unstable-only (shows only frequently changing dependencies)
+    
+💡 Perfect for identifying render loop culprits and unstable references`;
+  } catch (error) {
+    return `❌ Failed to set unstable-only filter: ${error}`;
+  }
 }
