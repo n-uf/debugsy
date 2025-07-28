@@ -33,7 +33,6 @@ export interface StableDebugsyInterface {
   timeEnd: (point: DebugPoint, label: string) => void;
 
   // State checking - converted from getters to methods
-  enabled: boolean; // Static value for this debug point
   isEnabled: (point: DebugPoint) => boolean;
   showVisual: (point: DebugPoint) => boolean;
 
@@ -66,18 +65,13 @@ export interface StableDebugsyInterface {
   };
 }
 
-// Cache for stable debugsy objects per debug point
-const stableDebugsyCache = new Map<
-  DebugPoint | "global",
-  StableDebugsyInterface
->();
+// Single global stable debugsy interface
+let globalStableInterface: StableDebugsyInterface | null = null;
 
 /**
- * Create a stable debugsy interface for a specific debug point
+ * Create a stable debugsy interface
  */
-function createStableDebugsyInterface(
-  point: DebugPoint | "global"
-): StableDebugsyInterface {
+function createStableDebugsyInterface(): StableDebugsyInterface {
   // Ensure unified system is initialized
   if (!globalThis.debugsySpace) {
     initializeDebugsySpace();
@@ -95,9 +89,7 @@ function createStableDebugsyInterface(
     time: unified.time,
     timeEnd: unified.timeEnd,
 
-    // State checking - compute enabled state once for this point
-    enabled:
-      point === "global" ? unified.isEnabled("all") : unified.isEnabled(point),
+    // State checking - delegate to unified system methods
     isEnabled: unified.isEnabled,
     showVisual: unified.showVisual,
 
@@ -135,24 +127,19 @@ function createStableDebugsyInterface(
 }
 
 /**
- * Get or create a stable debugsy interface for a specific debug point
- * Uses caching to ensure the same object reference is returned for the same point
+ * Get the global stable debugsy interface
+ * Uses caching to ensure the same object reference is returned
  */
-export function getStableDebugsyInterface(
-  point: DebugPoint | "global" = "all"
-): StableDebugsyInterface {
+export function getStableDebugsyInterface(): StableDebugsyInterface {
   // Check cache first
-  if (stableDebugsyCache.has(point)) {
-    return stableDebugsyCache.get(point)!;
+  if (globalStableInterface) {
+    return globalStableInterface;
   }
 
   // Create new stable interface
-  const stable = createStableDebugsyInterface(point);
+  globalStableInterface = createStableDebugsyInterface();
 
-  // Cache it
-  stableDebugsyCache.set(point, stable);
-
-  return stable;
+  return globalStableInterface;
 }
 
 /**
@@ -160,12 +147,12 @@ export function getStableDebugsyInterface(
  * Useful for testing or when the underlying system changes significantly
  */
 export function clearStableDebugsyCache(): void {
-  stableDebugsyCache.clear();
+  globalStableInterface = null;
 }
 
 /**
- * Get cache size for debugging/monitoring
+ * Get cache status for debugging/monitoring
  */
-export function getStableDebugsyCacheSize(): number {
-  return stableDebugsyCache.size;
+export function getStableDebugsyCacheStatus(): { cached: boolean } {
+  return { cached: globalStableInterface !== null };
 }

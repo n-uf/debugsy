@@ -12,10 +12,10 @@
  */
 export const DEBUG_POINT_CONFIG = {
   // Core System
-  dispatcher: {
+  mouse: {
     emoji: "🎯",
-    description: "Central mouse event dispatcher coordination",
-    label: "Dispatcher",
+    description: "Mouse event handling and coordination",
+    label: "Mouse",
     category: "core" as const,
     look: true,
   },

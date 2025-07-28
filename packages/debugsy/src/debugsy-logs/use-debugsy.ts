@@ -38,16 +38,14 @@ declare global {
 }
 
 /**
- * Centralized debugsy hook - returns stable debugsy interfaces per point
- * CLEAN: Now delegates to the extracted stable debugsy system
+ * Centralized debugsy hook - returns stable global debugsy interface
+ * CLEAN: Now returns a single global interface, eliminating redundant point parameter
  */
-export const useDebugsy = (
-  point: DebugPoint = "all"
-): StableDebugsyInterface => {
+export const useDebugsy = (): StableDebugsyInterface => {
   // Use useMemo to ensure React optimization
   return useMemo(() => {
-    return getStableDebugsyInterface(point);
-  }, [point]);
+    return getStableDebugsyInterface();
+  }, []);
 };
 
 // Re-export utilities
