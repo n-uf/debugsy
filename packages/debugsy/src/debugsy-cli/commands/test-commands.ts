@@ -22,7 +22,7 @@ export function createTestCommands(): TestCommands {
 🔍 CHECKING SYSTEM AVAILABILITY...`);
 
       // Check if global debugsy object exists
-      if (!globalThis.debugsySpace) {
+      if (!globalThis.debugsy) {
         console.log(`
 ❌ TEST FAILED: Global debugsy object not found
    The debugsy system is not initialized.
@@ -38,7 +38,7 @@ export function createTestCommands(): TestCommands {
       console.log("✅ Global debugsy object found");
 
       // Check if getDepsSettings method exists
-      if (!globalThis.debugsySpace.getDepsSettings) {
+      if (!globalThis.debugsy.getDepsSettings) {
         console.log(`
 ❌ TEST FAILED: getDepsSettings method not found
    The dependency tracking system is not properly initialized.
@@ -48,7 +48,7 @@ export function createTestCommands(): TestCommands {
 
       console.log("✅ getDepsSettings method found");
 
-      const depStatus = globalThis.debugsySpace.getDepsSettings();
+      const depStatus = globalThis.debugsy.getDepsSettings();
       console.log(`
 📊 CURRENT DEPENDENCY STATUS:
    Enabled: ${depStatus.enabled ? "✅ Yes" : "❌ No"}
@@ -61,7 +61,7 @@ export function createTestCommands(): TestCommands {
       // Enable deps tracking for test
       const state = getGlobalDebugState();
       state.enabled.add("dependencies");
-      const newStatus = globalThis.debugsySpace.getDepsSettings();
+      const newStatus = globalThis.debugsy.getDepsSettings();
 
       console.log(`
 📊 UPDATED DEPENDENCY STATUS:
@@ -88,7 +88,7 @@ export function createTestCommands(): TestCommands {
 🔍 CHECKING SYSTEM HEALTH...`);
 
       // Check if global debugsy space exists
-      if (!globalThis.debugsySpace) {
+      if (!globalThis.debugsy) {
         console.log(`
 ❌ TEST FAILED: Global debugsy object not found
    The debugsy system is not initialized.
@@ -121,7 +121,7 @@ export function createTestCommands(): TestCommands {
       console.log("   ✅ Emergency stop deactivated");
 
       // Test dependency status
-      const depState = globalThis.debugsySpace?.getDepsSettings?.();
+      const depState = globalThis.debugsy?.getDepsSettings?.();
 
       console.log(`
 📊 DEPENDENCY SYSTEM STATUS:`);

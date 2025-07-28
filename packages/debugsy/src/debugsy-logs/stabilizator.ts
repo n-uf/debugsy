@@ -73,11 +73,11 @@ let globalStableInterface: StableDebugsyInterface | null = null;
  */
 function createStableDebugsyInterface(): StableDebugsyInterface {
   // Ensure unified system is initialized
-  if (!globalThis.debugsySpace) {
+  if (!globalThis.debugsy) {
     initializeDebugsySpace();
   }
 
-  const unified = globalThis.debugsySpace;
+  const unified = globalThis.debugsy;
 
   // Create stable interface that delegates to unified system
   const stable: StableDebugsyInterface = {

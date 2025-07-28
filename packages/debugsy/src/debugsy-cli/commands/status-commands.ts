@@ -1,155 +1,123 @@
-import { getAllDebugPoints } from "../../debugsy-space/debugsy-constants";
-import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
-
 /**
- * Browser CLI Status Commands
- * Provides status reporting functionality for the debugsy browser console interface
+ * Status command implementations for the Debugsy CLI
  */
 
-export interface StatusCommands {
-  (): void; // Default status method
-  full: () => void; // Detailed status
-  deps: () => void; // Dependency tracking status only
-  emergency: () => void; // Emergency system status
-}
-
-/**
- * Creates the status command interface
- */
-export function createStatusCommands(): StatusCommands {
-  const defaultStatus = () => {
-    const globalState = getGlobalDebugState();
-    const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
-    const emergencyActive =
-      globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
-    const allPoints = getAllDebugPoints();
-
-    console.log(`
-🔍 Complete Debugsy System Status
-
-📊 SYSTEM STATE:
-  Emergency Mode: ${emergencyActive ? "🚨 ACTIVE" : "✅ Inactive"}
-  Console Output: ${globalState.console ? "✅ Enabled" : "❌ Disabled"}
-  Visual Panels:  ${globalState.visual ? "✅ Enabled" : "❌ Disabled"}
-  Performance:    ${globalState.performance ? "✅ Enabled" : "❌ Disabled"}
-  Total Logs:     ${globalState.logs.length} entries
-
-🎯 DEBUG POINTS:
-  ${allPoints
-    .map((point) => `${globalState.enabled.has(point) ? "✓" : "❌"} ${point}`)
-    .join("\n  ")}
-
-🎛️ DEPENDENCY TRACKING:
-  Status:        ${depState.enabled ? "✅ Enabled" : "❌ Disabled"}
-  Level:         ${depState.level || "N/A"}
-  Filter:        ${depState.filter || "all"}
-  Allowed Hooks: ${depState.allowedHooks?.length ? depState.allowedHooks.join(", ") : "all"}
-  Excluded Hooks: ${depState.excludedHooks?.length ? depState.excludedHooks.join(", ") : "none"}
-  Throttle:      ${depState.throttleMs || 0}ms
-
-🚀 QUICK ACTIONS:
-  debugsy.deps.initAware()    - Enable smart dependency tracking
-  debugsy.deps.verbose()      - Enable detailed tracking  
-  debugsy.emergency.status()  - Check emergency controls
-  debugsy.help()              - Show all available commands
-
-💡 SPECIALIZED STATUS VIEWS:
-  debugsy.status.deps()       - Dependency tracking details only
-  debugsy.status.emergency()  - Emergency system status only
-`);
-  };
-
-  const fullStatus = () => {
-    // Full status is now the same as default status
-    defaultStatus();
-  };
-
-  const depsStatus = () => {
-    const depState = globalThis.debugsySpace?.getDepsSettings?.();
-
-    if (!depState) {
-      console.log(`
-🎛️ Dependency Tracking Status
-
-❌ DEPENDENCY TRACKING UNAVAILABLE
-  The dependency tracking system is not initialized.
-  
-💡 To enable: debugsy.deps.on()
-`);
+export const statusCommands = {
+  status: (): void => {
+    if (!globalThis.debugsy) {
+      console.log("❌ Debugsy system not initialized");
       return;
     }
 
-    console.log(`
-🎛️ Dependency Tracking Status
+    console.log("🔍 Debugsy System Status:");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-📊 CURRENT STATE:
-  Status:        ${depState.enabled ? "✅ Enabled" : "❌ Disabled"}
-  Level:         ${depState.level}
-  Filter:        ${depState.filter}
+    // Get current state from unified system
+    const state = globalThis.debugsy.getDebugState();
+    const depState = globalThis.debugsy?.getDepsSettings?.() || {};
 
-🔧 CONFIGURATION:
-  Allowed Hooks: ${
-    depState.allowedHooks?.length
-      ? depState.allowedHooks.join(", ")
-      : "all hooks allowed"
-  }
-  Excluded Hooks: ${
-    depState.excludedHooks?.length
-      ? depState.excludedHooks.join(", ")
-      : "no hooks excluded"
-  }
-  Throttle:      ${depState.throttleMs}ms
+    console.log("📊 Debug Points:", Array.from(state.enabled));
+    console.log("🖥️  Console Logging:", state.console ? "✅ ON" : "❌ OFF");
+    console.log("👁️  Visual Debugging:", state.visual ? "✅ ON" : "❌ OFF");
+    console.log("⚡ Performance Mode:", state.performance ? "✅ ON" : "❌ OFF");
 
-🎯 QUICK ACTIONS:
-  debugsy.deps.on()        - Enable tracking
-  debugsy.deps.verbose()   - Enable detailed logging
-  debugsy.deps.quiet()     - Only critical changes
-  debugsy.deps.initAware() - Smart initialization filtering
-`);
-  };
+    console.log("\n🔧 Dependency Tracking:");
+    console.log("  Enabled:", depState.enabled ? "✅ ON" : "❌ OFF");
+    if (depState.enabled) {
+      console.log("  Level:", depState.level || "normal");
+      console.log("  Filter:", depState.filter || "none");
+      console.log("  Throttle:", `${depState.throttleMs || 100}ms`);
+    }
 
-  const emergencyStatus = () => {
-    const emergencyActive =
-      globalThis.__DEBUGSY_EMERGENCY_STOP?.active || false;
-    const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
+    console.log(`\n📝 Stored Logs: ${state.logs?.length || 0}`);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  },
 
-    console.log(`
-🚨 Emergency System Status
+  list: (): void => {
+    if (!globalThis.debugsy) {
+      console.log("❌ Debugsy system not initialized");
+      return;
+    }
 
-📊 EMERGENCY STATE:
-  Emergency Stop: ${emergencyActive ? "🚨 ACTIVE - All logging disabled" : "✅ Inactive"}
-  System Health:  ${emergencyActive ? "⚠️ Limited functionality" : "✅ Full functionality"}
+    const state = globalThis.debugsy.getDebugState();
+    const enabledPoints = Array.from(state.enabled);
 
-🎛️ DEPENDENCY TRACKING:
-  Status: ${depState.enabled ? "✅ Enabled" : "❌ Disabled"}
-  Level:  ${depState.level || "N/A"}
+    console.log("📋 Debug Points Status:");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-🔧 EMERGENCY CONTROLS:
-  ${
-    emergencyActive
-      ? "debugsy.emergency.deactivate() - Restore normal operation"
-      : "debugsy.emergency.activate()   - Emergency stop all logging"
-  }
-  debugsy.emergency.status()       - Check emergency status
+    if (enabledPoints.length === 0) {
+      console.log("❌ No debug points enabled");
+      return;
+    }
 
-${
-  emergencyActive
-    ? `
-⚠️  EMERGENCY MODE EFFECTS:
-  • All debug logging is disabled
-  • Performance tracking stopped
-  • Visual panels may not update
-  • Use deactivate() to restore functionality
-`
-    : ""
-}
-`);
-  };
+    enabledPoints.forEach((point) => {
+      const visual = globalThis.debugsy.showVisual(point as any) ? "👁️" : "🚫";
+      console.log(`  ✅ ${point} ${visual}`);
+    });
 
-  // Create callable function with methods attached
-  return Object.assign(defaultStatus, {
-    full: fullStatus,
-    deps: depsStatus,
-    emergency: emergencyStatus,
-  });
-}
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  },
+
+  deps: (): void => {
+    if (!globalThis.debugsy) {
+      console.log("❌ Debugsy system not initialized");
+      return;
+    }
+
+    const depState = globalThis.debugsy?.getDepsSettings?.();
+
+    if (!depState) {
+      console.log("❌ Dependency tracking not available");
+      return;
+    }
+
+    console.log("🔗 Dependency Tracking Status:");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("Status:", depState.enabled ? "✅ ENABLED" : "❌ DISABLED");
+
+    if (depState.enabled) {
+      console.log("Level:", depState.level || "normal");
+      console.log("Filter:", depState.filter || "none");
+      console.log("Throttle:", `${depState.throttleMs || 100}ms`);
+
+      if (depState.allowedHooks?.length) {
+        console.log("Allowed hooks:", depState.allowedHooks.join(", "));
+      }
+
+      if (depState.excludedHooks?.length) {
+        console.log("Excluded hooks:", depState.excludedHooks.join(", "));
+      }
+    }
+
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  },
+
+  logs: (count: number = 10): void => {
+    if (!globalThis.debugsy) {
+      console.log("❌ Debugsy system not initialized");
+      return;
+    }
+
+    const logs = globalThis.debugsy.getLogs();
+    const recentLogs = logs.slice(-count);
+
+    console.log(`📝 Recent Logs (${recentLogs.length}/${logs.length}):`);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    if (recentLogs.length === 0) {
+      console.log("📭 No logs found");
+      return;
+    }
+
+    recentLogs.forEach((log) => {
+      const timestamp = new Date(log.timestamp).toLocaleTimeString();
+      const level = log.level === "error" ? "❌" : "ℹ️";
+      console.log(`[${timestamp}] ${level} [${log.point}] ${log.message}`);
+      if (log.data) {
+        console.log("   Data:", log.data);
+      }
+    });
+
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  },
+};

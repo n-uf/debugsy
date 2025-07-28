@@ -1,7 +1,6 @@
 // Import CLI utilities for browser console integration
 import {
   createFullDebugsyCLI,
-  printCLIHelp,
   type DebugsyCLIWithHelp,
 } from "../debugsy-cli/cli-interface";
 import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
@@ -94,8 +93,7 @@ export interface DebugsySpaceWithCLI extends DebugsySpace, DebugsyCLIWithHelp {}
  * Global type declarations for the unified system
  */
 declare global {
-  var debugsySpace: DebugsySpace;
-  var debugsy: DebugsySpaceWithCLI; // Convenient alias with CLI
+  var debugsy: DebugsySpaceWithCLI; // Single unified interface with core + CLI
   var __debugsySanitizationLogged: boolean | undefined;
   var __DEBUGSY_EMERGENCY_STOP: {
     active: boolean;
@@ -362,7 +360,7 @@ function createDebugsySpace(): DebugsySpace {
  * Now properly separates core debug functionality from CLI
  */
 export function initializeDebugsySpace(): void {
-  if (globalThis.debugsySpace) {
+  if (globalThis.debugsy) {
     return; // Already initialized
   }
 
@@ -384,7 +382,7 @@ export function initializeDebugsySpace(): void {
         globalThis.__DEBUGSY_EMERGENCY_STOP.active = false;
       },
       status: () => {
-        const depState = globalThis.debugsySpace?.getDepsSettings?.() || {};
+        const depState = globalThis.debugsy?.getDepsSettings?.() || {};
         console.log("🔍 Surface Debug Status:", {
           emergencyActive: globalThis.__DEBUGSY_EMERGENCY_STOP.active,
           dependencyTracking: depState.enabled,
@@ -396,19 +394,83 @@ export function initializeDebugsySpace(): void {
   }
 
   // Create the core debug manager (clean separation of concerns)
-  globalThis.debugsySpace = createDebugsySpace();
+  const coreDebugManager = createDebugsySpace();
 
   // Create the CLI interface that uses the core debug manager
-  const cliInterface = createFullDebugsyCLI(globalThis.debugsySpace);
+  const cliInterface = createFullDebugsyCLI(coreDebugManager);
 
-  // Create convenient alias that combines core + CLI for browser console
-  (globalThis as any).debugsy = {
-    ...globalThis.debugsySpace,
+  // Create unified interface that combines core + CLI for browser console
+  globalThis.debugsy = {
+    ...coreDebugManager,
     ...cliInterface,
   } as DebugsySpaceWithCLI;
 
   console.log("✅ Debugsy System initialized");
 
-  // Show the complete CLI help
-  printCLIHelp();
+  // CLI help is now available via debugsy.help()
 }
+
+/**
+ * Get debugsy instance with auto-initialization
+ * Safe to use in any context - React or non-React
+ * BULLETPROOF: Guaranteed to never return undefined
+ */
+export function getDebugsy(): DebugsySpaceWithCLI {
+  if (!globalThis.debugsy) {
+    initializeDebugsySpace();
+  }
+
+  // Final safety check: if initialization somehow failed,
+  // return minimal working interface to prevent crashes
+  if (!globalThis.debugsy) {
+    console.error(
+      "❌ CRITICAL: Debugsy initialization failed - using emergency fallback"
+    );
+    return {
+      log: () => {},
+      warn: () => {},
+      error: () => {},
+      critical: () => {},
+      time: () => {},
+      timeEnd: () => {},
+      isEnabled: () => false,
+      isConsoleEnabled: () => false,
+      isVisualEnabled: () => false,
+      isPerformanceEnabled: () => false,
+      showVisual: () => false,
+      enable: () => {},
+      disable: () => {},
+      toggle: () => {},
+      enableAll: () => {},
+      disableAll: () => {},
+      setConsoleEnabled: () => {},
+      setVisualEnabled: () => {},
+      setPerformanceEnabled: () => {},
+      getLogs: () => [],
+      clearLogs: () => {},
+      getDebugState: () => ({}),
+      getDepsSettings: () => ({}),
+      state: {},
+      captureHealthSnapshot: () => ({}),
+    } as any; // Emergency fallback - minimal interface
+  }
+
+  return globalThis.debugsy;
+}
+
+// ===== AUTO-INITIALIZATION =====
+// Initialize debugsy automatically when this module is imported
+// This ensures debugsy is always available everywhere
+initializeDebugsySpace();
+
+/**
+ * Convenient short export for non-React usage
+ * GUARANTEED SAFE: Uses getDebugsy() which handles edge cases
+ *
+ * Why safer than direct globalThis.debugsy:
+ * 1. Handles potential CLI initialization failures
+ * 2. Provides auto-recovery if needed
+ * 3. Always returns a valid DebugsySpaceWithCLI object
+ * 4. Consistent with getDebugsy() function behavior
+ */
+export const dsy = getDebugsy();

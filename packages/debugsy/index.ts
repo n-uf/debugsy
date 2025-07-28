@@ -1,5 +1,7 @@
 // === SHARED CORE SYSTEM ===
 export {
+  dsy, // ✅ Convenient short export for non-React usage
+  getDebugsy,
   initializeDebugsySpace as initializeUnifiedDebugSystem,
   type DebugPoint,
   type DepsFilter,
