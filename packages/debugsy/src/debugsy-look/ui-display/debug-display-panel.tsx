@@ -341,7 +341,7 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
                   fontWeight: "bold",
                 }}
               >
-                📊 Debug Overview
+                🚧 Debugsy
               </span>
               <span
                 style={{
