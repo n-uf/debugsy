@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useRenderTracker } from "../debugsy-deps";
 import { useDebugSubscription } from "../debugsy-logs/hooks/debug-notifications";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import { DebugControlPanel } from "./ui-control-center/control-panel";
@@ -21,6 +22,7 @@ export interface DebugsyLookProps {
 export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
 }) => {
+  useRenderTracker("DebugsyLook");
   // SELF-CONTAINED: Handle debug state internally
   useDebugSubscription(); // Subscribe to debug state changes
   const debug = useDebugsy();
