@@ -5,6 +5,62 @@ import superjson from "superjson";
  * that contain circular references, particularly React Fiber nodes and DOM elements.
  */
 export function registerSuperjsonCustomSerializers(): void {
+  // Register custom serializer for HTMLCanvasElement specifically (before general HTMLElement)
+  superjson.registerCustom<HTMLCanvasElement, string>(
+    {
+      isApplicable: (v): v is HTMLCanvasElement => {
+        return v instanceof HTMLCanvasElement;
+      },
+      serialize: (canvas) => {
+        const width = canvas.width || 0;
+        const height = canvas.height || 0;
+        const id = canvas.id ? `#${canvas.id}` : "";
+        const className = canvas.className
+          ? `.${canvas.className.split(" ").join(".")}`
+          : "";
+        return `[HTMLCanvasElement: ${width}x${height}${id}${className}]`;
+      },
+      deserialize: (str) => {
+        // Create a placeholder canvas element
+        const canvas = document.createElement("canvas");
+        canvas.setAttribute("data-placeholder", str);
+        return canvas;
+      },
+    },
+    "htmlCanvas"
+  );
+
+  // Register custom serializer for any DOM Node with React Fiber properties (broader catch)
+  superjson.registerCustom<Node, string>(
+    {
+      isApplicable: (v): v is Node => {
+        return (
+          v instanceof Node &&
+          typeof v === "object" &&
+          v !== null &&
+          Object.keys(v).some((key) => key.includes("__reactFiber"))
+        );
+      },
+      serialize: (node) => {
+        if (node instanceof HTMLElement) {
+          const tagName = node.tagName?.toLowerCase() || "unknown";
+          const id = node.id ? `#${node.id}` : "";
+          const className = node.className
+            ? `.${node.className.split(" ").join(".")}`
+            : "";
+          return `[DOM: ${tagName}${id}${className}]`;
+        }
+        return `[DOM: ${node.nodeName || node.constructor?.name || "Node"}]`;
+      },
+      deserialize: (str) => {
+        const div = document.createElement("div");
+        div.setAttribute("data-placeholder", str);
+        return div;
+      },
+    },
+    "domNodeWithFiber"
+  );
+
   // Register custom serializer for HTMLElement with React Fiber properties
   superjson.registerCustom<HTMLElement, string>(
     {

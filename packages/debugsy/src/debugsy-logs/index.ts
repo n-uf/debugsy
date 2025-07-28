@@ -11,7 +11,7 @@ export { captureHealthSnapshot } from "./hooks/health-snapshot";
 // === STABLE DEBUGSY SYSTEM ===
 export {
   clearStableDebugsyCache,
-  getStableDebugsyCacheSize,
+  getStableDebugsyCacheStatus,
   getStableDebugsyInterface,
   type StableDebugsyInterface,
 } from "./stabilizator";

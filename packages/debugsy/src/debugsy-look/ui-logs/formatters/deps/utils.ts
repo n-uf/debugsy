@@ -4,6 +4,7 @@ import {
   getLogTypeConfig,
   type LogType,
 } from "../../../../debugsy-space/debugsy-point";
+import { safeSuperjsonStringify } from "../../utils/json/json-core";
 import type { LogSeverity } from "../default-log-formatter";
 import { COMPONENT_NAME_REGEX } from "./constants";
 
@@ -161,8 +162,18 @@ export const calculateDelta = (
     const keyDelta = toKeys.length - fromKeys.length;
 
     // Check if it's a reference change (different objects with same structure)
-    const isReferenceChange =
-      from !== to && JSON.stringify(from) === JSON.stringify(to);
+    // Use safe superjson stringify to handle circular references
+    const isReferenceChange = (() => {
+      try {
+        return (
+          from !== to &&
+          safeSuperjsonStringify(from) === safeSuperjsonStringify(to)
+        );
+      } catch {
+        // If comparison fails, assume objects are different
+        return false;
+      }
+    })();
 
     if (isReferenceChange) {
       return {
