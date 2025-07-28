@@ -1,8 +1,5 @@
 // Debug UI Components
-export {
-  DebugsyLook as Debugsy,
-  type DebugsyLookProps as DebugsyProps,
-} from "./debugsy-look";
+export { DebugsyLook, type DebugsyLookProps } from "./debugsy-look";
 export {
   DebugPointButtons,
   type DebugPointButtonConfig,

@@ -29,7 +29,7 @@ export {
   DebugPointButtons,
   DebugResizePresets,
   DebugStatsPanel,
-  Debugsy as DebugsyPanel,
+  DebugsyLook,
 } from "./src/debugsy-look";
 
 // === LOG FORMATTERS ===
@@ -77,7 +77,7 @@ export type {
   DebugPointButtonsProps,
   DebugResizePresetsProps,
   DebugStatsPanelProps,
-  DebugsyProps as DebugsyPanelProps,
+  DebugsyLookProps,
 } from "./src/debugsy-look";
 
 // === ADVANCED DEPENDENCY CONTROLS ===
