@@ -7,6 +7,11 @@
  * - Pattern analysis for detecting render loops and unstable dependencies
  */
 
+import {
+  DEPS_CONFIG_DEFAULTS,
+  getFrequencyThreshold,
+  type DepsConfigThresholds,
+} from "../deps-config";
 import { logToDebugSystem } from "../deps-logger";
 
 export interface ChangeTrackingInfo {
@@ -25,8 +30,9 @@ export const initializationPhase = {
   startTime: Date.now(),
   isActive: true,
   endTimeout: null as NodeJS.Timeout | null,
+  config: DEPS_CONFIG_DEFAULTS,
 
-  // Mark initialization as complete after 5 seconds of no new components
+  // Mark initialization as complete after configured timeout
   markComponentSeen() {
     if (this.endTimeout) {
       clearTimeout(this.endTimeout);
@@ -36,11 +42,16 @@ export const initializationPhase = {
       logToDebugSystem(
         "🏁 App initialization phase completed - switching to runtime severity"
       );
-    }, 5000);
+    }, this.config.initializationPhaseTimeout);
   },
 
   getPhase(): "initialization" | "runtime" {
     return this.isActive ? "initialization" : "runtime";
+  },
+
+  // Allow configuration updates
+  updateConfig(newConfig: DepsConfigThresholds) {
+    this.config = newConfig;
   },
 };
 
@@ -52,11 +63,13 @@ export const initializationPhase = {
  * - Pattern analysis using recent change intervals
  * - Different thresholds for functions vs objects vs primitives
  * - Automatic initialization phase detection
+ * - Configurable thresholds via deps-config
  */
 export function trackDependencyChange(
   hookName: string,
   propName: string,
-  changeType: "function" | "object" | "primitive"
+  changeType: "function" | "object" | "primitive",
+  config: DepsConfigThresholds = DEPS_CONFIG_DEFAULTS
 ): ChangeTrackingInfo {
   const key = `${hookName}.${propName}`;
   const now = Date.now();
@@ -70,32 +83,21 @@ export function trackDependencyChange(
     const timeSinceLastChange = now - existing.lastChange;
     existing.changeIntervals.push(timeSinceLastChange);
 
-    // Keep only last 5 intervals for pattern analysis
-    if (existing.changeIntervals.length > 5) {
+    // Keep only configured number of intervals for pattern analysis
+    if (existing.changeIntervals.length > config.patternAnalysisWindow) {
       existing.changeIntervals.shift();
     }
 
-    // Progressive frequency detection based on phase and change type
-    let frequencyThreshold: number;
+    // Get frequency threshold from centralized config
     const phase = initializationPhase.getPhase();
-
-    if (phase === "initialization") {
-      // During initialization, be much more lenient
-      frequencyThreshold = changeType === "function" ? 2000 : 5000;
-    } else {
-      // Runtime: stricter detection
-      frequencyThreshold =
-        changeType === "function"
-          ? 1000
-          : changeType === "object"
-            ? 2000
-            : 3000;
-    }
+    const frequencyThreshold = getFrequencyThreshold(changeType, phase, config);
 
     // Enhanced frequency detection
-    if (existing.count >= 3) {
-      // Pattern-based detection: if last 3 changes were all rapid
-      const recentIntervals = existing.changeIntervals.slice(-3);
+    if (existing.count >= config.patternAnalysisMinCount) {
+      // Pattern-based detection: if last N changes were all rapid
+      const recentIntervals = existing.changeIntervals.slice(
+        -config.patternAnalysisMinCount
+      );
       const allRecentFast = recentIntervals.every(
         (interval) => interval < frequencyThreshold
       );

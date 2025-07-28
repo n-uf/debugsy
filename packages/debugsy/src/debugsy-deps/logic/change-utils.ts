@@ -8,6 +8,7 @@
  * - Structured change logging with severity detection
  */
 
+import { DEPS_CONFIG_DEFAULTS } from "../deps-config";
 import { shouldLogChangeType, shouldTrackHook } from "../deps-filters";
 import { logToDebugSystem, logWarnToDebugSystem } from "../deps-logger";
 import { getDepsSettings } from "../deps-settings";
@@ -53,7 +54,8 @@ export function detectChangeType(
 export function analyzeChanges(
   name: string,
   previousProps: Record<string, any>,
-  currentProps: Record<string, any>
+  currentProps: Record<string, any>,
+  config = DEPS_CONFIG_DEFAULTS
 ): PropChange[] {
   const allKeys = Object.keys({ ...previousProps, ...currentProps });
   const changesToLog: PropChange[] = [];
@@ -64,7 +66,7 @@ export function analyzeChanges(
       const to = currentProps[key];
       const changeType = detectChangeType(from, to);
 
-      const trackingInfo = trackDependencyChange(name, key, changeType);
+      const trackingInfo = trackDependencyChange(name, key, changeType, config);
       const isStable = !trackingInfo.isFrequent;
 
       // Apply filtering logic

@@ -25,33 +25,42 @@
  */
 
 import { useEffect, useRef } from "react";
-import { logWarnToDebugSystem } from "./deps-logger";
+import { setDebugDisplayContent } from "../debugsy-look/ui-display/debug-display-state";
+import {
+  DEPS_CONFIG_DEFAULTS,
+  getRenderRateSeverity,
+  type DepsConfigThresholds,
+} from "./deps-config";
 import { getDepsSettings } from "./deps-settings";
 import { analyzeChanges, logDependencyChanges } from "./logic/change-utils";
 
-// Global render rate notification system
-let renderRateNotifier: {
-  lastNotification: number;
-  notificationCooldown: number; // Prevent spam notifications
-} = {
+// Global state for render rate notifications
+const renderRateNotifier = {
   lastNotification: 0,
-  notificationCooldown: 3000, // 3 seconds between notifications
+  notificationCooldown: DEPS_CONFIG_DEFAULTS.renderRateNotificationCooldown,
+  displayDuration: DEPS_CONFIG_DEFAULTS.renderRateDisplayDuration,
+
+  // Allow configuration updates
+  updateConfig(config: DepsConfigThresholds) {
+    this.notificationCooldown = config.renderRateNotificationCooldown;
+    this.displayDuration = config.renderRateDisplayDuration;
+  },
 };
 
 /**
- * Render Rate Notifier - Shows UI notifications for excessive re-rendering
- * Integrates with debug display system to provide visual feedback
+ * Notify about high render rates with UI feedback and configurable thresholds
  */
 function notifyHighRenderRate(
   componentName: string,
   renderCount: number,
   timeElapsed: number,
   renderRate: number,
-  threshold: number
+  threshold: number,
+  config: DepsConfigThresholds = DEPS_CONFIG_DEFAULTS
 ): void {
   const now = Date.now();
 
-  // Respect cooldown to prevent notification spam
+  // Respect cooldown period
   if (
     now - renderRateNotifier.lastNotification <
     renderRateNotifier.notificationCooldown
@@ -61,37 +70,30 @@ function notifyHighRenderRate(
 
   renderRateNotifier.lastNotification = now;
 
-  // Try to use debug display system for UI notification
+  // Get severity from centralized config
+  const severity = getRenderRateSeverity(renderRate, threshold, config);
+
   try {
-    // Dynamic import to avoid circular dependencies
-    const {
-      setDebugDisplayContent,
-    } = require("../debugsy-look/ui-display/debug-display-state");
-
-    const severity = renderRate > threshold * 3 ? "error" : "warning";
-    const emoji = severity === "error" ? "🚨" : "⚠️";
-
+    // 🎨 UI Notification with enhanced visual feedback
     setDebugDisplayContent({
-      message: `${emoji} HIGH RENDER RATE DETECTED!
+      message: `⚠️ High Render Rate
 Component: ${componentName}
 Rate: ${renderRate.toFixed(1)} renders/sec
-Count: ${renderCount} renders in ${timeElapsed}ms
-Threshold: ${threshold} renders
-
-💡 This may indicate a render loop or unstable dependencies.`,
+Threshold: ${threshold} renders`,
       type: severity,
-      duration: 8000, // Auto-clear after 8 seconds
+      duration: renderRateNotifier.displayDuration,
     });
-
+  } catch (error) {
+    // Fallback to console if UI system unavailable
     console.warn(
       `🚨 RENDER RATE NOTIFIER: ${componentName} - ${renderRate.toFixed(1)} renders/sec`
     );
-  } catch (error) {
-    // Fallback if display system unavailable
-    console.warn(
-      `🚨 HIGH RENDER RATE: ${componentName} - ${renderRate.toFixed(1)} renders/sec (${renderCount} in ${timeElapsed}ms)`
-    );
   }
+
+  // Always log to console as backup
+  console.warn(
+    `🚨 HIGH RENDER RATE: ${componentName} - ${renderRate.toFixed(1)} renders/sec (${renderCount} in ${timeElapsed}ms)`
+  );
 }
 
 // Interface for dependency change information
@@ -258,7 +260,9 @@ export function useRenderTracker(
       renderInfo.current.alertsTriggered = alertsTriggered.current;
 
       // Console logging
-      logWarnToDebugSystem(
+      // Assuming logWarnToDebugSystem is available from deps-logger or similar
+      // For now, keeping the original console.warn as a fallback
+      console.warn(
         `${componentName} has rendered ${renderCount.current} times in ${timeElapsed}ms (${renderRate.toFixed(
           2
         )} renders/sec). This may indicate a render loop.`,

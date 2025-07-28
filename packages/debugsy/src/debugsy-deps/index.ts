@@ -1,55 +1,64 @@
 /**
- * Debugsy Deps - Enhanced React Hook Dependency Tracking
+ * Dependency Tracking Module - Enhanced Debug System
  *
- * UNIFIED ARCHITECTURE: Complete integration with debugsy system
- * - State management via unified debugsy space
- * - Logging through unified debugsy channels
- * - UI controls through unified control panels
- * - Settings persistence through unified storage
- *
- * PERFORMANCE OPTIMIZATIONS:
- * - Throttled logging to prevent UI blocking
- * - Smart filtering based on app lifecycle phase
- * - Emergency stop mechanism for runaway render loops
- * - Efficient change detection with early bailouts
- *
- * DEBUGGING FEATURES:
+ * RESPONSIBILITY: Comprehensive dependency tracking and analysis
+ * - Intelligent frequency detection with app phase awareness
+ * - Smart filtering to reduce noise during initialization
  * - Detailed change analysis with type discrimination
- * - Render loop detection with progressive warnings
- * - Hook-specific filtering for targeted debugging
- * - Initialization-aware filtering for better UX during app startup
+ * - Performance-conscious rendering with configurable throttling
+ * - Throttled logging to prevent UI blocking
+ * - Clean separation between React logic and analysis utilities
+ *
+ * ARCHITECTURE: Modular design for maintainability
+ * - use-deps.ts: React hooks orchestration
+ * - logic/change-utils.ts: Core analysis utilities
+ * - logic/change-tracking.ts: Frequency detection algorithms
+ * - deps-filters.ts: Filtering logic
+ * - deps-logger.ts: Unified logging system
+ * - deps-settings.ts: State management
+ * - deps-config.ts: Centralized threshold configuration
  */
 
-// Core tracking hooks - primary interface
-export { useRenderTracker, useWhyDidYouUpdate } from "./use-deps";
+// === REACT HOOKS ===
+export {
+  useRenderTracker,
+  useWhyDidYouUpdate,
+  type DependencyChangeInfo,
+  type RenderRateInfo,
+} from "./use-deps";
 
-// Logging system - unified with debugsy
-export { logToDebugSystem as logDepsChange } from "./deps-logger";
+// === CORE LOGIC ===
+export {
+  analyzeChanges,
+  getChangeIndicators,
+  logDependencyChanges,
+  type PropChange,
+} from "./logic/change-utils";
 
-// Settings and state access
-export { getDepsSettings } from "./deps-settings";
+export {
+  initializationPhase,
+  trackDependencyChange,
+  type ChangeTrackingInfo,
+} from "./logic/change-tracking";
 
-// Filtering utilities
+// === CONFIGURATION ===
+export {
+  DEPS_CONFIG_DEFAULTS,
+  getFrequencyThreshold,
+  getRenderRateSeverity,
+  validateDepsConfig,
+  type DepsConfigThresholds,
+} from "./deps-config";
+
+// === UTILITIES ===
 export {
   shouldLogChangeType,
   shouldLogLevel,
   shouldTrackHook,
 } from "./deps-filters";
-
-// Change analysis utilities
-export { analyzeChanges, detectChangeType } from "./logic/change-utils";
-
-// Initialization phase tracking
-export { initializationPhase } from "./logic/change-tracking";
-
-// React hook for settings - from unified space
-export { useDepsSettings as useDepsState } from "../debugsy-space/debugsy-space-settings";
-
-// Type re-exports from debugsy space
-export type {
-  DepsConfig,
-  DepsFilter,
-  DepsLogLevel,
-  DepsSettings,
-  DepsTrackingConfig,
-} from "../debugsy-space/debugsy-constants";
+export {
+  logErrorToDebugSystem,
+  logToDebugSystem,
+  logWarnToDebugSystem,
+} from "./deps-logger";
+export { getDepsSettings } from "./deps-settings";
