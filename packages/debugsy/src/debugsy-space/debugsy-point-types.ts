@@ -21,7 +21,7 @@ export interface DebugPointConfig {
   emoji: string;
   description: string;
   label: string; // Short display name for UI
-  category: "core" | "interaction" | "performance" | "system";
+  category: "core" | "interaction" | "performance" | "system" | "surface";
   priority?: number; // For interaction handlers
   look?: boolean; // Whether to show in main control panel (defaults to true for non-system)
   logTypes?: Record<string, LogTypeConfig>; // Custom log type configurations for this debug point

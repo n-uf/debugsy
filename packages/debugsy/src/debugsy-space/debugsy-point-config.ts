@@ -11,26 +11,42 @@
  * The DebugPoint type is automatically derived from these keys.
  */
 export const DEBUG_POINT_CONFIG = {
+  // Visual & Debug
+  "visual-debug": {
+    emoji: "👁️",
+    description: "Visual debug overlays and priority zones",
+    label: "Visual",
+    category: "system" as const,
+    look: true,
+  },
+  // Performance & Monitoring
+  performance: {
+    emoji: "⚡",
+    description: "Event throughput, timing, and efficiency",
+    label: "Perf",
+    category: "performance" as const,
+    look: true,
+  },
   // Core System
   mouse: {
     emoji: "🎯",
     description: "Mouse event handling and coordination",
     label: "Mouse",
-    category: "core" as const,
+    category: "surface" as const,
     look: true,
   },
   "hit-testing": {
     emoji: "🔍",
     description: "Priority-based hit test routing & decisions",
     label: "Hit Test",
-    category: "core" as const,
+    category: "surface" as const,
     look: true,
   },
   routing: {
     emoji: "🔗",
     description: "Event routing decisions with conflict resolution",
     label: "Routing",
-    category: "core" as const,
+    category: "surface" as const,
     look: true,
   },
 
@@ -39,21 +55,21 @@ export const DEBUG_POINT_CONFIG = {
     emoji: "🌍",
     description: "Surface component lifecycle",
     label: "Surface",
-    category: "core" as const,
+    category: "surface" as const,
     look: true,
   },
   "surface-interactions": {
     emoji: "🏠",
     description: "Surface component coordination",
     label: "Surface.io",
-    category: "core" as const,
+    category: "surface" as const,
     look: true,
   },
   "surface-dock": {
     emoji: "🚢",
     description: "SurfaceDock component lifecycle",
     label: "Dock",
-    category: "core" as const,
+    category: "surface" as const,
     look: true,
   },
 
@@ -74,39 +90,15 @@ export const DEBUG_POINT_CONFIG = {
     priority: 2,
     look: true,
   },
-  "selection-interaction": {
-    emoji: "📋",
-    description: "Multi-frame selection system",
-    label: "Selection",
-    category: "interaction" as const,
-    priority: 998,
-    look: true,
-  },
 
-  // Registry & Management
-  "handler-registry": {
-    emoji: "📝",
-    description: "Handler registration/unregistration lifecycle",
-    label: "Registry",
-    category: "core" as const,
-    look: true,
-  },
   "frame-metrics": {
     emoji: "📏",
     description: "Frame positioning and sizing state",
     label: "Metrics",
-    category: "core" as const,
+    category: "surface" as const,
     look: false, // Specialized/verbose
   },
 
-  // Performance & Monitoring
-  performance: {
-    emoji: "⚡",
-    description: "Event throughput, timing, and efficiency",
-    label: "Perf",
-    category: "performance" as const,
-    look: true,
-  },
   dependencies: {
     emoji: "🧠",
     description: "React hook dependency tracking and optimization",
@@ -154,24 +146,6 @@ export const DEBUG_POINT_CONFIG = {
     label: "Health",
     category: "system" as const,
     look: false, // Always enabled, no need for button
-  },
-
-  // Visual & Debug
-  "visual-debug": {
-    emoji: "👁️",
-    description: "Visual debug overlays and priority zones",
-    label: "Visual",
-    category: "system" as const,
-    look: true,
-  },
-
-  // Aliases
-  "mouse-dispatcher": {
-    emoji: "🖱️",
-    description: "Event dispatcher system (alias for dispatcher)",
-    label: "MouseDisp",
-    category: "core" as const,
-    look: false, // Alias, use main dispatcher instead
   },
 
   // Special
