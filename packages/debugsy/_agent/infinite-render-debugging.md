@@ -130,7 +130,7 @@ When React throws "Maximum update depth exceeded", follow this systematic approa
 // Look for the component with the highest render count
 ⚠️ [Surface] High render count detected: 25        // ← ROOT PROBLEM
 🔄 [useMouseDispatcher] Render #24
-🔄 [useSelectionInteraction] Render #23
+🔄 [useSurfaceInteraction] Render #23
 ```
 
 #### **2.2 Follow the Dependency Path**
@@ -286,7 +286,7 @@ useEffect(() => {
 // Filter by component name:
 "[Surface]";
 "[useMouseDispatcher]";
-"[useSelectionInteraction]";
+"[useSurfaceInteraction]";
 
 // Focus on specific component's render cycle
 ```
@@ -573,8 +573,8 @@ useWhyDidYouUpdate("useMouseDispatcher", {
 #### Interaction Hooks
 
 ```typescript
-// useSelectionInteraction
-useWhyDidYouUpdate("useSelectionInteraction", {
+// useSurfaceInteraction
+useWhyDidYouUpdate("useSurfaceInteraction", {
   viewport,
   frameHandlers,
   onSelectionStart,
@@ -764,7 +764,7 @@ const deleteItems = useCallback(() => {
 
 ```javascript
 // Watch for selection callback recreation
-🔄 [useSelectionInteraction] Dependencies changed: {
+🔄 [useSurfaceInteraction] Dependencies changed: {
   onSelectionStart: { from: function, to: function }
 }
 
