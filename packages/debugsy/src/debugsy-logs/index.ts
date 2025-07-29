@@ -5,8 +5,8 @@
  */
 
 // === CORE HOOK SYSTEM ===
-export { useDebugSubscription } from "./hooks/debug-notifications";
-export { captureHealthSnapshot } from "./hooks/health-snapshot";
+export { useDebugsySubscription as useDebugSubscription } from "./hooks/debugsy-notifications";
+export { captureHealthSnapshot } from "./logic/health-snapshot";
 
 // === STABLE DEBUGSY SYSTEM ===
 export {
@@ -14,7 +14,7 @@ export {
   getStableDebugsyCacheStatus,
   getStableDebugsyInterface,
   type StableDebugsyInterface,
-} from "./stabilizator";
+} from "./logic/stabilizator";
 
 // === CORE HOOK ===
 export { useDebugsy } from "./use-debugsy";
@@ -30,7 +30,7 @@ export {
 export type {
   HealthMetrics,
   HealthSnapshotConfig,
-} from "./hooks/health-snapshot";
+} from "./logic/health-snapshot";
 export type { DebugLogEntry } from "./use-debugsy";
 
 // Component prop types
@@ -42,5 +42,5 @@ export type { DebugResizePresetsProps } from "../debugsy-look/ui-control-center/
 export type { DebugDependencyAdvancedControlsProps } from "../debugsy-look/ui-dependency/dependency-advanced-controls";
 export type { DebugDependencyControlsProps } from "../debugsy-look/ui-dependency/dependency-controls";
 export type { DebugDisplayPanelProps } from "../debugsy-look/ui-display/debug-display-panel";
-export type { DebugLogsListProps } from "../debugsy-look/ui-logs/debug-logs-list";
+export type { DebugLogsListProps } from "../debugsy-look/ui-logs/logs-list";
 export type { DebugStatsPanelProps } from "../debugsy-look/ui-stats-center/stats-panel";

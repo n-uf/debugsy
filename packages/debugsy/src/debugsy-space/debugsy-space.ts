@@ -3,8 +3,8 @@ import {
   createFullDebugsyCLI,
   type DebugsyCLIWithHelp,
 } from "../debugsy-cli/cli-interface";
-import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
-import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/hooks/health-snapshot";
+import { notifySubscribers } from "../debugsy-logs/hooks/debugsy-notifications";
+import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-logs/logic/health-snapshot";
 import { registerSuperjsonCustomSerializers } from "../shared/superjson-config";
 import {
   getDebugPointEmoji,

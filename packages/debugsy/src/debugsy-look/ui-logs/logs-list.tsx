@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import type { DebugLogEntry } from "../../debugsy-logs/use-debugsy";
+import { useDebugsy } from "../../debugsy-logs/use-debugsy";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
@@ -45,82 +46,19 @@ import {
 export interface DebugLogsListProps {
   logs: DebugLogEntry[];
   onClearLogs?: () => void;
+  onStateChange?: (state: { isPaused: boolean; isFollowing: boolean }) => void;
+  onRegisterClearLocalState?: (clearCallback: () => void) => void;
 }
-
-/**
- * Debug Logs List - Main orchestrator for the debug logs display system
- *
- * EXTRACTED COMPONENT ARCHITECTURE:
- * This component now serves as the main coordinator, importing specialized components:
- *
- * 📦 **Core Components** (./components/):
- * - MemoizedLogEntry: Individual log rendering with performance optimization
- * - VirtualizedLogContainer: High-performance virtualized log display (>50 items)
- * - TruncationInfoPanel: Interactive warning panel with Clear/Copy All buttons
- * - DebugStatusPanels: Sticky status panels for pause/following states
- * - ActionsPanel: Right sidebar with copy progression, pause, and health buttons
- *
- * 🎯 **Main Responsibilities**:
- * - State management (copy state, pause/following, scroll position)
- * - Event handling coordination (copy, pause, scroll following)
- * - Data preparation (active logs, truncation info, reversed logs)
- * - Layout orchestration and container structure
- *
- * RECENT IMPROVEMENTS:
- * 1. 🔒 SMART RESET BEHAVIOR: Separate control for complete vs auto-reset behavior
- *    - resetOnComplete: false = clicking when complete doesn't cycle back to beginning
- *    - autoResetAfterDelay: true = button auto-resets to idle after 3 seconds
- *    - Best of both worlds: no annoying cycling + convenient auto-reset
- *
- * 2. ⏱️ SYNCHRONIZED TIMING: All animations use consistent timing constants from config
- *    - Progress bar: 300ms transition duration
- *    - Button interactions: 200ms for quick feedback
- *    - Display duration: 3000ms (3 sec) before auto-reset
- *    - Reset delay: 2000ms additional delay for final state
- *    - All timing values centralized in copy-config.ts
- *
- * 3. 🎯 ADAPTIVE BOUNDARIES: Copy progression respects actual log counts
- *    - Percentage steps that would go backwards are automatically skipped
- *    - Ensures monotonically increasing progression (20 → 200 → all)
- *
- * 4. 🏁 MAXIMUM REACHED FINISH: Progression ends when any step copies all logs
- *    - If step 2 copies all available logs, progression finishes immediately
- *    - No redundant subsequent steps (e.g., 150 logs: 20 → 150 (finish), not 20 → 150 → 75% → all)
- *    - Optimal user experience with minimal unnecessary steps
- *
- * 5. 📊 DATA-DRIVEN PROGRESS: Progress bar shows actual data copied vs total logs
- *    - Before: Step 2 of 4 = 50% progress (arbitrary step completion)
- *    - After: 200 logs of 1000 total = 20% progress (meaningful data metric)
- *    - Users see accurate feedback about how much data has been copied
- *
- * 6. 🚀 PERFORMANCE OPTIMIZATIONS: Memoization and virtualization
- *    - Memoized log components prevent unnecessary re-renders
- *    - Virtual scrolling for large lists (>50 items)
- *    - Expensive computations cached with useMemo
- *
- * 7. 🎯 SCROLL FOLLOWING: Smart auto-follow behavior for live logs
- *    - Automatically follows newest logs when at top (reversed order)
- *    - Stops following when user scrolls down, shows clickable return panel
- *    - Returns to following on click or scroll back to top
- *
- * 8. 📋 ENHANCED TRUNCATION PANEL: Interactive info panel with actions
- *    - Clear All Logs: Clears entire log history
- *    - Copy All Logs: Copies complete log set (not just visible)
- *    - Positioned at tail after last log record
- *    - Shows debug info and actionable buttons
- *
- * 9. 🏗️ COMPONENT EXTRACTION: Granular, maintainable architecture
- *    - Each component has single responsibility
- *    - Independent testing and development possible
- *    - Better code organization and reusability
- *    - Cleaner main orchestrator with focused logic
- */
-// Timing constants moved to ../config/copy-config.ts for centralized configuration
 
 export const DebugLogsList: React.FC<DebugLogsListProps> = ({
   logs,
   onClearLogs,
+  onStateChange,
+  onRegisterClearLocalState,
 }) => {
+  // Get debug state for filtering logs by enabled debug points
+  const debug = useDebugsy();
+
   const [copyState, setCopyState] = useState<CopyState>(0);
   const [isPaused, setIsPaused] = useState(false);
   const [pausedLogs, setPausedLogs] = useState<DebugLogEntry[]>([]);
@@ -131,12 +69,32 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
 
   const stateResetTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
+  // Filter logs by enabled debug points BEFORE applying paused/following logic
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      return debug.isEnabled(log.point);
+    });
+  }, [logs, debug.isEnabled]);
+
   // Memoize active logs to prevent unnecessary recalculations
   const activeLogs = useMemo(() => {
-    if (isPaused) return pausedLogs;
-    if (!isFollowing) return snapshotLogs;
-    return logs;
-  }, [isPaused, pausedLogs, isFollowing, snapshotLogs, logs]);
+    if (isPaused)
+      return pausedLogs.filter(
+        (log) => log.point === "health" || debug.isEnabled(log.point)
+      );
+    if (!isFollowing)
+      return snapshotLogs.filter(
+        (log) => log.point === "health" || debug.isEnabled(log.point)
+      );
+    return filteredLogs;
+  }, [
+    isPaused,
+    pausedLogs,
+    isFollowing,
+    snapshotLogs,
+    filteredLogs,
+    debug.isEnabled,
+  ]);
 
   // Memoize truncation info based on the ORIGINAL logs, not activeLogs
   const truncationInfo = useMemo(() => {
@@ -160,14 +118,14 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
       if (!isNearTop && isFollowing) {
         // User scrolled away from top, stop following and capture snapshot
         setIsFollowing(false);
-        setSnapshotLogs([...logs]);
+        setSnapshotLogs([...filteredLogs]);
       } else if (isNearTop && !isFollowing) {
         // User scrolled back to top, resume following
         setIsFollowing(true);
         setSnapshotLogs([]);
       }
     },
-    [isPaused, isFollowing, logs]
+    [isPaused, isFollowing, filteredLogs]
   );
 
   // Function to return to following mode
@@ -197,7 +155,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         container.scrollTop = 0; // Scroll to top where newest logs appear
       });
     }
-  }, [logs.length, isFollowing, isPaused]);
+  }, [filteredLogs.length, isFollowing, isPaused]);
 
   // Auto-reset copy state after synchronized display duration
   useEffect(() => {
@@ -225,6 +183,35 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
       }
     };
   }, [copyState]);
+
+  // Communicate state changes to parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({ isPaused, isFollowing });
+    }
+  }, [isPaused, isFollowing, onStateChange]);
+
+  // Create and register local state clearing function
+  const clearLocalState = useCallback(() => {
+    setPausedLogs([]);
+    setSnapshotLogs([]);
+    setIsFollowing(true);
+    setIsPaused(false);
+
+    // Scroll to top when resuming
+    setTimeout(() => {
+      if (logsContainerRef.current) {
+        logsContainerRef.current.scrollTop = 0;
+      }
+    }, 0);
+  }, []);
+
+  // Register the clear function with parent
+  useEffect(() => {
+    if (onRegisterClearLocalState) {
+      onRegisterClearLocalState(clearLocalState);
+    }
+  }, [onRegisterClearLocalState, clearLocalState]);
 
   const handleCopyLogs = useCallback(async () => {
     try {
@@ -305,7 +292,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
     } else {
       // Pause - capture current logs state and stop following
       setIsPaused(true);
-      setPausedLogs([...logs]);
+      setPausedLogs([...filteredLogs]);
       setIsFollowing(false);
       setSnapshotLogs([]);
 
@@ -316,7 +303,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         duration: 2000,
       });
     }
-  }, [isPaused, logs]);
+  }, [isPaused, filteredLogs]);
 
   // Function to copy all logs (enhanced version of existing functionality)
   const handleCopyAllLogs = useCallback(async () => {
@@ -329,12 +316,13 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         duration: 3000,
       });
 
-      console.log(`📋 Copied all ${logs.length} logs to clipboard`);
+      console.log(`Copied all ${logs.length} logs to clipboard`);
     } catch (error) {
-      console.error("Failed to copy all logs:", error);
+      console.error("Failed to copy logs:", error);
 
+      // Show error on display panels
       setDebugDisplayContent({
-        message: "Failed to copy all logs",
+        message: "Failed to copy logs",
         type: "error",
         duration: 3000,
       });
@@ -343,15 +331,7 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
 
   // Function to clear all logs
   const handleClearAllLogs = useCallback(() => {
-    if (onClearLogs) {
-      onClearLogs();
-
-      setDebugDisplayContent({
-        message: "All logs cleared",
-        type: "info",
-        duration: 2000,
-      });
-    } else {
+    if (!onClearLogs) {
       console.warn(
         "Clear logs functionality not available - onClearLogs prop not provided"
       );
@@ -361,7 +341,11 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
         type: "error",
         duration: 2000,
       });
+      return;
     }
+
+    // Call the parent's clear function which handles double-action logic
+    onClearLogs();
   }, [onClearLogs]);
 
   // Handle Cmd+A to select only logs content

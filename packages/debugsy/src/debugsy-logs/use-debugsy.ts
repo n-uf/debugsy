@@ -10,11 +10,11 @@ import {
 import {
   type HealthMetrics,
   type HealthSnapshotConfig,
-} from "./hooks/health-snapshot";
+} from "./logic/health-snapshot";
 import {
   type StableDebugsyInterface,
   getStableDebugsyInterface,
-} from "./stabilizator";
+} from "./logic/stabilizator";
 
 // Import the unified system for type declarations
 import type { DebugsySpace } from "../debugsy-space/debugsy-space";

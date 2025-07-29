@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useDebugSubscription } from "../../debugsy-logs/hooks/debug-notifications";
+import { useDebugsySubscription } from "../../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../../debugsy-logs/use-debugsy";
 import { getLookDebugPoints } from "../../debugsy-space/debugsy-point";
 import { DebugDependencyControls } from "../ui-dependency/dependency-controls";
@@ -35,7 +35,7 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   showDependencyControls = true,
 }) => {
   // SUBSCRIBE to debug state changes so button indicators update
-  useDebugSubscription();
+  useDebugsySubscription();
 
   const debug = useDebugsy();
 

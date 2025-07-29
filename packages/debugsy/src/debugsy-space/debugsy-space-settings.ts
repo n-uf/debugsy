@@ -1,5 +1,5 @@
 import superjson from "superjson";
-import { notifySubscribers } from "../debugsy-logs/hooks/debug-notifications";
+import { notifySubscribers } from "../debugsy-logs/hooks/debugsy-notifications";
 import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
 import {
   type DebugPoint,

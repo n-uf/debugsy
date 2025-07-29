@@ -10,9 +10,9 @@
  * interfaces for safe use in React dependency arrays and memoization.
  */
 
-import { type DebugPoint } from "../debugsy-space/debugsy-constants";
-import { initializeDebugsySpace } from "../debugsy-space/debugsy-space";
-import { getGlobalDebugState } from "../debugsy-space/debugsy-space-settings";
+import { type DebugPoint } from "../../debugsy-space/debugsy-constants";
+import { initializeDebugsySpace } from "../../debugsy-space/debugsy-space";
+import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
 
 /**
  * Stable debugsy interface without problematic getters

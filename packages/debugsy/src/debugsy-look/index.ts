@@ -27,10 +27,7 @@ export {
   type DebugDependencyControlsProps,
 } from "./ui-dependency/dependency-controls";
 export { DebugDisplayPanel, type DebugDisplayPanelProps } from "./ui-display";
-export {
-  DebugLogsList,
-  type DebugLogsListProps,
-} from "./ui-logs/debug-logs-list";
+export { DebugLogsList, type DebugLogsListProps } from "./ui-logs/logs-list";
 export {
   DebugStatsPanel,
   type DebugStatsPanelProps,

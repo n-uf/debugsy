@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRenderTracker } from "../debugsy-deps";
-import { useDebugSubscription } from "../debugsy-logs/hooks/debug-notifications";
+import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import { DebugControlPanel } from "./ui-control-center/control-panel";
 import { DebugPanelHeader } from "./ui-control-center/header";
 import { DebugPanelResizeHandle } from "./ui-control-center/resize-handle";
 import { DebugResizePresets } from "./ui-control-center/resize-presets";
-import { DebugLogsList } from "./ui-logs/debug-logs-list";
+import { DebugLogsList } from "./ui-logs/logs-list";
 import { DebugStatsPanel } from "./ui-stats-center/stats-panel";
 
 export interface DebugsyLookProps {
@@ -24,7 +24,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 }) => {
   useRenderTracker("DebugsyLook");
   // SELF-CONTAINED: Handle debug state internally
-  useDebugSubscription(); // Subscribe to debug state changes
+  useDebugsySubscription(); // Subscribe to debug state changes
   const debug = useDebugsy();
 
   // Get logs and clear function from debug system
@@ -34,12 +34,64 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [panelHeight, setPanelHeight] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
+  const [clearConfirmation, setClearConfirmation] = useState(false);
+  const [debugLogsState, setDebugLogsState] = useState({
+    isPaused: false,
+    isFollowing: true,
+  });
+  const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
+    (() => void) | null
+  >(null);
   const externalPanelRef = useRef<HTMLDivElement>(null);
   const resizeStartY = useRef<number>(0);
   const resizeStartHeight = useRef<number>(0);
+  const clearConfirmationTimeoutRef = useRef<NodeJS.Timeout | undefined>(
+    undefined
+  );
+
+  // Smart clear function with double-action logic
+  const handleSmartClear = useCallback(() => {
+    const { isPaused, isFollowing } = debugLogsState;
+
+    // If following live logs, clear immediately
+    if (isFollowing && !isPaused) {
+      onClearLogs();
+      return;
+    }
+
+    // If paused or scrolled (not following), use two-step process
+    if (!clearConfirmation) {
+      // First action: Clear storage immediately but keep local state
+      onClearLogs();
+      setClearConfirmation(true);
+
+      // Clear any existing timeout
+      if (clearConfirmationTimeoutRef.current) {
+        clearTimeout(clearConfirmationTimeoutRef.current);
+      }
+
+      // Auto-reset confirmation after 3 seconds
+      clearConfirmationTimeoutRef.current = setTimeout(() => {
+        setClearConfirmation(false);
+      }, 3000);
+    } else {
+      // Second action: Clear local state and resume following
+      // Note: Storage was already cleared on first action
+      setClearConfirmation(false);
+
+      // Clear the confirmation timeout
+      if (clearConfirmationTimeoutRef.current) {
+        clearTimeout(clearConfirmationTimeoutRef.current);
+      }
+
+      // Clear local state in DebugLogsList
+      if (clearLocalStateCallback) {
+        clearLocalStateCallback();
+      }
+    }
+  }, [debugLogsState, clearConfirmation, onClearLogs, clearLocalStateCallback]);
 
   const onClose = () => {
-    console.log("🚪 Closing debugsy panel");
     setIsVisible(false);
   };
 
@@ -54,7 +106,6 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
         externalPanelRef.current &&
         !externalPanelRef.current.contains(event.target as Node)
       ) {
-        console.log("🖱️ Click outside detected, closing panel");
         onClose();
       }
     };
@@ -64,7 +115,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       return () =>
         document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isVisible, isResizing, closeOnClickOutside]);
+  }, [isVisible, isResizing, closeOnClickOutside, onClose]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -75,17 +126,11 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
         if (!isVisible) {
           // First time: show in compact mode
-          console.log("⌨️ Cmd+D pressed, showing panel in compact mode");
           setIsVisible(true);
           setPanelHeight(0);
         } else {
           // Toggle between compact (0) and extended (400) modes
           const newHeight = panelHeight === 0 ? 400 : 0;
-          console.log(
-            "⌨️ Cmd+D pressed, switching to",
-            newHeight === 0 ? "compact" : "extended",
-            "mode"
-          );
           setPanelHeight(newHeight);
         }
         return;
@@ -96,7 +141,6 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
       // Escape to close
       if (event.key === "Escape") {
-        console.log("⌨️ Escape key pressed, closing panel");
         onClose();
         return;
       }
@@ -104,15 +148,30 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       // Cmd+K or Ctrl+K to clear logs
       if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
-        console.log("⌨️ Cmd+K pressed, clearing logs");
-        onClearLogs();
+        handleSmartClear();
         return;
       }
     };
 
     document.addEventListener("keydown", handleKeydown);
     return () => document.removeEventListener("keydown", handleKeydown);
-  }, [isVisible, isResizing, panelHeight, onClearLogs]);
+  }, [
+    isVisible,
+    isResizing,
+    panelHeight,
+    onClearLogs,
+    handleSmartClear,
+    onClose,
+  ]);
+
+  // Cleanup clearConfirmationTimeoutRef on unmount
+  useEffect(() => {
+    return () => {
+      if (clearConfirmationTimeoutRef.current) {
+        clearTimeout(clearConfirmationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle resize drag
   useEffect(() => {
@@ -159,15 +218,10 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
   const handleClearClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("🗑️ Clearing debug logs from debugsy panel");
-    onClearLogs();
+    handleSmartClear();
   };
 
   const handleDisplayClick = () => {
-    console.log("🔄 DebugsyPanel display click - toggling main content:", {
-      currentHeight: panelHeight,
-      willToggleTo: panelHeight === 0 ? 400 : 0,
-    });
     setPanelHeight(panelHeight === 0 ? 400 : 0);
   };
 
@@ -229,7 +283,14 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
             <DebugPanelHeader onClear={handleClearClick} onClose={onClose} />
 
             {/* Logs Content */}
-            <DebugLogsList logs={logs} />
+            <DebugLogsList
+              logs={logs}
+              onClearLogs={handleSmartClear}
+              onStateChange={setDebugLogsState}
+              onRegisterClearLocalState={(callback) =>
+                setClearLocalStateCallback(() => callback)
+              }
+            />
           </div>
 
           {/* Right Panel - Stats & Controls */}

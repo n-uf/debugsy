@@ -89,7 +89,7 @@ export function subscribeToDebugChanges(callback: () => void): () => void {
  * Hook to subscribe to debug state changes
  * FIXED: Use useReducer instead of forceUpdate({}) to prevent infinite loops
  */
-export function useDebugSubscription(): void {
+export function useDebugsySubscription(): void {
   // Use useReducer for stable forceUpdate - no new objects created
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 

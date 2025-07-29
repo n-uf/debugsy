@@ -8,15 +8,15 @@
  */
 
 // Main logs list component
-export { DebugLogsList } from "./debug-logs-list";
+export { DebugLogsList } from "./logs-list";
 
 // JSON utilities (superjson-based)
 export {
-  JsonUtils,
   benchmarkSerialization,
   formatDataForDisplay,
   formatJsonTooltip,
   getDisplayStrategy,
+  JsonUtils,
   performanceJsonStringify,
   safeJsonStringify,
 } from "./utils/json/json-utilities";
@@ -26,12 +26,12 @@ export { copyLogsToClipboard, formatLogForCopy } from "./utils/copy-utilities";
 
 // Log utilities
 export {
-  LOG_RENDERING_CONFIG,
-  LOG_STYLES,
   formatPointName,
   getLogEntryBackgroundColor,
   getLogsTruncationInfo,
   getPointEmoji,
+  LOG_RENDERING_CONFIG,
+  LOG_STYLES,
   prepareLogsForRendering,
 } from "./utils/log-utilities";
 
@@ -50,7 +50,6 @@ export {
 } from "./formatters/formatter-routing";
 
 // Type exports
-export type { DebugLogsListProps } from "./debug-logs-list";
 export type {
   DefaultLogFormatterProps,
   LogSeverity,
@@ -59,6 +58,7 @@ export type {
   FormatterConfig,
   FormatterMeta,
 } from "./formatters/formatter-routing";
+export type { DebugLogsListProps } from "./logs-list";
 
 /**
  * Quick Start Examples:
