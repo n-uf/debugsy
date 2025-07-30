@@ -46,6 +46,16 @@ export interface DepsConfigThresholds {
   /** UI display duration for render rate alerts (ms) */
   renderRateDisplayDuration: number;
 
+  // === MOUNT TRACKING ===
+  /** Default mount count threshold before warnings */
+  mountRateDefaultThreshold: number;
+  /** Multiplier for error vs warning severity for mounts (error = threshold * multiplier) */
+  mountRateSeverityMultiplier: number;
+  /** Cooldown between mount rate notifications (ms) */
+  mountRateNotificationCooldown: number;
+  /** UI display duration for mount rate alerts (ms) */
+  mountRateDisplayDuration: number;
+
   // === THROTTLING ===
   /** Default throttling for dependency logging (ms) */
   dependencyThrottleMs: number;
@@ -91,6 +101,12 @@ export const DEPS_CONFIG_DEFAULTS: DepsConfigThresholds = {
   renderRateSeverityMultiplier: 3, // 30+ renders = error
   renderRateNotificationCooldown: 3000, // 3 seconds between notifications
   renderRateDisplayDuration: 8000, // Show alerts for 8 seconds
+
+  // === MOUNT TRACKING ===
+  mountRateDefaultThreshold: 3, // 3 mounts before warning
+  mountRateSeverityMultiplier: 3, // 30+ mounts = error
+  mountRateNotificationCooldown: 3000, // 3 seconds between notifications
+  mountRateDisplayDuration: 8000, // Show alerts for 8 seconds
 
   // === THROTTLING ===
   dependencyThrottleMs: 100, // 100ms between dependency logs
@@ -143,6 +159,19 @@ export function getRenderRateSeverity(
 }
 
 /**
+ * Determine severity level for mount rate notifications based on configuration
+ */
+export function getMountRateSeverity(
+  mountRate: number,
+  threshold: number,
+  config: DepsConfigThresholds = DEPS_CONFIG_DEFAULTS
+): "warning" | "error" {
+  return mountRate > threshold * config.mountRateSeverityMultiplier
+    ? "error"
+    : "warning";
+}
+
+/**
  * Validate configuration values for safety
  */
 export function validateDepsConfig(config: DepsConfigThresholds): void {
@@ -176,6 +205,11 @@ export function validateDepsConfig(config: DepsConfigThresholds): void {
       value: config.renderRateDefaultThreshold,
       min: 1,
       name: "renderRateDefaultThreshold",
+    },
+    {
+      value: config.mountRateDefaultThreshold,
+      min: 1,
+      name: "mountRateDefaultThreshold",
     },
     {
       value: config.dependencyThrottleMs,

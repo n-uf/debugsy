@@ -28,6 +28,7 @@ import { useEffect, useRef } from "react";
 import { setDebugDisplayContent } from "../debugsy-look/ui-display/debug-display-state";
 import {
   DEPS_CONFIG_DEFAULTS,
+  getMountRateSeverity,
   getRenderRateSeverity,
   type DepsConfigThresholds,
 } from "./deps-config";
@@ -44,6 +45,19 @@ const renderRateNotifier = {
   updateConfig(config: DepsConfigThresholds) {
     this.notificationCooldown = config.renderRateNotificationCooldown;
     this.displayDuration = config.renderRateDisplayDuration;
+  },
+};
+
+// Global state for mount rate notifications
+const mountRateNotifier = {
+  lastNotification: 0,
+  notificationCooldown: DEPS_CONFIG_DEFAULTS.mountRateNotificationCooldown,
+  displayDuration: DEPS_CONFIG_DEFAULTS.mountRateDisplayDuration,
+
+  // Allow configuration updates
+  updateConfig(config: DepsConfigThresholds) {
+    this.notificationCooldown = config.mountRateNotificationCooldown;
+    this.displayDuration = config.mountRateDisplayDuration;
   },
 };
 
@@ -96,6 +110,55 @@ Threshold: ${threshold} renders`,
   );
 }
 
+/**
+ * Notify about high mount rates with UI feedback and configurable thresholds
+ */
+function notifyHighMountRate(
+  componentName: string,
+  mountCount: number,
+  timeElapsed: number,
+  mountRate: number,
+  threshold: number,
+  config: DepsConfigThresholds = DEPS_CONFIG_DEFAULTS
+): void {
+  const now = Date.now();
+
+  // Respect cooldown period
+  if (
+    now - mountRateNotifier.lastNotification <
+    mountRateNotifier.notificationCooldown
+  ) {
+    return;
+  }
+
+  mountRateNotifier.lastNotification = now;
+
+  // Get severity from centralized config
+  const severity = getMountRateSeverity(mountRate, threshold, config);
+
+  try {
+    // 🎨 UI Notification with enhanced visual feedback
+    setDebugDisplayContent({
+      message: `🔄 High Mount Rate
+Component: ${componentName}
+Rate: ${mountRate.toFixed(1)} mounts/sec
+Threshold: ${threshold} mounts`,
+      type: severity,
+      duration: mountRateNotifier.displayDuration,
+    });
+  } catch (error) {
+    // Fallback to console if UI system unavailable
+    console.warn(
+      `🚨 MOUNT RATE NOTIFIER: ${componentName} - ${mountRate.toFixed(1)} mounts/sec`
+    );
+  }
+
+  // Always log to console as backup
+  console.warn(
+    `🚨 HIGH MOUNT RATE: ${componentName} - ${mountRate.toFixed(1)} mounts/sec (${mountCount} in ${timeElapsed}ms)`
+  );
+}
+
 // Interface for dependency change information
 export interface DependencyChangeInfo {
   changesCount: number;
@@ -112,6 +175,38 @@ export interface RenderRateInfo {
   threshold: number;
   isExcessive: boolean;
   alertsTriggered: number;
+}
+
+// Interface for mount rate information
+export interface MountRateInfo {
+  mountCount: number;
+  timeElapsed: number;
+  mountRate: number;
+  threshold: number;
+  isExcessive: boolean;
+  alertsTriggered: number;
+}
+
+// Options for configuring render tracker behavior
+export interface RenderTrackerOptions {
+  /** Threshold for render count warnings (default: 10) */
+  renderThreshold?: number;
+  /** Threshold for mount count warnings (default: 3) */
+  mountThreshold?: number;
+  /** Enable render tracking (default: true) */
+  trackRenders?: boolean;
+  /** Enable mount tracking (default: true) */
+  trackMounts?: boolean;
+  /** Callback for excessive render events */
+  onExcessiveRenders?: (info: RenderRateInfo) => void;
+  /** Callback for excessive mount events */
+  onExcessiveMounts?: (info: MountRateInfo) => void;
+}
+
+// Combined lifecycle information returned by useRenderTracker
+export interface ComponentLifecycleInfo {
+  render: RenderRateInfo;
+  mount: MountRateInfo;
 }
 
 /**
@@ -207,41 +302,157 @@ export function useWhyDidYouUpdate(
 }
 
 /**
- * Enhanced render tracking hook with UI notifications and callback support
- * Tracks render frequency and provides callback when excessive renders detected
+ * Enhanced render and mount tracking hook with UI notifications and callback support
+ * Tracks both render frequency and mount/unmount lifecycle events
+ * ENHANCED: Added mount tracking and separate configuration options
  * FIXED: Rules of Hooks violation - all hooks now called unconditionally
- * ENHANCED: Added callback support and return value for render rate info
  */
+// Overloaded signatures for backward compatibility
 export function useRenderTracker(
   componentName: string,
-  threshold: number = 10,
+  threshold?: number,
   onExcessiveRenders?: (info: RenderRateInfo) => void
-): RenderRateInfo {
+): RenderRateInfo;
+export function useRenderTracker(
+  componentName: string,
+  options?: RenderTrackerOptions
+): ComponentLifecycleInfo;
+export function useRenderTracker(
+  componentName: string,
+  thresholdOrOptions?: number | RenderTrackerOptions,
+  onExcessiveRenders?: (info: RenderRateInfo) => void
+): RenderRateInfo | ComponentLifecycleInfo {
+  // Parse options from parameters (backward compatibility)
+  const options: RenderTrackerOptions =
+    typeof thresholdOrOptions === "object" && thresholdOrOptions !== null
+      ? thresholdOrOptions
+      : {
+          renderThreshold: thresholdOrOptions ?? 10,
+          mountThreshold: DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold,
+          trackRenders: true,
+          trackMounts: true,
+          onExcessiveRenders,
+        };
+
   // ✅ ALWAYS call ALL hooks first - never conditionally skip them
   const renderCount = useRef(0);
-  const startTime = useRef<number>(Date.now());
-  const alertsTriggered = useRef(0);
+  const renderStartTime = useRef<number>(Date.now());
+  const renderAlertsTriggered = useRef(0);
+
+  const mountCount = useRef(0);
+  const mountStartTime = useRef<number>(Date.now());
+  const mountAlertsTriggered = useRef(0);
+  const isMounted = useRef(false);
+
   const renderInfo = useRef<RenderRateInfo>({
     renderCount: 0,
     timeElapsed: 0,
     renderRate: 0,
-    threshold,
+    threshold: options.renderThreshold ?? 10,
     isExcessive: false,
     alertsTriggered: 0,
   });
 
-  // ✅ RULES OF HOOKS FIX: useEffect MUST always be called - move conditions inside
+  const mountInfo = useRef<MountRateInfo>({
+    mountCount: 0,
+    timeElapsed: 0,
+    mountRate: 0,
+    threshold:
+      options.mountThreshold ?? DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold,
+    isExcessive: false,
+    alertsTriggered: 0,
+  });
+
+  // Track mounts/unmounts
   useEffect(() => {
-    // Get current deps state inside effect
     const depsState = getDepsSettings();
 
-    // Early return if deps tracking disabled - but INSIDE the effect
-    if (!depsState.enabled) {
+    if (!depsState.enabled || !options.trackMounts) {
+      return;
+    }
+
+    // Mount detected
+    if (!isMounted.current) {
+      isMounted.current = true;
+      mountCount.current += 1;
+
+      const timeElapsed = Date.now() - mountStartTime.current;
+      const mountRate = mountCount.current / (timeElapsed / 1000);
+
+      // Update mount info
+      mountInfo.current = {
+        mountCount: mountCount.current,
+        timeElapsed,
+        mountRate,
+        threshold:
+          options.mountThreshold ??
+          DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold,
+        isExcessive:
+          mountCount.current >=
+          (options.mountThreshold ??
+            DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold),
+        alertsTriggered: mountAlertsTriggered.current,
+      };
+
+      // Check for excessive mounts
+      if (
+        mountCount.current >=
+        (options.mountThreshold ??
+          DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold)
+      ) {
+        mountAlertsTriggered.current += 1;
+        mountInfo.current.alertsTriggered = mountAlertsTriggered.current;
+
+        console.warn(
+          `${componentName} has mounted ${mountCount.current} times in ${timeElapsed}ms (${mountRate.toFixed(
+            2
+          )} mounts/sec). This may indicate rapid mount/unmount cycles.`,
+          {
+            component: componentName,
+            mountCount: mountCount.current,
+            timeElapsed,
+            mountRate,
+            threshold: options.mountThreshold,
+          }
+        );
+
+        // 🚨 UI Notification System for high mount rates
+        notifyHighMountRate(
+          componentName,
+          mountCount.current,
+          timeElapsed,
+          mountRate,
+          options.mountThreshold ??
+            DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold
+        );
+
+        // 🔔 Callback support for external handling
+        if (options.onExcessiveMounts) {
+          options.onExcessiveMounts(mountInfo.current);
+        }
+
+        // Reset counter to prevent spam
+        mountCount.current = 0;
+        mountStartTime.current = Date.now();
+      }
+    }
+
+    // Cleanup: track unmount
+    return () => {
+      isMounted.current = false;
+    };
+  }, []); // Empty dependency array to track mount/unmount only
+
+  // Track renders
+  useEffect(() => {
+    const depsState = getDepsSettings();
+
+    if (!depsState.enabled || !options.trackRenders) {
       return;
     }
 
     renderCount.current += 1;
-    const timeElapsed = Date.now() - startTime.current;
+    const timeElapsed = Date.now() - renderStartTime.current;
     const renderRate = renderCount.current / (timeElapsed / 1000);
 
     // Update render info
@@ -249,19 +460,16 @@ export function useRenderTracker(
       renderCount: renderCount.current,
       timeElapsed,
       renderRate,
-      threshold,
-      isExcessive: renderCount.current >= threshold,
-      alertsTriggered: alertsTriggered.current,
+      threshold: options.renderThreshold ?? 10,
+      isExcessive: renderCount.current >= (options.renderThreshold ?? 10),
+      alertsTriggered: renderAlertsTriggered.current,
     };
 
     // Log warning if excessive renders detected
-    if (renderCount.current >= threshold) {
-      alertsTriggered.current += 1;
-      renderInfo.current.alertsTriggered = alertsTriggered.current;
+    if (renderCount.current >= (options.renderThreshold ?? 10)) {
+      renderAlertsTriggered.current += 1;
+      renderInfo.current.alertsTriggered = renderAlertsTriggered.current;
 
-      // Console logging
-      // Assuming logWarnToDebugSystem is available from deps-logger or similar
-      // For now, keeping the original console.warn as a fallback
       console.warn(
         `${componentName} has rendered ${renderCount.current} times in ${timeElapsed}ms (${renderRate.toFixed(
           2
@@ -271,7 +479,7 @@ export function useRenderTracker(
           renderCount: renderCount.current,
           timeElapsed,
           renderRate,
-          threshold,
+          threshold: options.renderThreshold,
         }
       );
 
@@ -281,25 +489,35 @@ export function useRenderTracker(
         renderCount.current,
         timeElapsed,
         renderRate,
-        threshold
+        options.renderThreshold ?? 10
       );
 
-      // 🔔 NEW: Callback support for external handling
-      if (onExcessiveRenders) {
-        onExcessiveRenders(renderInfo.current);
+      // 🔔 Callback support for external handling
+      if (options.onExcessiveRenders) {
+        options.onExcessiveRenders(renderInfo.current);
       }
 
       // Reset counter to prevent spam
       renderCount.current = 0;
-      startTime.current = Date.now();
+      renderStartTime.current = Date.now();
     }
-  }); // Note: No dependency array to run on every render
+  }); // No dependency array to run on every render
 
-  return renderInfo.current;
+  // Return appropriate format based on input type
+  if (typeof thresholdOrOptions === "object" && thresholdOrOptions !== null) {
+    // New API: return full lifecycle info
+    return {
+      render: renderInfo.current,
+      mount: mountInfo.current,
+    };
+  } else {
+    // Backward compatibility: return just render info
+    return renderInfo.current;
+  }
 }
 
 /**
- * Export render rate notifier for external use
- * Allows other components to trigger render rate notifications
+ * Export rate notifiers for external use
+ * Allows other components to trigger rate notifications
  */
-export { notifyHighRenderRate };
+export { notifyHighMountRate, notifyHighRenderRate };

@@ -41,11 +41,21 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
   const maxRenders = 8;
   const renderInterval = 50;
 
-  // 🚨 Use render tracker with low threshold and callback
-  const renderInfo = useRenderTracker("ProbeReRenderDetection", 3, (info) => {
-    // Callback when excessive renders are detected
-    console.log("🚨 Excessive render rate detected:", info);
-    setRenderRateNotifications(info.alertsTriggered);
+  // 🚨 Use enhanced render tracker with both render and mount tracking
+  const lifecycleInfo = useRenderTracker("ProbeReRenderDetection", {
+    renderThreshold: 3,    // Low threshold for testing
+    mountThreshold: 2,     // Very low threshold to detect mount cycles
+    trackRenders: true,
+    trackMounts: true,
+    onExcessiveRenders: (info) => {
+      // Callback when excessive renders are detected
+      console.log("🚨 Excessive render rate detected:", info);
+      setRenderRateNotifications(info.alertsTriggered);
+    },
+    onExcessiveMounts: (info) => {
+      console.log("🚨 Excessive mount rate detected:", info);
+      // Could add mount-specific state tracking here if needed
+    },
   });
 
   // Create intentionally unstable dependencies that change every render
@@ -95,10 +105,10 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
 
   // Also track render rate alerts from the returned info
   React.useEffect(() => {
-    if (renderInfo.alertsTriggered > 0) {
-      setRenderRateNotifications(renderInfo.alertsTriggered);
+    if (lifecycleInfo.render.alertsTriggered > 0) {
+      setRenderRateNotifications(lifecycleInfo.render.alertsTriggered);
     }
-  }, [renderInfo.alertsTriggered]);
+  }, [lifecycleInfo.render.alertsTriggered]);
 
   // Force runtime phase for stronger warnings after a few renders
   React.useEffect(() => {
@@ -183,7 +193,7 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
         warningsDetected,
         renderRateNotifications,
         dependencyInfo, // Structured dependency change information
-        renderInfo, // Structured render rate information
+        lifecycleInfo, // Structured render and mount information
       });
 
       // Signal completion to parent (no data needed)

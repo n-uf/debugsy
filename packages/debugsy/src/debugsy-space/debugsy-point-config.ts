@@ -72,6 +72,13 @@ export const DEBUG_POINT_CONFIG = {
     category: "surface" as const,
     look: true,
   },
+  "pdf-surface": {
+    emoji: "📄",
+    description: "PDF Surface component lifecycle and rendering",
+    label: "PDF Surface",
+    category: "surface" as const,
+    look: true,
+  },
 
   // Interactions (with priorities)
   "surface-interaction": {
