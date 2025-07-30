@@ -25,11 +25,13 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   // Enhanced tracking with both render and mount detection
   const lifecycleInfo = useRenderTracker("DebugsyLook", {
     renderThreshold: 15, // Higher threshold for debug panel
-    mountThreshold: 5,   // Track frequent mount/unmount cycles
+    mountThreshold: 5, // Track frequent mount/unmount cycles
     trackRenders: true,
     trackMounts: true,
-    onExcessiveRenders: (info) => console.warn("DebugsyLook excessive renders:", info),
-    onExcessiveMounts: (info) => console.warn("DebugsyLook excessive mounts:", info),
+    onExcessiveRenders: (info) =>
+      console.warn("DebugsyLook excessive renders:", info),
+    onExcessiveMounts: (info) =>
+      console.warn("DebugsyLook excessive mounts:", info),
   });
   // SELF-CONTAINED: Handle debug state internally
   useDebugsySubscription(); // Subscribe to debug state changes

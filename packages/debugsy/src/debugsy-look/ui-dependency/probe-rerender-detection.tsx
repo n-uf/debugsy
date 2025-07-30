@@ -38,13 +38,14 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
   const [warningsDetected, setWarningsDetected] = React.useState(0);
   const [renderRateNotifications, setRenderRateNotifications] =
     React.useState(0);
+  const [mountRateNotifications, setMountRateNotifications] = React.useState(0);
   const maxRenders = 8;
   const renderInterval = 50;
 
   // 🚨 Use enhanced render tracker with both render and mount tracking
   const lifecycleInfo = useRenderTracker("ProbeReRenderDetection", {
-    renderThreshold: 3,    // Low threshold for testing
-    mountThreshold: 2,     // Very low threshold to detect mount cycles
+    renderThreshold: 3, // Low threshold for testing
+    mountThreshold: 2, // Very low threshold to detect mount cycles
     trackRenders: true,
     trackMounts: true,
     onExcessiveRenders: (info) => {
@@ -54,7 +55,7 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
     },
     onExcessiveMounts: (info) => {
       console.log("🚨 Excessive mount rate detected:", info);
-      // Could add mount-specific state tracking here if needed
+      setMountRateNotifications(info.alertsTriggered);
     },
   });
 
@@ -103,12 +104,18 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
     dependencyInfo.frequentChangeTypes.length,
   ]);
 
-  // Also track render rate alerts from the returned info
+  // Also track render and mount rate alerts from the returned info
   React.useEffect(() => {
     if (lifecycleInfo.render.alertsTriggered > 0) {
       setRenderRateNotifications(lifecycleInfo.render.alertsTriggered);
     }
   }, [lifecycleInfo.render.alertsTriggered]);
+
+  React.useEffect(() => {
+    if (lifecycleInfo.mount.alertsTriggered > 0) {
+      setMountRateNotifications(lifecycleInfo.mount.alertsTriggered);
+    }
+  }, [lifecycleInfo.mount.alertsTriggered]);
 
   // Force runtime phase for stronger warnings after a few renders
   React.useEffect(() => {
@@ -136,14 +143,20 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
   React.useEffect(() => {
     const progress = ((renderCount / maxRenders) * 100).toFixed(0);
     const statusType =
-      warningsDetected > 0 || renderRateNotifications > 0 ? "success" : "info";
+      warningsDetected > 0 ||
+      renderRateNotifications > 0 ||
+      mountRateNotifications > 0
+        ? "success"
+        : "info";
 
     // Enhanced readability with minimal text
     const status =
-      warningsDetected > 0 || renderRateNotifications > 0
+      warningsDetected > 0 ||
+      renderRateNotifications > 0 ||
+      mountRateNotifications > 0
         ? "Working"
         : "Testing";
-    const currentStatus = `Probe ${progress}% | ${warningsDetected} deps, ${renderRateNotifications} rates | ${status}`;
+    const currentStatus = `Probe ${progress}% | ${warningsDetected} deps, ${renderRateNotifications} renders, ${mountRateNotifications} mounts | ${status}`;
 
     setDebugDisplayContent({
       message: currentStatus,
@@ -165,12 +178,15 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
       const duration = Date.now() - startTime;
       const renderRate = (renderCount / (duration / 1000)).toFixed(1);
 
-      const wasSuccessful = warningsDetected > 0 || renderRateNotifications > 0;
+      const wasSuccessful =
+        warningsDetected > 0 ||
+        renderRateNotifications > 0 ||
+        mountRateNotifications > 0;
       const resultType = wasSuccessful ? "success" : "warning";
 
       // Enhanced readability with minimal text, fewer emojis
       const displayMessage = wasSuccessful
-        ? `✅ Probe Success: ${warningsDetected} deps, ${renderRateNotifications} rates detected (${renderRate}/sec)`
+        ? `✅ Probe Success: ${warningsDetected} deps, ${renderRateNotifications} renders, ${mountRateNotifications} mounts detected (${renderRate}/sec)`
         : `⚠️ Probe Complete: No detections at ${renderRate}/sec - check config`;
 
       // Clear any existing display first
@@ -192,6 +208,7 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
         renderInterval,
         warningsDetected,
         renderRateNotifications,
+        mountRateNotifications,
         dependencyInfo, // Structured dependency change information
         lifecycleInfo, // Structured render and mount information
       });
@@ -207,6 +224,7 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
     onStatusUpdate,
     warningsDetected,
     renderRateNotifications,
+    mountRateNotifications,
     renderInterval,
   ]);
 

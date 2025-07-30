@@ -11,7 +11,15 @@ export {
 } from "./src/debugsy-space";
 
 // === DEBUG DEPENDENCY TRACKING ===
-export { useRenderTracker, useWhyDidYouUpdate } from "./src/debugsy-deps";
+export {
+  useRenderTracker,
+  useWhyDidYouUpdate,
+  type ComponentLifecycleInfo,
+  type DependencyChangeInfo,
+  type MountRateInfo,
+  type RenderRateInfo,
+  type RenderTrackerOptions,
+} from "./src/debugsy-deps";
 
 // === DEBUG LOGGING SYSTEM ===
 export {

@@ -23,8 +23,11 @@
 export {
   useRenderTracker,
   useWhyDidYouUpdate,
+  type ComponentLifecycleInfo,
   type DependencyChangeInfo,
+  type MountRateInfo,
   type RenderRateInfo,
+  type RenderTrackerOptions,
 } from "./use-deps";
 
 // === CORE LOGIC ===

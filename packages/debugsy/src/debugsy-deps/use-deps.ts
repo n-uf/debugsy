@@ -32,6 +32,7 @@ import {
   getRenderRateSeverity,
   type DepsConfigThresholds,
 } from "./deps-config";
+import { logWarnToDebugSystem } from "./deps-logger";
 import { getDepsSettings } from "./deps-settings";
 import { analyzeChanges, logDependencyChanges } from "./logic/change-utils";
 
@@ -72,6 +73,12 @@ function notifyHighRenderRate(
   threshold: number,
   config: DepsConfigThresholds = DEPS_CONFIG_DEFAULTS
 ): void {
+  // Early exit for zero overhead when disabled
+  const depsState = getDepsSettings();
+  if (!depsState.enabled) {
+    return;
+  }
+
   const now = Date.now();
 
   // Respect cooldown period
@@ -98,15 +105,31 @@ Threshold: ${threshold} renders`,
       duration: renderRateNotifier.displayDuration,
     });
   } catch (error) {
-    // Fallback to console if UI system unavailable
-    console.warn(
-      `🚨 RENDER RATE NOTIFIER: ${componentName} - ${renderRate.toFixed(1)} renders/sec`
+    // Fallback to unified logging if UI system unavailable
+    logWarnToDebugSystem(
+      `🚨 RENDER RATE NOTIFIER: ${componentName} - ${renderRate.toFixed(1)} renders/sec`,
+      {
+        component: componentName,
+        renderRate,
+        error: error instanceof Error ? error.message : "Unknown error",
+        fallback: true,
+      },
+      "render-warning"
     );
   }
 
-  // Always log to console as backup
-  console.warn(
-    `🚨 HIGH RENDER RATE: ${componentName} - ${renderRate.toFixed(1)} renders/sec (${renderCount} in ${timeElapsed}ms)`
+  // Always log to unified debug system as backup
+  logWarnToDebugSystem(
+    `🚨 HIGH RENDER RATE: ${componentName} - ${renderRate.toFixed(1)} renders/sec (${renderCount} in ${timeElapsed}ms)`,
+    {
+      component: componentName,
+      renderCount,
+      timeElapsed,
+      renderRate,
+      threshold,
+      notificationType: "render-rate-notification",
+    },
+    "render-warning"
   );
 }
 
@@ -121,6 +144,12 @@ function notifyHighMountRate(
   threshold: number,
   config: DepsConfigThresholds = DEPS_CONFIG_DEFAULTS
 ): void {
+  // Early exit for zero overhead when disabled
+  const depsState = getDepsSettings();
+  if (!depsState.enabled) {
+    return;
+  }
+
   const now = Date.now();
 
   // Respect cooldown period
@@ -147,15 +176,31 @@ Threshold: ${threshold} mounts`,
       duration: mountRateNotifier.displayDuration,
     });
   } catch (error) {
-    // Fallback to console if UI system unavailable
-    console.warn(
-      `🚨 MOUNT RATE NOTIFIER: ${componentName} - ${mountRate.toFixed(1)} mounts/sec`
+    // Fallback to unified logging if UI system unavailable
+    logWarnToDebugSystem(
+      `🚨 MOUNT RATE NOTIFIER: ${componentName} - ${mountRate.toFixed(1)} mounts/sec`,
+      {
+        component: componentName,
+        mountRate,
+        error: error instanceof Error ? error.message : "Unknown error",
+        fallback: true,
+      },
+      "mount-warning"
     );
   }
 
-  // Always log to console as backup
-  console.warn(
-    `🚨 HIGH MOUNT RATE: ${componentName} - ${mountRate.toFixed(1)} mounts/sec (${mountCount} in ${timeElapsed}ms)`
+  // Always log to unified debug system as backup
+  logWarnToDebugSystem(
+    `🚨 HIGH MOUNT RATE: ${componentName} - ${mountRate.toFixed(1)} mounts/sec (${mountCount} in ${timeElapsed}ms)`,
+    {
+      component: componentName,
+      mountCount,
+      timeElapsed,
+      mountRate,
+      threshold,
+      notificationType: "mount-rate-notification",
+    },
+    "mount-warning"
   );
 }
 
@@ -365,8 +410,8 @@ export function useRenderTracker(
 
   // Track mounts/unmounts
   useEffect(() => {
+    // Early exit for zero overhead when disabled
     const depsState = getDepsSettings();
-
     if (!depsState.enabled || !options.trackMounts) {
       return;
     }
@@ -403,17 +448,21 @@ export function useRenderTracker(
         mountAlertsTriggered.current += 1;
         mountInfo.current.alertsTriggered = mountAlertsTriggered.current;
 
-        console.warn(
-          `${componentName} has mounted ${mountCount.current} times in ${timeElapsed}ms (${mountRate.toFixed(
+        // Log to unified debug system instead of console
+        logWarnToDebugSystem(
+          `🔄 [${componentName}] Excessive mount rate detected: ${mountRate.toFixed(
             2
-          )} mounts/sec). This may indicate rapid mount/unmount cycles.`,
+          )} mounts/sec (${mountCount.current} in ${timeElapsed}ms)`,
           {
             component: componentName,
             mountCount: mountCount.current,
             timeElapsed,
             mountRate,
             threshold: options.mountThreshold,
-          }
+            type: "mount-cycle",
+            severity: "warning",
+          },
+          "mount-warning"
         );
 
         // 🚨 UI Notification System for high mount rates
@@ -445,8 +494,8 @@ export function useRenderTracker(
 
   // Track renders
   useEffect(() => {
+    // Early exit for zero overhead when disabled
     const depsState = getDepsSettings();
-
     if (!depsState.enabled || !options.trackRenders) {
       return;
     }
@@ -470,17 +519,21 @@ export function useRenderTracker(
       renderAlertsTriggered.current += 1;
       renderInfo.current.alertsTriggered = renderAlertsTriggered.current;
 
-      console.warn(
-        `${componentName} has rendered ${renderCount.current} times in ${timeElapsed}ms (${renderRate.toFixed(
+      // Log to unified debug system instead of console
+      logWarnToDebugSystem(
+        `⚠️ [${componentName}] Excessive render rate detected: ${renderRate.toFixed(
           2
-        )} renders/sec). This may indicate a render loop.`,
+        )} renders/sec (${renderCount.current} in ${timeElapsed}ms)`,
         {
           component: componentName,
           renderCount: renderCount.current,
           timeElapsed,
           renderRate,
           threshold: options.renderThreshold,
-        }
+          type: "render-loop",
+          severity: "warning",
+        },
+        "render-warning"
       );
 
       // 🚨 UI Notification System for high render rates

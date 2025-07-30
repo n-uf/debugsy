@@ -133,6 +133,10 @@ export const DEBUG_POINT_CONFIG = {
         icon: "⚠️",
         description: "High render count detected",
       },
+      "mount-warning": {
+        icon: "🔄",
+        description: "High mount/unmount cycle count detected",
+      },
       "circuit-breaker": {
         icon: "🚨",
         description: "Circuit breaker activated",
