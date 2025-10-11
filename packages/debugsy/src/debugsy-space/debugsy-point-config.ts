@@ -97,6 +97,13 @@ export const DEBUG_POINT_CONFIG = {
     priority: 2,
     look: true,
   },
+  "frame-coordination": {
+    emoji: "🎯",
+    description: "Frame selection coordination and callback flow",
+    label: "Frame Coord",
+    category: "interaction" as const,
+    look: true,
+  },
 
   "frame-metrics": {
     emoji: "📏",
