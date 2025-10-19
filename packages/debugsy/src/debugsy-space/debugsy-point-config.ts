@@ -113,6 +113,29 @@ export const DEBUG_POINT_CONFIG = {
     look: false, // Specialized/verbose
   },
 
+  // Swarm & Transform System
+  swarm: {
+    emoji: "🐝",
+    description: "Swarm cluster management and multi-selection",
+    label: "Swarm",
+    category: "surface" as const,
+    look: true,
+  },
+  "swarm-manager": {
+    emoji: "🎪",
+    description: "SwarmManager lifecycle and registry",
+    label: "Swarm Mgr",
+    category: "surface" as const,
+    look: false, // Specialized
+  },
+  transform: {
+    emoji: "🔄",
+    description: "Transform operations and geometry",
+    label: "Transform",
+    category: "surface" as const,
+    look: true,
+  },
+
   dependencies: {
     emoji: "🧠",
     description: "React hook dependency tracking and optimization",
