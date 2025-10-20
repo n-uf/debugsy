@@ -25,6 +25,10 @@
  */
 
 import { useEffect, useRef } from "react";
+import {
+  enterRenderPhase,
+  exitRenderPhase,
+} from "../debugsy-logs/hooks/debugsy-notifications";
 import { setDebugDisplayContent } from "../debugsy-look/ui-display/debug-display-state";
 import {
   DEPS_CONFIG_DEFAULTS,
@@ -273,6 +277,9 @@ export function useWhyDidYouUpdate(
   props: Record<string, any>,
   onFrequentChanges?: (info: DependencyChangeInfo) => void
 ): DependencyChangeInfo {
+  // ✅ Mark render phase to prevent state updates during render
+  enterRenderPhase();
+
   // ✅ ALWAYS call ALL hooks first - never conditionally skip them
   const previousProps = useRef<Record<string, any> | undefined>(undefined);
   const lastLogTime = useRef(0);
@@ -343,6 +350,9 @@ export function useWhyDidYouUpdate(
     lastLogTime.current = now;
   }); // Note: No dependency array to run on every render
 
+  // ✅ Exit render phase before returning
+  exitRenderPhase();
+
   return changeInfo.current;
 }
 
@@ -367,6 +377,9 @@ export function useRenderTracker(
   thresholdOrOptions?: number | RenderTrackerOptions,
   onExcessiveRenders?: (info: RenderRateInfo) => void
 ): RenderRateInfo | ComponentLifecycleInfo {
+  // ✅ Mark render phase to prevent state updates during render
+  enterRenderPhase();
+
   // Parse options from parameters (backward compatibility)
   const options: RenderTrackerOptions =
     typeof thresholdOrOptions === "object" && thresholdOrOptions !== null
@@ -555,6 +568,9 @@ export function useRenderTracker(
       renderStartTime.current = Date.now();
     }
   }); // No dependency array to run on every render
+
+  // ✅ Exit render phase before returning
+  exitRenderPhase();
 
   // Return appropriate format based on input type
   if (typeof thresholdOrOptions === "object" && thresholdOrOptions !== null) {

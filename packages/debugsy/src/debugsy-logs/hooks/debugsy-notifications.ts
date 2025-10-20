@@ -11,18 +11,45 @@ const THROTTLE_MS = 16; // ~60fps max update rate
 // Re-entrancy guard to prevent infinite feedback loops
 let isNotifying = false;
 
+// React render phase detection to prevent state updates during render
+let inRenderPhase = false;
+let renderPhaseDepth = 0;
+
+/**
+ * Mark that we're entering a React render phase
+ * This prevents state updates during render which would cause infinite loops
+ */
+export function enterRenderPhase(): void {
+  renderPhaseDepth++;
+  inRenderPhase = true;
+}
+
+/**
+ * Mark that we're exiting a React render phase
+ */
+export function exitRenderPhase(): void {
+  renderPhaseDepth = Math.max(0, renderPhaseDepth - 1);
+  if (renderPhaseDepth === 0) {
+    inRenderPhase = false;
+  }
+}
+
 /**
  * Notify all subscribers of state changes
  * Use queueMicrotask for immediate but deferred execution with throttling
  * FIXED: Added re-entrancy guard to prevent infinite loops
+ * FIXED: Added React render phase detection to prevent state updates during render
  */
 export function notifySubscribers(): void {
   // Prevent re-entrant calls that cause infinite loops
   if (isNotifying) {
-    console.warn(
-      "🔄 Blocked re-entrant notifySubscribers() call to prevent infinite loop"
-    );
-    return;
+    return; // Silent return, no warning needed
+  }
+
+  // CRITICAL FIX: Do NOT notify during React render phase
+  // This prevents infinite loops from useWhyDidYouUpdate/useRenderTracker
+  if (inRenderPhase) {
+    return; // Silent return - this is expected behavior
   }
 
   if (pendingNotification) return; // Already scheduled
