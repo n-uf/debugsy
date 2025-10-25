@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React from "react";
 import type { DebugLogEntry } from "../../debugsy-logs/use-debugsy";
 import { useDebugDisplayContent } from "./debug-display-state";
@@ -449,7 +450,7 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
             fontSize: "10px",
             fontWeight: "bold",
             cursor: "pointer",
-            zIndex: 100,
+            zIndex: Z_INDEX.DEBUG_DISPLAY,
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => {
@@ -482,7 +483,7 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
             fontSize: "10px",
             fontWeight: "bold",
             cursor: "pointer",
-            zIndex: 100,
+            zIndex: Z_INDEX.DEBUG_DISPLAY,
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => {

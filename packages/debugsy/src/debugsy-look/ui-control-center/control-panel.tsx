@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React, { useMemo, useState } from "react";
 import { useDebugsySubscription } from "../../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../../debugsy-logs/use-debugsy";
@@ -69,7 +70,10 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   }
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 ${className}`}>
+    <div
+      className={`fixed bottom-0 left-0 right-0 ${className}`}
+      style={{ zIndex: Z_INDEX.DEBUG_CONTROL_PANEL }}
+    >
       {/* Main control panel with embedded logs */}
       <div className="bg-white/90 backdrop-blur border-t border-gray-200 shadow-sm">
         <div className="flex items-start gap-4 px-4 py-1">
@@ -132,8 +136,9 @@ export const StandaloneDebugControlPanel: React.FC<
       {!isVisible && (
         <button
           onClick={handleToggle}
-          className="fixed bottom-4 left-4 z-50"
+          className="fixed bottom-4 left-4"
           style={{
+            zIndex: Z_INDEX.DEBUG_CONTROL_PANEL,
             width: "40px",
             height: "40px",
             borderRadius: "50%",

@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React from "react";
 import { LOG_STYLES } from "../utils/log-utilities";
 
@@ -39,7 +40,7 @@ export const DebugStatusPanels: React.FC<DebugStatusPanelsProps> = React.memo(
               fontWeight: "bold",
               position: "sticky",
               top: `${pausedPanelTop}px`,
-              zIndex: 11,
+              zIndex: Z_INDEX.DEBUG_LOGS_LIST + 11,
               backdropFilter: "blur(8px)",
               borderBottom: "1px solid #f59e0b44",
               marginBottom: "2px",
@@ -63,7 +64,7 @@ export const DebugStatusPanels: React.FC<DebugStatusPanelsProps> = React.memo(
               userSelect: "none",
               position: "sticky",
               top: `${followingPanelTop}px`,
-              zIndex: 10,
+              zIndex: Z_INDEX.DEBUG_LOGS_LIST + 10,
               backdropFilter: "blur(8px)",
               borderBottom: "1px solid #3b82f644",
               marginBottom: "2px",

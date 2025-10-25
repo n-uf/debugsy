@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React from "react";
 
 export interface DebugPanelResizeHandleProps {
@@ -24,7 +25,7 @@ export const DebugPanelResizeHandle: React.FC<DebugPanelResizeHandleProps> = ({
         height: "6px",
         cursor: "ns-resize",
         backgroundColor: "transparent",
-        zIndex: 1001,
+        zIndex: Z_INDEX.DEBUG_RESIZE_HANDLE,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

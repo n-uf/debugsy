@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React from "react";
 import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
 import { type DepthSetting } from "../../../shared/object-depth-utils";
@@ -218,7 +219,7 @@ export const ActionsPanel: React.FC<ActionsPanelProps> = React.memo(
                 color: "#ffffff",
                 textShadow: "0 0 2px rgba(0,0,0,0.8)",
                 fontFamily: "monospace",
-                zIndex: 2,
+                zIndex: Z_INDEX.DEBUG_ACTIONS + 1,
               }}
             >
               {depthSetting}
@@ -290,7 +291,7 @@ export const ActionsPanel: React.FC<ActionsPanelProps> = React.memo(
           </div>
 
           {/* Button Icon */}
-          <span style={{ zIndex: 1 }}>
+          <span style={{ zIndex: Z_INDEX.DEBUG_ACTIONS }}>
             {getCopyIcon(copyState, DEFAULT_COPY_CONFIG)}
           </span>
         </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
@@ -254,7 +255,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
         width: "100vw",
         height: `${panelHeight}px`,
         backgroundColor: "#000000f0",
-        zIndex: 1000,
+        zIndex: Z_INDEX.DEBUG_PANEL,
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch", // Stretch children to full width

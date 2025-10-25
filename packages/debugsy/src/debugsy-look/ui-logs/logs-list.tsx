@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React, {
   useCallback,
   useEffect,
@@ -488,10 +489,10 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
               justifyContent: "center",
               border: "1px dashed #78350f44",
               position: "relative", // Changed from sticky to relative
-              zIndex: 9,
               backdropFilter: "blur(8px)",
               borderTop: "1px solid #78350f44",
               marginBottom: "8px", // Added bottom margin for spacing
+              zIndex: Z_INDEX.DEBUG_LOGS_LIST,
             }}
           >
             <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>

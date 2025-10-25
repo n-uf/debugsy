@@ -5,6 +5,7 @@ import React, { useMemo, useState } from "react";
 import "react18-json-view/src/style.css";
 // Import useLongPress for better touch/mouse interaction
 import { useLongPress } from "@uidotdev/usehooks";
+import { Z_INDEX } from "@workspace/harbuz";
 import type {
   DebugLogEntry,
   LogLevel,
@@ -310,10 +311,11 @@ export const DefaultLogFormatter: React.FC<DefaultLogFormatterProps> =
             {/* Copy Success Indicator */}
             {copyFeedback && (
               <div
-                className="absolute top-0 right-1 z-10 pointer-events-none
+                className="absolute top-0 right-1 pointer-events-none
                           px-1.5 py-0 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap
                           text-emerald-400 bg-emerald-900/90 backdrop-blur-sm
                           border border-emerald-500/30 shadow-md"
+                style={{ zIndex: Z_INDEX.DEBUG_LOGS_LIST + 10 }}
               >
                 📋 Copied
               </div>

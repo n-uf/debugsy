@@ -1,5 +1,6 @@
 "use client";
 
+import { Z_INDEX } from "@workspace/harbuz";
 import React, { useCallback } from "react";
 import { LOG_RENDERING_CONFIG, LOG_STYLES } from "../utils/log-utilities";
 
@@ -52,7 +53,7 @@ export const TruncationInfoPanel: React.FC<TruncationInfoPanelProps> =
             marginTop: "12px",
             marginBottom: "4px", // Reduced from 32px to just 4px
             position: "relative",
-            zIndex: 1,
+            zIndex: Z_INDEX.DEBUG_LOGS_LIST + 1,
             backgroundColor: "#78350f33",
             border: "2px solid #fbbf24",
             fontWeight: "bold",
