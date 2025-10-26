@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Indicator } from "@workspace/harbuz";
 import React from "react";
 import { useDepsSettings } from "../../debugsy-space/debugsy-space-settings";
 import { DebugDependencyAdvancedControls } from "./dependency-advanced-controls";
@@ -10,7 +11,7 @@ export interface DebugDependencyControlsProps {
 }
 
 /**
- * Reusable 3-dot indicator component
+ * Reusable 3-dot indicator component using harbuz Indicator
  */
 interface ThreeDotIndicatorProps {
   activeDots: boolean[];
@@ -26,16 +27,14 @@ const ThreeDotIndicator: React.FC<ThreeDotIndicatorProps> = ({
   return (
     <div className="flex items-center gap-0.5 w-4 h-2">
       {activeDots.map((isActive, index) => (
-        <div
+        <Indicator
           key={index}
-          className={`w-1.5 h-1.5 rounded-full ${
-            isDisabled
-              ? disabledColor
-              : isActive
-                ? "bg-blue-500"
-                : "bg-gray-300"
-          }`}
-        ></div>
+          size="sm"
+          variant={isDisabled ? "error" : isActive ? "success" : "neutral"}
+          active={!isDisabled && isActive}
+          inactiveVariant={isDisabled ? "error" : "neutral"}
+          className="w-1.5 h-1.5"
+        />
       ))}
     </div>
   );
@@ -207,12 +206,13 @@ export const DebugDependencyControls: React.FC<
       style={{ borderLeft: "1px solid #d1d5db" }}
     >
       <div className="flex flex-col shrink-0" style={{ gap: "0px" }}>
-        {/* Row 1: Deps | Quiet */}
+        {/* Row 1: Deps | Quiet - Using harbuz Button */}
         <div className="flex items-center gap-0.5 h-[20px]">
-          <button
+          <Button
             onClick={handleDependenciesToggle}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded font-medium w-20
-              bg-gray-100 text-gray-600 hover:bg-gray-200"
+            variant="ghost"
+            size="xs"
+            className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
             style={{ fontSize: "10px", lineHeight: "12px" }}
             title={
               !isInitialized
@@ -226,12 +226,13 @@ export const DebugDependencyControls: React.FC<
               className={`w-2 h-1 rounded-sm transition-colors duration-150 ${getDependenciesColor()}`}
             />
             <span className="leading-none truncate">Deps</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleQuietCycle}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded w-20 
-              bg-gray-100 text-gray-600 hover:bg-gray-200"
+            variant="ghost"
+            size="xs"
+            className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
             style={{ fontSize: "10px", lineHeight: "12px" }}
             title="Cycle between Quiet -> Normal -> Verbose modes"
           >
@@ -239,15 +240,16 @@ export const DebugDependencyControls: React.FC<
             <span className="leading-none truncate">
               {getQuietDisplayText()}
             </span>
-          </button>
+          </Button>
         </div>
 
-        {/* Row 2: Filter | Probe | Adv. */}
+        {/* Row 2: Filter | Probe | Adv. - Using harbuz Button */}
         <div className="flex items-center gap-0.5 overflow-x-auto h-[20px]">
-          <button
+          <Button
             onClick={handleFilterCycle}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded w-20
-              bg-gray-100 text-gray-600 hover:bg-gray-200"
+            variant="ghost"
+            size="xs"
+            className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
             style={{ fontSize: "10px", lineHeight: "12px" }}
             title="Cycle between All -> Func -> Obj -> Unstable filters"
           >
@@ -255,27 +257,27 @@ export const DebugDependencyControls: React.FC<
             <span className="leading-none truncate">
               {getFilterDisplayText()}
             </span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleProbeTest}
             disabled={isRunningProbe}
-            className={`px-1.5 py-0.5 rounded w-10 font-medium transition-colors duration-150 ${
-              isRunningProbe
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+            variant="ghost"
+            size="xs"
+            className="justify-center px-1.5 py-0.5 w-10 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
             style={{ fontSize: "10px", lineHeight: "12px" }}
             title="Run comprehensive re-render probe to verify dependency tracking"
           >
             <span className="leading-none truncate">
               {isRunningProbe ? "Testing" : "Probe"}
             </span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleAdvancedToggle}
-            className={`px-1.5 py-0.5 rounded w-10 font-medium transition-colors duration-150 ${
+            variant="ghost"
+            size="xs"
+            className={`justify-center px-1.5 py-0.5 w-10 h-auto rounded font-medium transition-colors duration-150 ${
               showAdvanced
                 ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -286,7 +288,7 @@ export const DebugDependencyControls: React.FC<
             }
           >
             <span className="leading-none truncate">Adv.</span>
-          </button>
+          </Button>
         </div>
       </div>
 

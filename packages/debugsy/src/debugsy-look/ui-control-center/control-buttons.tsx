@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Indicator } from "@workspace/harbuz";
 import React from "react";
 import {
   type DebugPoint,
@@ -31,32 +32,32 @@ export interface DebugPointButtonsProps {
   className?: string;
 }
 
-// Memoized individual button component to prevent unnecessary re-renders
+// Memoized individual button component using harbuz primitives
 const DebugPointButton = React.memo<{
   point: DebugPointButtonConfig;
   enabled: boolean;
   onToggle: (point: DebugPoint) => void;
 }>(({ point, enabled, onToggle }) => (
-  <button
+  <Button
     key={point.key}
     onClick={() => onToggle(point.key)}
-    className={`
-      flex items-center gap-1 px-1.5 py-0.5 rounded font-medium
-      transition-colors duration-150 w-20
-      bg-gray-100 text-gray-600 hover:bg-gray-200
-    `}
+    variant="ghost"
+    size="xs"
+    className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
     style={{ fontSize: "10px", lineHeight: "12px" }}
   >
-    {/* Slit indicator */}
-    <div
-      className={`w-2 h-1 rounded-sm transition-colors duration-150 ${
-        enabled ? "bg-green-500" : "bg-red-200"
-      }`}
+    {/* Slit indicator using harbuz Indicator */}
+    <Indicator
+      size="md"
+      shape="slit"
+      variant={enabled ? "success" : "error"}
+      active={enabled}
+      inactiveVariant="error"
     />
     <span className="hidden sm:inline leading-none truncate">
       {point.label}
     </span>
-  </button>
+  </Button>
 ));
 
 DebugPointButton.displayName = "DebugPointButton";
