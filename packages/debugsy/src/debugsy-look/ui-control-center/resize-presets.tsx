@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@workspace/shadcn/lib/utils";
+import { cn } from "@workspace/harbuz/utils";
 import React from "react";
 
 export interface DebugResizePresetsProps {
