@@ -458,49 +458,51 @@ export const DebugLogsList: React.FC<DebugLogsListProps> = ({
               depthSetting={depthSetting}
               containerRef={logsContainerRef}
               onScrollFollowing={handleScrollFollowing}
+              truncationPanel={
+                <TruncationInfoPanel
+                  truncationInfo={truncationInfo}
+                  totalLogs={logs.length}
+                  renderedLogs={reversedLogs.length}
+                  onClearLogs={handleClearAllLogs}
+                  onCopyAllLogs={handleCopyAllLogs}
+                />
+              }
+              hiddenLogsIndicator={
+                truncationInfo.isLogsTruncated ? (
+                  <div
+                    key="hidden-logs-indicator"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      marginTop: "8px",
+                      padding: "6px 8px",
+                      backgroundColor: "#78350f22",
+                      borderRadius: "4px",
+                      fontSize: "10px",
+                      fontFamily: "monospace",
+                      lineHeight: "1.2",
+                      justifyContent: "center",
+                      border: "1px dashed #78350f44",
+                      position: "relative",
+                      backdropFilter: "blur(8px)",
+                      borderTop: "1px solid #78350f44",
+                      marginBottom: "8px",
+                      zIndex: Z_INDEX.DEBUG_LOGS_LIST,
+                    }}
+                  >
+                    <span style={{ color: "#fbbf24", fontSize: "12px" }}>
+                      📁
+                    </span>
+                    <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
+                      ... and {truncationInfo.hiddenLogsCount.toLocaleString()}{" "}
+                      more logs hidden for performance
+                    </span>
+                  </div>
+                ) : null
+              }
             />
           </>
-        )}
-
-        {/* Truncation Info Panel - positioned at tail after all logs */}
-        <TruncationInfoPanel
-          truncationInfo={truncationInfo}
-          totalLogs={logs.length}
-          renderedLogs={reversedLogs.length}
-          onClearLogs={handleClearAllLogs}
-          onCopyAllLogs={handleCopyAllLogs}
-        />
-
-        {/* Hidden logs indicator - keep at very bottom */}
-        {truncationInfo.isLogsTruncated && (
-          <div
-            key="hidden-logs-indicator"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              marginTop: "8px",
-              padding: "6px 8px",
-              backgroundColor: "#78350f22",
-              borderRadius: "4px",
-              fontSize: "10px",
-              fontFamily: "monospace",
-              lineHeight: "1.2",
-              justifyContent: "center",
-              border: "1px dashed #78350f44",
-              position: "relative", // Changed from sticky to relative
-              backdropFilter: "blur(8px)",
-              borderTop: "1px solid #78350f44",
-              marginBottom: "8px", // Added bottom margin for spacing
-              zIndex: Z_INDEX.DEBUG_LOGS_LIST,
-            }}
-          >
-            <span style={{ color: "#fbbf24", fontSize: "12px" }}>📁</span>
-            <span style={{ color: "#fbbf24", fontWeight: "bold" }}>
-              ... and {truncationInfo.hiddenLogsCount.toLocaleString()} more
-              logs hidden for performance
-            </span>
-          </div>
         )}
       </div>
 
