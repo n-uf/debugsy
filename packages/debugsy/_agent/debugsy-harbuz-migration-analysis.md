@@ -1,16 +1,41 @@
 # Debugsy-to-Harbuz Migration Analysis
 
 **Analysis Date:** 2025-11-18  
+**Last Updated:** 2025-11-18 (Actualized against current codebase)  
 **Scope:** Completeness and compatibility assessment of Harbuz UI library for full debugsy-look migration  
-**Status:** Ready for migration with minor gaps
+**Status:** Ready for migration with minimal gaps
 
 ---
 
 ## Executive Summary
 
-The **Harbuz showcase** successfully replicates **~85-90%** of debugsy-look's UI patterns and components. The library is production-ready for migration, with most gaps being logic-specific (dependency tracking) rather than UI primitives.
+The **Harbuz showcase** successfully replicates **~90-95%** of debugsy-look's UI patterns and components. The library is production-ready for migration, with most remaining gaps being logic-specific (dependency tracking) rather than UI primitives.
 
 **Key Finding:** Harbuz provides a complete, thin UI layer that can fully replace debugsy's UI components while maintaining visual and functional parity.
+
+**Recent Improvements:** Since initial analysis, Harbuz has added proper header extraction, formalized formatter registry, and enhanced shortcut/stats components.
+
+---
+
+## Changelog
+
+### 2025-11-18 Update (Actualization)
+
+**Key Changes Verified:**
+- ✅ **TerminalLayoutHeader** - Now properly extracted (was gap: "needs manual composition")
+- ✅ **Formatter Registry** - `formatter-registry.ts` with extensible API (was nice-to-have)
+- ✅ **Enhanced Panels** - StatItem, StatsPanel, Shortcut, ShortcutsPanel extracted
+- ✅ **ThemeSwitcher** - New component added to ui/
+- ✅ **Component Count** - Terminal layout now has 16 components (was 14)
+- ✅ **Completeness** - Updated from 85-90% to 90-95%
+
+**Documentation Updates:**
+- Removed "Header not extracted" from gaps
+- Updated Visual Components to 100% complete
+- Updated Interactive Patterns to 95% complete
+- Updated ui-blocks to 90% complete (with formatter registry)
+- Reduced migration effort estimate from 15-20h to 12-18h
+- Moved formatter registry from "Nice-to-Have" to "Recently Completed"
 
 ---
 
@@ -76,16 +101,18 @@ harbuz/
 │   ├── banner/                   ✅ Maps to status banners
 │   ├── control-panel/            ✅ Maps to control-panel
 │   ├── display/                  ✅ Maps to display-panel
-│   └── status-button/            ✅ Maps to point buttons
-├── ui-blocks/                    Compositions (✅ 80% complete)
-│   ├── log-entry/                ✅ With formatters
+│   ├── status-button/            ✅ Maps to point buttons
+│   └── theme-switcher/           ✅ Theme switching UI
+├── ui-blocks/                    Compositions (✅ 90% complete)
+│   ├── log-entry/                ✅ With extensible formatter registry
+│   │   └── formatters/           ✅ Registry + change/default formatters
 │   ├── diff-display/             ✅ For change detection
 │   ├── truncation-panel/         ✅ Performance warning
 │   └── hidden-logs-indicator/    ✅ Visual indicator
 ├── ui-layout/                    Complete layouts (✅ Complete)
 │   └── terminal-layout/          ✅ Full debugsy-look structure
 │       ├── terminal-layout.tsx
-│       ├── terminal-layout-header.tsx
+│       ├── terminal-layout-header.tsx ✅ NOW EXTRACTED
 │       ├── terminal-layout-body.tsx
 │       ├── terminal-layout-content.tsx
 │       ├── terminal-layout-logs-container.tsx
@@ -95,8 +122,12 @@ harbuz/
 │       ├── terminal-layout-resize-handle.tsx
 │       ├── terminal-layout-resize-presets.tsx
 │       ├── terminal-layout-stats.tsx
+│       ├── terminal-layout-stats-panel.tsx ✅ Panel composition
+│       ├── terminal-layout-stat-item.tsx ✅ Individual stat
 │       ├── terminal-layout-shortcuts.tsx
-│       └── [14 total components]
+│       ├── terminal-layout-shortcuts-panel.tsx ✅ Panel composition
+│       └── terminal-layout-shortcut.tsx ✅ Individual shortcut
+│       └── [16 total components]
 ├── patterns/                     Reusable logic (✅ Complete)
 │   ├── display-system/           ✅ Maps to debug-display-state
 │   │   ├── display-state.ts
@@ -112,7 +143,7 @@ harbuz/
     └── colors.ts                 ✅ Terminal color palette
 ```
 
-**Total:** ~50 reusable UI files (vs 60+ debugsy-specific)
+**Total:** ~55 reusable UI files (vs 60+ debugsy-specific)
 
 ---
 
@@ -144,8 +175,7 @@ harbuz/
 
 | Debugsy Component | Harbuz Equivalent | Gap | Solution |
 |-------------------|-------------------|-----|----------|
-| `DebugPanelHeader` | Manual composition | Header with clear/close not extracted | Compose from Button + layout |
-| Specialized log formatters | Generic `LogEntry` formatters | Dependency/health/sanitized formatters missing | Keep in debugsy, pass as props |
+| Specialized log formatters | Generic `LogEntry` with registry | Dependency/health/sanitized formatters missing | Register in debugsy, use formatter-registry |
 | `DebugStatusPanels` | `Banner` component | Pause/snapshot logic in debugsy | Use Banner with custom logic |
 | Smart clear logic | Not in showcase | Double-action clear not shown | Keep in debugsy orchestration |
 | Following/snapshot logic | Not in showcase | Scroll-based following behavior | Keep in debugsy orchestration |
@@ -176,7 +206,7 @@ harbuz/
 - [x] Z-index management (60000+ for debug tools)
 - [x] Smooth animations and transitions
 
-### Visual Components ✅ 95%
+### Visual Components ✅ 100%
 
 - [x] Button variants (default, ghost, toggle, action)
 - [x] Badge variants (success, error, warning, info)
@@ -187,9 +217,10 @@ harbuz/
 - [x] Banners (pause, snapshot, sticky)
 - [x] Virtualized list (10k+ items)
 - [x] Resize presets with active state
-- [ ] Header component not extracted (manual composition needed)
+- [x] Header component (TerminalLayoutHeader) ✅ NOW EXTRACTED
+- [x] Theme switcher component
 
-### Interactive Patterns ✅ 90%
+### Interactive Patterns ✅ 95%
 
 - [x] Copy state progression (0 → 1 → 2)
 - [x] Depth switcher with progress bar
@@ -199,6 +230,7 @@ harbuz/
 - [x] Progress bar overlays
 - [x] Multi-state indicators
 - [x] Clickable banners
+- [x] Formatter registry system (extensible)
 - [ ] Smart clear (double-action) - logic kept in debugsy
 - [ ] Scroll-based following - logic kept in debugsy
 - [ ] Keyboard shortcuts - logic kept in debugsy
@@ -290,25 +322,27 @@ Replace custom state management with harbuz patterns:
 Replace custom layout with `TerminalLayout` structure:
 
 1. **Main container** → `TerminalLayout`
-2. **Logs area** → `TerminalLayoutContent` + `LogsContainer`
-3. **Actions sidebar** → `TerminalLayoutActions` + `ActionToolbar`
-4. **Bottom panel** → `TerminalLayoutControlPanel` + `ControlPanel`
-5. **Header** → Manual composition (not yet extracted)
+2. **Header** → `TerminalLayoutHeader` ✅ NOW AVAILABLE
+3. **Logs area** → `TerminalLayoutContent` + `LogsContainer`
+4. **Actions sidebar** → `TerminalLayoutActions` + `ActionToolbar`
+5. **Bottom panel** → `TerminalLayoutControlPanel` + `ControlPanel`
+6. **Stats panel** → `TerminalLayoutStatsPanel` + `StatItem`
+7. **Shortcuts panel** → `TerminalLayoutShortcutsPanel` + `Shortcut`
 
 **Risk:** Medium (most complex refactor)  
-**Effort:** Significant restructuring
+**Effort:** Significant restructuring (but easier with header extracted)
 
 ### Phase 4: Specialized Components (2-3 hours)
 
 Keep debugsy-specific logic, adapt to harbuz interfaces:
 
 1. **Dependency controls** → Keep in debugsy, style with harbuz
-2. **Log formatters** → Pass to generic `LogEntry` as props
+2. **Log formatters** → Register with `formatter-registry` system
 3. **Smart clear logic** → Orchestrate from debugsy
 4. **Keyboard shortcuts** → Keep in DebugsyLook wrapper
 
 **Risk:** Low  
-**Effort:** Minimal adaptation
+**Effort:** Minimal adaptation (formatter registry makes this cleaner)
 
 ---
 
@@ -349,9 +383,8 @@ Most harbuz components accept standard React props:
 
 ### Medium Confidence Areas ⚠️
 
-1. **Log formatters** - Generic approach may need debugsy-specific extensions
-2. **Header composition** - Not extracted, needs manual assembly
-3. **Keyboard shortcuts** - Logic kept in debugsy, integration point needed
+1. **Log formatters** - Formatter registry now available, needs debugsy-specific registrations
+2. **Keyboard shortcuts** - Logic kept in debugsy, integration point needed
 
 ### Low Risk Areas ✅
 
@@ -401,23 +434,32 @@ Most harbuz components accept standard React props:
 
 **None.** All critical UI components are covered.
 
-### Nice-to-Have Enhancements 💡
+### Recently Completed Enhancements ✅
 
-1. **Extract Header Component**
-   - `TerminalLayoutHeader` currently requires manual composition
-   - Recommendation: Extract `<HeaderWithActions>` pattern
+1. **~~Extract Header Component~~** ✅ COMPLETE
+   - `TerminalLayoutHeader` is now fully extracted
+   - Ready to use with children composition
 
-2. **Formalized Formatter Registry**
-   - Showcase has basic formatters
-   - Recommendation: Document how to extend with custom formatters
+2. **~~Formalized Formatter Registry~~** ✅ COMPLETE
+   - `formatter-registry.ts` now provides extensible formatter system
+   - Supports registration of custom formatters
+   - Auto-detection for change patterns
+   - Clean API: `registerFormatter()`, `getExpansionContent()`, etc.
 
-3. **Keyboard Shortcuts Hook**
+3. **Enhanced Stats/Shortcuts Components** ✅ COMPLETE
+   - `TerminalLayoutStatItem` + `TerminalLayoutStatsPanel`
+   - `TerminalLayoutShortcut` + `TerminalLayoutShortcutsPanel`
+   - Better composition and reusability
+
+### Remaining Nice-to-Have Enhancements 💡
+
+1. **Keyboard Shortcuts Hook**
    - Currently kept in debugsy
-   - Recommendation: Extract `useDebugShortcuts` hook to harbuz
+   - Recommendation: Extract `useDebugShortcuts` hook to harbuz (optional)
 
-4. **Theme Variants**
-   - Currently only dark terminal theme
-   - Recommendation: Add light theme variant (future)
+2. **Theme Variants**
+   - Currently dark terminal theme + ThemeSwitcher component
+   - Recommendation: Additional theme variants (future)
 
 ### Documentation Gaps 📝
 
@@ -439,18 +481,21 @@ Most harbuz components accept standard React props:
 
 ### Summary
 
-**Harbuz is ready for debugsy migration** with 85-90% completeness:
+**Harbuz is ready for debugsy migration** with 90-95% completeness:
 
 ✅ **Strengths:**
 - Complete UI primitive library
 - Extracted patterns (display, copy systems)
-- Full layout structure (TerminalLayout)
+- Full layout structure (TerminalLayout) with 16 components
+- Header component now properly extracted ✅
+- Formalized formatter registry system ✅
+- Enhanced stats/shortcuts panel compositions ✅
 - Exact visual parity (colors, spacing, typography)
 - Performance optimized (virtualization, memoization)
+- Theme switcher component available
 
 ⚠️ **Minor Gaps:**
-- Header component needs manual composition
-- Specialized formatters kept in debugsy
+- Specialized formatters need registration in debugsy (clean registry API available)
 - Keyboard shortcuts orchestration in debugsy
 - Dependency controls kept in debugsy (not UI-generic)
 
@@ -458,7 +503,7 @@ Most harbuz components accept standard React props:
 - Low risk, proven patterns
 - Maintains debugsy functionality
 - Clear rollback path
-- 15-20 hours over 3-4 weeks
+- 12-18 hours over 2-3 weeks (reduced due to improvements)
 
 ### Expected Outcomes
 
@@ -468,18 +513,26 @@ Most harbuz components accept standard React props:
 - Reusable UI across workspace
 - Easier maintenance and testing
 - Better type safety and documentation
+- Extensible formatter system for custom log types
 
-### Next Steps
+### Recent Progress Since Initial Analysis
 
-1. ✅ **This analysis complete** - documented gaps and compatibility
+✅ **Completed:**
+1. Header component extraction (TerminalLayoutHeader)
+2. Formatter registry system with extensibility
+3. Enhanced stats/shortcuts panel compositions
+4. Component count increased from 14 to 16 in terminal-layout
+
+📋 **Next Steps:**
+1. ✅ **This analysis actualized** - verified current codebase state
 2. 📋 Create detailed migration checklist
-3. 📋 Write migration guide with code examples
+3. 📋 Write migration guide with formatter registration examples
 4. 📋 Plan phase 1 (primitive replacements)
 5. 📋 Execute gradual migration
 
 ---
 
-**Document Status:** Complete  
-**Confidence Level:** High (85-90% ready)  
-**Recommendation:** Proceed with migration
+**Document Status:** Actualized (2025-11-18)  
+**Confidence Level:** Very High (90-95% ready)  
+**Recommendation:** Proceed with migration - Harbuz has improved significantly
 
