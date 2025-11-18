@@ -128,6 +128,13 @@ export const VirtualizedLogContainer: React.FC<{
     visibleRange.endIndex + 1
   );
 
+  // Calculate bottom spacer height, accounting for panels that appear after logs
+  // These panels are: TruncationInfoPanel (~60px) + hidden logs indicator (~40px)
+  const PANELS_AFTER_LOGS_HEIGHT = 100; // Approximate combined height of panels after logs
+  const bottomSpacerHeight = visibleRange.endIndex < logs.length - 1
+    ? Math.max(0, (logs.length - 1 - visibleRange.endIndex) * itemHeight - PANELS_AFTER_LOGS_HEIGHT)
+    : 0;
+
   return (
     <>
       {/* Spacer for items before render range */}
@@ -149,11 +156,11 @@ export const VirtualizedLogContainer: React.FC<{
         );
       })}
 
-      {/* Spacer for items after render range */}
-      {visibleRange.endIndex < logs.length - 1 && (
+      {/* Spacer for items after render range - adjusted for panels that appear after logs */}
+      {bottomSpacerHeight > 0 && (
         <div
           style={{
-            height: (logs.length - 1 - visibleRange.endIndex) * itemHeight,
+            height: bottomSpacerHeight,
           }}
         />
       )}
