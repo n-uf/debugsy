@@ -5,20 +5,20 @@
 **React crashing with infinite renders? Use this immediately:**
 
 ```typescript
-// 1. EMERGENCY CIRCUIT BREAKER (add to problematic component)
-const { isDisabled } = useCircuitBreakerTracker('ComponentName', props, { maxRenders: 10 });
-if (isDisabled) return <div>🛑 Component disabled</div>;
-
-// 2. TRACK CAUSALITY (add to same component)
+// 1. TRACK CAUSALITY (add to problematic component)
 useWhyDidYouUpdate('ComponentName', props);
+useRenderTracker('ComponentName', props, { enableFrequencyWarnings: true });
+
+// 2. EMERGENCY STOP (if browser unresponsive)
+// In browser console:
+__DEBUGSY_EMERGENCY_STOP.activate();
 ```
 
 ```javascript
-// 3. ENABLE TRACKING (in browser console)
-surfaceDebug.deps.on();
-surfaceDebug.deps.verbose();
-
-// 4. LOOK FOR: ⚠️ FREQUENT warnings - these are your culprits!
+// 3. LOOK FOR: ⚠️ FREQUENT warnings in console - these are your culprits!
+// Example output:
+// 📝 [ComponentName] onCallback: function changed ⚠️ FREQUENT
+// 📦 [ComponentName] data: object changed ⚠️ FREQUENT
 ```
 
 ## 🚀 **Essential Commands**
@@ -27,32 +27,37 @@ surfaceDebug.deps.verbose();
 
 ```javascript
 // Test if dependency tracking works
-testDependencyTracking();
+debugsy.test.dependency();
 
-// Enable dependency tracking
-surfaceDebug.deps.on();
-surfaceDebug.deps.verbose();
+// Check debug system status
+debugsy.status.show();
 
-// Quick debugging
-surfaceDebug.deps.functionsOnly(); // Only function changes
-surfaceDebug.deps.unstableOnly(); // Only frequent changes
+// Enable/disable debug points
+debugsy.enable("surface-interaction");
+debugsy.disable("surface-interaction");
+debugsy.enableAll();
+debugsy.disableAll();
 
 // Emergency stop
 __DEBUGSY_EMERGENCY_STOP.activate();
+debugsy.emergency.activate(); // Alternative API
 ```
 
 ### **React Hooks (Quick Copy)**
 
 ```typescript
 // Basic logging
-const { log } = useDebug("surface-interaction");
+const { log } = useDebugsy("surface-interaction");
 log("User action", { action: "click", target: "button" });
 
 // Track re-renders
 useWhyDidYouUpdate("MyComponent", { prop1, prop2, callback });
 
-// Circuit breaker protection
-const { isDisabled } = useCircuitBreakerTracker("MyComponent", props);
+// Monitor render frequency
+useRenderTracker("MyComponent", props, {
+  enableTracking: true,
+  enableFrequencyWarnings: true,
+});
 ```
 
 ---
@@ -63,16 +68,13 @@ const { isDisabled } = useCircuitBreakerTracker("MyComponent", props);
 
 ```typescript
 // App.tsx
-import { DebugControlPanel, DebugExternalPanel } from '@your-org/debugsy';
+import { DebugsyLook } from '@workspace/debugsy';
 
 function App() {
-  const [showDebug, setShowDebug] = useState(false);
-
   return (
     <div>
       <YourApp />
-      <DebugControlPanel onToggleExternalPanel={() => setShowDebug(!showDebug)} />
-      {showDebug && <DebugExternalPanel onClose={() => setShowDebug(false)} />}
+      {process.env.NODE_ENV === 'development' && <DebugsyLook />}
     </div>
   );
 }
@@ -81,10 +83,10 @@ function App() {
 ### **Component with Debug Logging**
 
 ```typescript
-import { useDebug, useWhyDidYouUpdate } from '@your-org/debugsy';
+import { useDebugsy, useWhyDidYouUpdate } from '@workspace/debugsy';
 
 const MyComponent = ({ data, onSave, config }) => {
-  const { log } = useDebug('surface-interaction');
+  const { log } = useDebugsy('surface-interaction');
   useWhyDidYouUpdate('MyComponent', { data, onSave, config });
 
   const handleAction = () => {
@@ -133,22 +135,26 @@ const config = useMemo(() => ({ theme: "dark", userId: user.id }), [user.id]);
 ### **2. Performance Issues**
 
 ```typescript
-// Add circuit breaker
-const { isDisabled } = useCircuitBreakerTracker("Component", props, {
-  maxRenders: 15,
-  onBreak: (name) => console.error(`${name} excessive renders`),
+// Monitor render frequency
+useRenderTracker("Component", props, {
+  enableTracking: true,
+  enableFrequencyWarnings: true,
 });
 
-// Monitor circuit breakers
-circuitBreakerControl.listAll(); // See all breakers
+// Check status
+debugsy.status.show(); // See debug state
 ```
 
 ### **3. Custom Debug Points**
 
 ```typescript
 // Create custom logging
-const { log } = useDebug('my-feature');
+const { log } = useDebugsy('my-feature');
 log('Custom event', { customData });
+
+// Enable/disable via console
+debugsy.enable('my-feature');
+debugsy.disable('my-feature');
 
 // Register custom formatter
 registerFormatter('my-feature', {
@@ -162,31 +168,30 @@ registerFormatter('my-feature', {
 ## ⚡ **Common Console Commands**
 
 ```javascript
-// DEPENDENCY TRACKING
-surfaceDebug.deps.on(); // Enable
-surfaceDebug.deps.off(); // Disable
-surfaceDebug.deps.normal(); // Standard
-surfaceDebug.deps.verbose(); // Detailed
-surfaceDebug.deps.quiet(); // Critical only
+// DEBUG POINTS CONTROL
+debugsy.enable("surface-interaction"); // Enable specific
+debugsy.disable("surface-interaction"); // Disable specific
+debugsy.enableAll(); // Enable all
+debugsy.disableAll(); // Disable all
+debugsy.toggle("surface-interaction"); // Toggle
 
-// FILTERING
-surfaceDebug.deps.functionsOnly(); // Functions only
-surfaceDebug.deps.objectsOnly(); // Objects only
-surfaceDebug.deps.unstableOnly(); // Frequent changes
+// STATUS & DIAGNOSTICS
+debugsy.status.show(); // Show current state
+debugsy.captureHealthSnapshot(); // Health report
+debugsy.test.dependency(); // Test dependency tracking
 
-// CIRCUIT BREAKERS
-circuitBreakerControl.listAll(); // List all
-circuitBreakerControl.isOpen("ComponentName"); // Check status
-circuitBreakerControl.close("ComponentName"); // Manual restore
-circuitBreakerControl.resetAll(); // Reset all
-
-// EMERGENCY
+// EMERGENCY CONTROLS
 __DEBUGSY_EMERGENCY_STOP.activate(); // Stop all
 __DEBUGSY_EMERGENCY_STOP.status(); // Check status
+__DEBUGSY_EMERGENCY_STOP.deactivate(); // Resume
+debugsy.emergency.activate(); // Alternative API
+debugsy.emergency.status(); // Alternative status
 
-// TESTING
-surfaceDebug.testDependencyTracking(); // Test if working
-surfaceDebug.testMockComponent(); // Run mock tests
+// UI VERSION CONTROL
+debugsy.setUIVersion("v1"); // Switch to V1
+debugsy.setUIVersion("v2"); // Switch to V2
+debugsy.setUIVersion("auto"); // Auto mode
+debugsy.getUIVersion(); // Get current
 ```
 
 ---
@@ -196,31 +201,33 @@ surfaceDebug.testMockComponent(); // Run mock tests
 ```typescript
 // Core hooks
 import {
-  useDebug,
+  useDebugsy,
   useWhyDidYouUpdate,
-  useCircuitBreakerTracker,
-} from "@your-org/debugsy";
+  useRenderTracker,
+} from "@workspace/debugsy";
 
 // Components
 import {
-  DebugControlPanel,
-  DebugExternalPanel,
+  DebugsyLook,
+  DebugsyLookV1,
+  DebugsyLookV2,
   DebugLogsList,
-} from "@your-org/debugsy";
+} from "@workspace/debugsy";
 
 // Utilities
 import {
-  copyLogsToClipboard,
   registerFormatter,
-  circuitBreakerControl,
-} from "@your-org/debugsy";
+  sanitizeLogData,
+  captureHealthSnapshot,
+} from "@workspace/debugsy";
 
 // Types
 import type {
   DebugLogEntry,
-  LogSeverity,
+  LogLevel,
+  DebugPoint,
   FormatterConfig,
-} from "@your-org/debugsy";
+} from "@workspace/debugsy";
 ```
 
 ---
@@ -229,17 +236,17 @@ import type {
 
 | Problem                             | Quick Fix                                                 |
 | ----------------------------------- | --------------------------------------------------------- |
-| **"Maximum update depth exceeded"** | **Add `useCircuitBreakerTracker` + `useWhyDidYouUpdate`** |
+| **"Maximum update depth exceeded"** | **Add `useWhyDidYouUpdate` + `useRenderTracker`**        |
 | **React infinite renders**          | **Look for `⚠️ FREQUENT` warnings**                       |
 | **Function changing every render**  | **Wrap in `useCallback`**                                 |
 | **Object changing every render**    | **Wrap in `useMemo`**                                     |
 | **useEffect infinite loop**         | **Check if effect updates its own dependencies**          |
-| `useWhyDidYouUpdate` not working    | `surfaceDebug.deps.on()`                                  |
-| No dependency logs                  | `testDependencyTracking()`                                |
-| Too much noise                      | `surfaceDebug.deps.quiet()`                               |
+| `useWhyDidYouUpdate` not working    | Check console output                                      |
+| No dependency logs                  | `debugsy.test.dependency()`                               |
+| Too much noise                      | `debugsy.disableAll()` then enable specific points        |
 | Performance issues                  | `__DEBUGSY_EMERGENCY_STOP.activate()`                     |
-| Module not found                    | Check import path                                         |
-| Global undefined                    | Import debugsy in app root                                |
+| Module not found                    | Check import path: `@workspace/debugsy`                   |
+| Global undefined                    | Import `@workspace/debugsy` in app root                   |
 
 ---
 

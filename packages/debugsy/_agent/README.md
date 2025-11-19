@@ -1,110 +1,184 @@
-# Debugsy Documentation & Agent Files
+# Debugsy Documentation
 
-## 📁 **Folder Contents**
-
-This `_agent/` folder contains comprehensive documentation, guides, and development utilities for the Debugsy package.
-
-### **📚 User Documentation**
-
-- **[user-manual.md](./user-manual.md)** - Complete user manual with installation, setup, API reference, and troubleshooting
-- **[quick-reference.md](./quick-reference.md)** - Quick reference guide for developers with common commands and patterns
-
-### **🔧 Technical Documentation**
-
-- **[dependency-tracking-fix.md](./dependency-tracking-fix.md)** - Details on the useWhyDidYouUpdate fix and implementation
-- **[debug-deps-test.ts](./debug-deps-test.ts)** - Test utilities for verifying dependency tracking functionality
-
-### **📋 Development Notes**
-
-- **[README.md](./README.md)** - This file - overview of documentation structure
+**Comprehensive React debugging toolkit with real-time logging, dependency tracking, and performance monitoring**
 
 ---
 
-## 📖 **Documentation Structure**
+## 📖 Documentation Index
 
-### **For End Users**
+### For End Users
 
-1. **Start here**: [user-manual.md](./user-manual.md) - Comprehensive guide
-2. **Quick reference**: [quick-reference.md](./quick-reference.md) - Fast lookup
+1. **[User Manual](./user-manual.md)** - Complete guide: installation, setup, API reference, troubleshooting
+2. **[Quick Reference](./quick-reference.md)** - Fast lookup for common commands and patterns
 
-### **For Developers/Maintainers**
+### For Developers
 
-1. **Technical fixes**: [dependency-tracking-fix.md](./dependency-tracking-fix.md)
-2. **Testing tools**: [debug-deps-test.ts](./debug-deps-test.ts)
+1. **[Debugsy Architecture](./debugsy-architecture.md)** - Complete technical architecture and design
+2. **[Debug Log Management](./debug-log-management.md)** - Operational guide for log management
 
 ---
 
-## 🏗️ **Package Structure Improvements**
+## Quick Start
 
-The debugsy package now includes enhanced folder structure with proper index.ts files:
+### Installation
 
-```
-packages/debugsy/
-├── index.ts                          # Main package exports
-├── src/
-│   ├── components/
-│   │   ├── index.ts                  # Component exports
-│   │   └── logs/
-│   │       ├── index.ts              # Log component exports
-│   │       ├── formatters/
-│   │       │   └── index.ts          # Formatter exports
-│   │       └── utils/
-│   │           └── index.ts          # Utility exports
-│   ├── debug-deps/
-│   │   ├── index.ts                  # Dependency tracking exports
-│   │   └── _agent/
-│   │       ├── debug-deps-test.ts    # Testing utilities
-│   │       └── dependency-tracking-fix.md
-│   └── hooks/
-│       └── index.ts                  # Hook exports
-└── _agent/                           # Documentation & guides
-    ├── README.md                     # This file
-    ├── user-manual.md                # Complete user guide
-    ├── quick-reference.md            # Quick reference
-    └── dependency-tracking-fix.md    # Technical documentation
+```bash
+pnpm add @workspace/debugsy
 ```
 
-### **Benefits of Enhanced Structure**
+### Basic Setup
 
-✅ **Cleaner Imports**: Use package-level exports instead of deep imports  
-✅ **Better Organization**: Related functionality grouped together  
-✅ **Comprehensive Documentation**: Complete user guides and technical docs  
-✅ **Developer Utilities**: Testing and verification tools included  
-✅ **Easier Maintenance**: Clear separation of concerns and responsibilities
+```typescript
+// App.tsx
+import { DebugsyLook } from '@workspace/debugsy';
+
+function App() {
+  return (
+    <div>
+      <YourApp />
+      {process.env.NODE_ENV === 'development' && <DebugsyLook />}
+    </div>
+  );
+}
+```
+
+### Component Usage
+
+```typescript
+import { useDebugsy, useWhyDidYouUpdate } from '@workspace/debugsy';
+
+const MyComponent = ({ data, onSave }) => {
+  const { log } = useDebugsy('surface-interaction');
+  useWhyDidYouUpdate('MyComponent', { data, onSave });
+  
+  const handleClick = () => {
+    log('User action', { id: data.id });
+    onSave(data);
+  };
+  
+  return <button onClick={handleClick}>Save</button>;
+};
+```
 
 ---
 
-## 🚀 **Quick Start for New Users**
+## Emergency Commands
 
-1. **Read the user manual**: [user-manual.md](./user-manual.md)
-2. **Try the quick reference**: [quick-reference.md](./quick-reference.md)
-3. **Test the setup**: Run `testDependencyTracking()` in browser console
-4. **Get help**: Check troubleshooting section in user manual
+### Infinite Loop Rescue
 
----
+```javascript
+// In browser console
+__DEBUGSY_EMERGENCY_STOP.activate();  // Stop everything immediately
+__DEBUGSY_EMERGENCY_STOP.status();    // Check status
+__DEBUGSY_EMERGENCY_STOP.deactivate(); // Resume when ready
+```
 
-## 🔧 **For Package Maintainers**
+### Track Re-render Issues
 
-### **Adding New Features**
+```javascript
+// Test dependency tracking
+debugsy.test.dependency();
 
-1. **Update relevant index.ts** files to export new functionality
-2. **Add documentation** to user manual for user-facing features
-3. **Update quick reference** with new console commands or common patterns
-4. **Create technical docs** in `_agent/` for complex implementations
-
-### **Testing Changes**
-
-1. **Use debug-deps-test.ts** utilities for dependency tracking features
-2. **Verify exports** work correctly through index.ts files
-3. **Test documentation** examples to ensure they work
-4. **Update version** information in user manual if needed
+// Add to components to track changes
+// Use useWhyDidYouUpdate hook
+// Look for ⚠️ FREQUENT warnings in console
+```
 
 ---
 
-## 📞 **Getting Help**
+## Key Features
 
-- **For users**: Check [user-manual.md](./user-manual.md) troubleshooting section
-- **For developers**: Review technical documentation in this folder
-- **For quick answers**: Use [quick-reference.md](./quick-reference.md)
+✅ **Real-time Logging** - Structured debug logs with filtering  
+✅ **Dependency Tracking** - Identify re-render causes  
+✅ **Circuit Breakers** - Prevent infinite loops  
+✅ **Health Snapshots** - System diagnostics  
+✅ **Interactive UI** - Resizable panels with virtualized rendering  
+✅ **Console Commands** - Runtime configuration  
+✅ **Zero Production Impact** - Auto-disabled in production
 
-**Happy debugging! 🐛➡️✨**
+## Console Commands
+
+### Enable/Disable Debug Points
+
+```javascript
+debugsy.enable("surface-interaction");
+debugsy.disable("dispatcher");
+debugsy.enableAll();
+debugsy.disableAll();
+debugsy.toggle("surface-interaction");
+```
+
+### Dependency Tracking
+
+```javascript
+// Use hooks in components
+import { useWhyDidYouUpdate, useRenderTracker } from '@workspace/debugsy';
+
+useWhyDidYouUpdate('Component', props);
+useRenderTracker('Component', props);
+// Look for ⚠️ FREQUENT warnings
+```
+
+### Health & Diagnostics
+
+```javascript
+debugsy.captureHealthSnapshot();  // System health report
+debugsy.status.show();            // Current state
+debugsy.test.dependency();        // Test dependency tracking
+```
+
+---
+
+## Architecture Overview
+
+### Core System (3 layers)
+
+1. **Debug State** - Global state, log storage, point management
+2. **UI System** - V2 (Harbuz-based) and V1 (legacy) panels
+3. **Integration** - Hooks, components, utilities
+
+### Key Components
+
+- **useDebugsy** - Main debug hook for logging
+- **useWhyDidYouUpdate** - Dependency change tracking
+- **useRenderTracker** - Render frequency monitoring
+- **DebugsyLook V2** - Modern UI with Harbuz components
+- **DebugsyLook V1** - Legacy UI (stable)
+- **Health Snapshots** - System diagnostics
+
+**See:** [debugsy-architecture.md](./debugsy-architecture.md) for complete technical details
+
+---
+
+## Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| **Maximum update depth** | `__DEBUGSY_EMERGENCY_STOP.activate()` |
+| **Dependency tracking not working** | Use `useWhyDidYouUpdate` hook |
+| **Too much console noise** | Disable debug points: `debugsy.disable("point")` |
+| **Infinite re-renders** | Add `useWhyDidYouUpdate` + `useRenderTracker` |
+| **Function changing every render** | Wrap in `useCallback` |
+| **Object changing every render** | Wrap in `useMemo` |
+
+**See:** [user-manual.md](./user-manual.md) for comprehensive troubleshooting
+
+---
+
+## Related Documentation
+
+### In This Module
+- **[User Manual](./user-manual.md)** - Complete usage guide
+- **[Quick Reference](./quick-reference.md)** - Command cheat sheet
+- **[Architecture](./debugsy-architecture.md)** - Technical design
+- **[Log Management](./debug-log-management.md)** - Operational guide
+
+### External
+- **[Harbuz Showcase](../../harbuz/src/showcase/_agent/README.md)** - UI component patterns
+- **[Harbuz Architecture](../../harbuz/_agent/harbuz-architecture.md)** - UI library design
+
+---
+
+**Last Updated:** 2025-11-19  
+**Version:** 2.0 (Harbuz Integration Complete)  
+**Status:** Production-ready

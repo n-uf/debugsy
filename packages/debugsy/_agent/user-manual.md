@@ -43,37 +43,26 @@ Debugsy is a comprehensive React debugging toolkit that provides:
 ### **Installation**
 
 ```bash
-npm install @your-org/debugsy
+npm install @workspace/debugsy
 # or
-pnpm add @your-org/debugsy
+pnpm add @workspace/debugsy
 ```
 
 ### **Basic Setup**
 
 ```typescript
 // App.tsx
-import { DebugControlPanel, DebugExternalPanel } from '@your-org/debugsy';
-import { useDebug } from '@your-org/debugsy';
+import { DebugsyLook } from '@workspace/debugsy';
+import { useDebugsy } from '@workspace/debugsy';
 
 function App() {
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
-
   return (
     <div>
       {/* Your app content */}
       <YourMainContent />
 
-      {/* Debug Controls (always visible in dev) */}
-      <DebugControlPanel
-        onToggleExternalPanel={() => setShowDebugPanel(!showDebugPanel)}
-      />
-
-      {/* Debug Panel (toggleable) */}
-      {showDebugPanel && (
-        <DebugExternalPanel
-          onClose={() => setShowDebugPanel(false)}
-        />
-      )}
+      {/* Debug Panel (only in development) */}
+      {process.env.NODE_ENV === 'development' && <DebugsyLook />}
     </div>
   );
 }
@@ -96,10 +85,10 @@ NEXT_PUBLIC_SURFACE_DEBUG = all;
 ### **1. Add Debug Logging to Components**
 
 ```typescript
-import { useDebug } from '@your-org/debugsy';
+import { useDebugsy } from '@workspace/debugsy';
 
 const MyComponent = ({ user, onSave }) => {
-  const { log, isEnabled } = useDebug('surface-interaction');
+  const { log, isEnabled } = useDebugsy('surface-interaction');
 
   const handleClick = (event) => {
     // Log user interactions with structured data
@@ -123,11 +112,17 @@ const MyComponent = ({ user, onSave }) => {
 ### **2. Track Dependency Changes**
 
 ```typescript
-import { useWhyDidYouUpdate } from '@your-org/debugsy';
+import { useWhyDidYouUpdate, useRenderTracker } from '@workspace/debugsy';
 
 const ProblematicComponent = ({ data, callback, config }) => {
   // Track what props are causing re-renders
   useWhyDidYouUpdate('ProblematicComponent', { data, callback, config });
+  
+  // Monitor render frequency
+  useRenderTracker('ProblematicComponent', { data, callback, config }, {
+    enableTracking: true,
+    enableFrequencyWarnings: true,
+  });
 
   // This will log when props change and potentially cause issues
   useEffect(() => {
@@ -138,13 +133,13 @@ const ProblematicComponent = ({ data, callback, config }) => {
 };
 ```
 
-### **3. Enable Debug Tracking**
+### **3. Check Debug Status**
 
 ```javascript
 // Browser console commands
-surfaceDebug.deps.on(); // Enable dependency tracking
-surfaceDebug.deps.verbose(); // Detailed tracking
-surfaceDebug.testDependencyTracking(); // Test if working
+debugsy.status.show(); // View current debug state
+debugsy.test.dependency(); // Test dependency tracking
+debugsy.captureHealthSnapshot(); // Get health report
 ```
 
 ---
@@ -156,7 +151,7 @@ surfaceDebug.testDependencyTracking(); // Test if working
 Main control interface for debug features.
 
 ```typescript
-import { DebugControlPanel } from '@your-org/debugsy';
+import { DebugControlPanel } from '@workspace/debugsy';
 
 <DebugControlPanel
   onToggleExternalPanel={() => setShowPanel(!showPanel)}
@@ -178,7 +173,7 @@ import { DebugControlPanel } from '@your-org/debugsy';
 Full-featured debug panel with logs, filtering, and analysis.
 
 ```typescript
-import { DebugExternalPanel } from '@your-org/debugsy';
+import { DebugExternalPanel } from '@workspace/debugsy';
 
 <DebugExternalPanel
   onClose={() => setShowPanel(false)}
@@ -201,7 +196,7 @@ import { DebugExternalPanel } from '@your-org/debugsy';
 Standalone log list component for custom implementations.
 
 ```typescript
-import { DebugLogsList } from '@your-org/debugsy';
+import { DebugLogsList } from '@workspace/debugsy';
 
 const CustomDebugView = () => {
   const { logs } = useDebugState();
@@ -218,12 +213,12 @@ const CustomDebugView = () => {
 
 ## 🪝 **Debug Hooks**
 
-### **useDebug(debugPoint)**
+### **useDebugsy(debugPoint)**
 
 Primary hook for logging debug information.
 
 ```typescript
-const { log, isEnabled, enabled } = useDebug("surface-interaction");
+const { log, isEnabled } = useDebugsy("surface-interaction");
 
 // Basic logging
 log("User interaction", { action: "click", target: "button" });
@@ -236,7 +231,7 @@ if (isEnabled("performance")) {
 }
 
 // Check if specific debug point is enabled
-const shouldTrackClicks = enabled; // boolean
+const enabled = isEnabled("surface-interaction"); // boolean
 ```
 
 ### **useWhyDidYouUpdate(name, props)**
@@ -272,27 +267,25 @@ const HighFrequencyComponent = (props) => {
 };
 ```
 
-### **useCircuitBreakerTracker(name, props, config)**
+### **useRenderTracker(name, props, options?)**
 
-Automatic protection against infinite render loops.
+Monitor render patterns and detect excessive re-renders.
 
 ```typescript
-const RiskyComponent = (props) => {
-  const { isDisabled, renderCount } = useCircuitBreakerTracker(
-    'RiskyComponent',
+const MonitoredComponent = (props) => {
+  useRenderTracker(
+    'MonitoredComponent',
     props,
     {
-      maxRenders: 20,        // Open circuit after 20 renders
-      resetInterval: 5000,   // Reset after 5 seconds
-      autoRestore: true,     // Automatically restore
+      enableTracking: true,           // Track render count
+      enableFrequencyWarnings: true,  // Warn about high frequency
     }
   );
 
-  if (isDisabled) {
-    return <div>Component disabled due to excessive renders</div>;
-  }
+  // Component will log warnings if it renders too frequently
+  // Check console for ⚠️ warnings
 
-  return <div>Normal content (render #{renderCount})</div>;
+  return <div>Normal content</div>;
 };
 ```
 
@@ -323,23 +316,18 @@ This error occurs when React detects an infinite loop of state updates, typicall
 ### **Console Commands**
 
 ```javascript
-// Enable/disable
-surfaceDebug.deps.on(); // Enable tracking
-surfaceDebug.deps.off(); // Disable tracking
+// Note: Dependency tracking is always active when using the hooks
+// Use useWhyDidYouUpdate and useRenderTracker in your components
 
-// Set detail level
-surfaceDebug.deps.quiet(); // Only critical changes
-surfaceDebug.deps.normal(); // Standard tracking (default)
-surfaceDebug.deps.verbose(); // Detailed tracking
-surfaceDebug.deps.debug(); // Maximum detail
+// Test dependency tracking system
+debugsy.test.dependency(); // Verify functionality
 
-// Filter by type
-surfaceDebug.deps.functionsOnly(); // Only function changes
-surfaceDebug.deps.objectsOnly(); // Only object changes
-surfaceDebug.deps.unstableOnly(); // Only unstable dependencies
+// Check debug status
+debugsy.status.show(); // View current state
 
-// Test if working
-surfaceDebug.testDependencyTracking(); // Verify functionality
+// Control debug points
+debugsy.enable("dependencies"); // Enable dependency logging
+debugsy.disable("dependencies"); // Disable dependency logging
 ```
 
 ### **🚨 Step-by-Step: Debugging "Maximum Update Depth Exceeded"**
@@ -363,12 +351,15 @@ const ProblematicComponent = ({ data, onUpdate, config }) => {
 };
 ```
 
-#### **Step 2: Enable Verbose Tracking**
+#### **Step 2: Check Console Output**
 
 ```javascript
-// In browser console
-surfaceDebug.deps.on();
-surfaceDebug.deps.verbose(); // Show all dependency changes
+// In browser console - check if tracking is working
+debugsy.test.dependency();
+debugsy.status.show();
+
+// Look for dependency change logs in console
+// They appear automatically when using useWhyDidYouUpdate
 ```
 
 #### **Step 3: Look for the Causality Chain**
@@ -376,14 +367,12 @@ surfaceDebug.deps.verbose(); // Show all dependency changes
 Watch the console for rapid, repeating patterns like:
 
 ```
-🔄 [ProblematicComponent] Dependencies changed: { onUpdate: [Function → Function] }
 📝 [ProblematicComponent] onUpdate: function changed ⚠️ FREQUENT
-🔄 [ProblematicComponent] Dependencies changed: { onUpdate: [Function → Function] }
 📝 [ProblematicComponent] onUpdate: function changed ⚠️ FREQUENT
-🔄 [ProblematicComponent] Dependencies changed: { onUpdate: [Function → Function] }
+📝 [ProblematicComponent] onUpdate: function changed ⚠️ FREQUENT
 ```
 
-The `⚠️ FREQUENT` warning indicates a **causality loop** - this dependency is changing rapidly.
+The `⚠️ FREQUENT` warning indicates a **causality loop** - this dependency is changing rapidly, causing excessive re-renders.
 
 #### **Step 4: Trace the Root Cause**
 
@@ -667,10 +656,12 @@ const ProblematicComponent = ({ data, onUpdate, config }) => {
 ```javascript
 // In browser console - stops ALL debugging immediately
 __DEBUGSY_EMERGENCY_STOP.activate();
+// Or via API
+debugsy.emergency.activate();
 
 // Later, when you're ready to debug again
 __DEBUGSY_EMERGENCY_STOP.deactivate();
-surfaceDebug.deps.on();
+debugsy.emergency.deactivate();
 ```
 
 #### **Emergency Step 4: Minimal Reproduction**
@@ -695,12 +686,15 @@ const MinimalComponent = ({ onUpdate }) => {
 
 #### **Technique 1: Dependency Frequency Analysis**
 
-```javascript
-// Filter to only frequent changes (likely culprits)
-surfaceDebug.deps.unstableOnly();
+```typescript
+// Use render tracker with frequency warnings
+useRenderTracker('Component', props, {
+  enableTracking: true,
+  enableFrequencyWarnings: true,
+});
 
 // Look for patterns in the console:
-// If you see the same dependency changing repeatedly, that's your culprit
+// If you see the same dependency changing repeatedly with ⚠️ FREQUENT, that's your culprit
 ```
 
 #### **Technique 2: Component Tree Tracking**
@@ -743,27 +737,21 @@ const HotComponent = (props) => {
 
 ## ⚡ **Performance Monitoring**
 
-### **Circuit Breakers**
+### **Render Monitoring**
 
-Automatic protection against render loops and excessive processing.
+Monitor render patterns to detect excessive re-renders.
 
 ```typescript
-// Manual circuit breaker control
-import { circuitBreakerControl } from "@your-org/debugsy";
+import { useRenderTracker } from "@workspace/debugsy";
 
-// Check status
-const isOpen = circuitBreakerControl.isOpen("MyComponent");
+// Add to component
+useRenderTracker("MyComponent", props, {
+  enableTracking: true,
+  enableFrequencyWarnings: true,
+});
 
-// Manual control
-circuitBreakerControl.open("MyComponent"); // Disable component
-circuitBreakerControl.close("MyComponent"); // Re-enable component
-
-// Get all circuit breakers
-const allBreakers = circuitBreakerControl.listAll();
-// Returns: [{ name: 'MyComponent', isOpen: false, renderCount: 5 }]
-
-// Reset all
-circuitBreakerControl.resetAll();
+// Check console for warnings about high-frequency renders
+// Warnings appear automatically when renders exceed thresholds
 ```
 
 ### **Emergency Stop**
@@ -782,7 +770,7 @@ __DEBUGSY_EMERGENCY_STOP.status(); // Check current status
 Wrap potentially problematic hooks with automatic failure handling.
 
 ```typescript
-import { useSafeHook } from '@your-org/debugsy';
+import { useSafeHook } from '@workspace/debugsy';
 
 const MyComponent = () => {
   // Wrap a hook that might cause issues
@@ -821,7 +809,7 @@ interface DebugLogEntry {
 Register custom formatters for specific log types:
 
 ```typescript
-import { registerFormatter } from '@your-org/debugsy';
+import { registerFormatter } from '@workspace/debugsy';
 
 // Register a custom formatter for API calls
 registerFormatter('api-call', {
@@ -861,7 +849,7 @@ registerFormatter('api-call', {
 ### **Export & Sharing**
 
 ```typescript
-import { copyLogsToClipboard } from "@your-org/debugsy";
+import { copyLogsToClipboard } from "@workspace/debugsy";
 
 // Copy logs to clipboard for sharing
 const exportLogs = async (logs) => {
@@ -880,23 +868,21 @@ const exportLogs = async (logs) => {
 
 ### **Dependency Tracking**
 
-```javascript
-// Enable/disable tracking
-surfaceDebug.deps.on();
-surfaceDebug.deps.off();
+```typescript
+// Use hooks in components
+import { useWhyDidYouUpdate, useRenderTracker } from '@workspace/debugsy';
 
-// Set tracking levels
-surfaceDebug.deps.quiet(); // Only critical changes
-surfaceDebug.deps.normal(); // Standard tracking
-surfaceDebug.deps.verbose(); // Detailed tracking
-surfaceDebug.deps.debug(); // Maximum detail
+// Track dependency changes
+useWhyDidYouUpdate('ComponentName', props);
 
-// Filter by change type
-surfaceDebug.deps.functionsOnly();
-surfaceDebug.deps.objectsOnly();
-surfaceDebug.deps.unstableOnly();
-surfaceDebug.deps.stableOnly();
-surfaceDebug.deps.loopRisks(); // Functions + unstable objects
+// Monitor render frequency
+useRenderTracker('ComponentName', props, {
+  enableTracking: true,
+  enableFrequencyWarnings: true,
+});
+
+// Console output shows automatically
+// Look for ⚠️ FREQUENT warnings
 ```
 
 ### **Emergency Controls**
@@ -906,32 +892,41 @@ surfaceDebug.deps.loopRisks(); // Functions + unstable objects
 __DEBUGSY_EMERGENCY_STOP.activate();
 __DEBUGSY_EMERGENCY_STOP.deactivate();
 __DEBUGSY_EMERGENCY_STOP.status();
+
+// Alternative API
+debugsy.emergency.activate();
+debugsy.emergency.deactivate();
+debugsy.emergency.status();
 ```
 
-### **Circuit Breaker Management**
+### **Debug Point Management**
 
 ```javascript
-// Check circuit breaker status
-circuitBreakerControl.isOpen("ComponentName");
-circuitBreakerControl.getStatus("ComponentName");
+// Enable/disable specific debug points
+debugsy.enable("surface-interaction");
+debugsy.disable("surface-interaction");
+debugsy.toggle("surface-interaction");
 
-// Manual control
-circuitBreakerControl.open("ComponentName");
-circuitBreakerControl.close("ComponentName");
-circuitBreakerControl.resetAll();
+// Bulk operations
+debugsy.enableAll();
+debugsy.disableAll();
 
-// List all circuit breakers
-circuitBreakerControl.listAll();
+// Check status
+debugsy.isEnabled("surface-interaction");
+debugsy.status.show();
 ```
 
 ### **Testing Functions**
 
 ```javascript
 // Test if dependency tracking is working
-surfaceDebug.testDependencyTracking();
+debugsy.test.dependency();
 
-// Run mock component tests
-surfaceDebug.testMockComponent();
+// Test emergency stop functionality
+debugsy.test.emergency();
+
+// View debug system status
+debugsy.status.show();
 ```
 
 ---
@@ -941,7 +936,7 @@ surfaceDebug.testMockComponent();
 ### **Health Monitoring**
 
 ```typescript
-import { useHealthSnapshot, captureHealthSnapshot } from '@your-org/debugsy';
+import { useHealthSnapshot, captureHealthSnapshot } from '@workspace/debugsy';
 
 const HealthMonitor = () => {
   const healthData = useHealthSnapshot();
@@ -964,7 +959,7 @@ const HealthMonitor = () => {
 ### **Data Sanitization**
 
 ```typescript
-import { sanitizeLogData, SANITIZATION_PRESETS } from "@your-org/debugsy";
+import { sanitizeLogData, SANITIZATION_PRESETS } from "@workspace/debugsy";
 
 // Sanitize sensitive data before logging
 const sanitizedData = sanitizeLogData(userData, SANITIZATION_PRESETS.STRICT);
@@ -1015,7 +1010,7 @@ const PerformantComponent = (props) => {
 2. **Enable dependency tracking**:
 
    ```javascript
-   surfaceDebug.deps.on();
+   debugsy.test.dependency();
    surfaceDebug.deps.verbose();
    ```
 
@@ -1041,24 +1036,24 @@ const PerformantComponent = (props) => {
 
 **Solutions**:
 
-1. **Check if enabled**:
+1. **Check if working**:
 
    ```javascript
-   surfaceDebug.deps.on(); // Enable tracking
-   surfaceDebug.testDependencyTracking(); // Verify working
+   debugsy.test.dependency(); // Verify working
+   debugsy.status.show(); // Check current state
    ```
 
 2. **Check debug points**:
 
    ```javascript
-   // Make sure 'dependencies' debug point is enabled
-   surfaceDebug.deps.normal();
+   // Enable dependencies debug point if needed
+   debugsy.enable('dependencies');
    ```
 
 3. **Verify global object**:
    ```javascript
-   console.log(surfaceDebug); // Should exist
-   console.log(surfaceDebug.getDepsSettings()); // Should return config
+   console.log(debugsy); // Should exist
+   console.log(debugsy.status.show()); // Should show current state
    ```
 
 ### **Performance Issues**
@@ -1094,7 +1089,7 @@ const PerformantComponent = (props) => {
 
 ```typescript
 // Ensure debugsy is imported in your app root
-import "@your-org/debugsy"; // This initializes the global system
+import "@workspace/debugsy"; // This initializes the global system
 ```
 
 **Error**: `Module not found: debug-deps`
@@ -1103,7 +1098,7 @@ import "@your-org/debugsy"; // This initializes the global system
 
 ```typescript
 // ✅ Correct
-import { useWhyDidYouUpdate } from "@your-org/debugsy";
+import { useWhyDidYouUpdate } from "@workspace/debugsy";
 
 // ❌ Incorrect
 import { useWhyDidYouUpdate } from "@your-org/debugsy/debug-deps";
@@ -1134,7 +1129,7 @@ if (process.env.NODE_ENV === "development") {
 
 | Hook                                            | Purpose             | Parameters                       | Returns                       |
 | ----------------------------------------------- | ------------------- | -------------------------------- | ----------------------------- |
-| `useDebug(point)`                               | Core logging        | `point: DebugPoint`              | `{ log, isEnabled, enabled }` |
+| `useDebugsy(point)`                             | Core logging        | `point: DebugPoint`              | `{ log, isEnabled }` |
 | `useWhyDidYouUpdate(name, props)`               | Dependency tracking | `name: string, props: object`    | `void`                        |
 | `useRenderTracker(name, props)`                 | Render monitoring   | `name: string, props: object`    | `void`                        |
 | `useCircuitBreakerTracker(name, props, config)` | Circuit breaker     | `name, props, config`            | `{ isDisabled, renderCount }` |
@@ -1193,9 +1188,8 @@ interface FormatterConfig {
    ```typescript
    // Add to problematic component
    useWhyDidYouUpdate("MyComponent", props);
-   // Enable verbose tracking
-   surfaceDebug.deps.verbose();
-   // Look for ⚠️ FREQUENT warnings
+   useRenderTracker("MyComponent", props, { enableFrequencyWarnings: true });
+   // Look for ⚠️ FREQUENT warnings in console
    ```
 
 2. **Performance Debugging**:
@@ -1210,7 +1204,7 @@ interface FormatterConfig {
 3. **Custom Debug Points**:
    ```typescript
    // Create custom logging
-   const { log } = useDebug('my-feature')
+   const { log } = useDebugsy('my-feature')
    log('Custom event', { data: complexObject })
    // Register custom formatter if needed
    registerFormatter('my-feature', { ... })
@@ -1238,7 +1232,7 @@ interface FormatterConfig {
 
 - **GitHub Issues**: Report bugs and feature requests
 - **Documentation**: Check inline JSDoc comments
-- **Console Tests**: Use `surfaceDebug.testDependencyTracking()` for quick verification
+- **Console Tests**: Use `debugsy.test.dependency()` for quick verification
 - **Community**: Share solutions and tips
 
 **Happy Debugging! 🐛➡️✨**

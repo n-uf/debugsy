@@ -9,11 +9,11 @@ The debug system implements a two-tier log management strategy to balance compre
 
 ## Architecture
 
-### Storage Layer (`use-debug.ts`)
+### Storage Layer (`debugsy-space.ts`)
 
 - **Constant**: `MAX_STORED_LOGS = 10000`
 - **Behavior**: When adding a new log entry, if the total count would exceed 10,000, the oldest logs are automatically removed
-- **Implementation**: `logs.slice(-(MAX_STORED_LOGS - 1))` keeps the most recent 9,999 logs before adding the new one
+- **Implementation**: Oldest logs are automatically removed to maintain the limit
 
 ```typescript
 // Add to logs array (keep last MAX_STORED_LOGS)
@@ -23,11 +23,11 @@ globalDebugState.logs = [
 ];
 ```
 
-### Rendering Layer (`debug-logs-list.tsx`)
+### Rendering Layer (UI Components)
 
-- **Constant**: `MAX_RENDERED_LOGS = 1000`
-- **Behavior**: Only renders the most recent 1,000 logs to maintain UI performance
-- **Implementation**: `logs.slice(-MAX_RENDERED_LOGS)` before reversing for display
+- **Constant**: Rendering limits implemented in V1/V2 UI
+- **Behavior**: Only renders recent logs to maintain UI performance
+- **Implementation**: Logs are sliced and virtualized for optimal rendering
 
 ```typescript
 // Limit to most recent MAX_RENDERED_LOGS for rendering
@@ -74,11 +74,11 @@ Storage limit: 10,000 | Rendering limit: 1,000
 To adjust the limits, modify the constants:
 
 ```typescript
-// In use-debug.ts
-const MAX_STORED_LOGS = 10000; // Increase for more storage
+// In debugsy-space/debugsy-constants.ts
+export const MAX_STORED_LOGS = 10000; // Adjust for more storage
 
-// In debug-logs-list.tsx
-const MAX_RENDERED_LOGS = 1000; // Increase for more visible logs
+// Rendering limits are configured in UI components
+// See debugsy-look-v1/ui-logs/ for rendering configurations
 ```
 
 ## Best Practices
