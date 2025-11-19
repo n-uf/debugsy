@@ -19,6 +19,7 @@ import {
   TerminalLayoutLogsContainer,
   TerminalLayoutResizeHandle,
   TerminalLayoutResizePresets,
+  TerminalLayoutSettings,
   TerminalLayoutSidebar,
   TruncationPanel,
   useClickOutside,
@@ -96,6 +97,8 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
     new Set()
   );
+  // Local setting states (demo placeholders for now, consistent with Showcase)
+  const [closeOnClickOutsideState, setCloseOnClickOutsideState] = useState(closeOnClickOutside);
 
   // Display system
   const displayContent = useDisplay();
@@ -181,19 +184,19 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     isResizing,
     handleResizeStart,
   } = useResizable({
-    initialHeight: 0, // Start compact (controls only)
-    minHeight: 0, // Allow compact mode (0 height)
+    initialHeight: 400, // Default height when expanded
+    minHeight: 200,
     maxHeight: getMaxHeight(),
   });
 
   // 6. Keyboard Selection Hook - Cmd+A selects only logs (after isResizing is defined)
   useKeyboardSelection({
     containerRef: logsContainerRef as React.RefObject<HTMLElement | null>,
-    enabled: isVisible && !isResizing,
+    enabled: isVisible && !isResizing && !isCompact,
   });
 
   // 7. Clear Hook - Double-action clear logic
-  const { handleClear: handleSmartClear } = useClear({
+  const { handleClear: handleSmartClear, clearConfirmation } = useClear({
     isPaused: pauseState.isPaused,
     isFollowing: scrollFollowing.isFollowing,
     onClearStorage: onClearLogs,
@@ -209,14 +212,13 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   const onClose = useCallback(() => {
     setIsVisible(false);
     setIsCompact(true); // Reset to compact for next activation
-    setPanelHeight(0);
-  }, [setPanelHeight]);
+  }, []);
 
   // 8. Click Outside Hook - Close panel when clicking outside
   useClickOutside(
     containerRef,
     onClose,
-    isVisible && !isResizing && closeOnClickOutside
+    isVisible && !isResizing && closeOnClickOutsideState && !isCompact
   );
 
   // 9. Keyboard Shortcuts Hook - Always active (especially ⌘+D for global toggle)
@@ -226,17 +228,18 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       if (!isVisible) {
         setIsVisible(true);
         setIsCompact(true);
-        setPanelHeight(0);
         return;
       }
 
       // Once visible, toggle between compact and extended
-      // isCompact is the source of truth
       const nextIsCompact = !isCompact;
-      const nextHeight = nextIsCompact ? 0 : 400;
-
       setIsCompact(nextIsCompact);
-      setPanelHeight(nextHeight);
+      
+      setDisplayContent({
+        message: `Mode: ${nextIsCompact ? "Compact" : "Extended"}`,
+        type: "info",
+        duration: 1500,
+      });
     },
     onClear: handleSmartClear,
     onClose,
@@ -262,8 +265,6 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
   // 🔥 Button theme for control panel buttons (matching Showcase)
   const controlButtonTheme: IndicatorButtonTheme = {
-    fontSize: "10px",
-    lineHeight: "12px",
     style: {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
@@ -305,7 +306,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
         bottom: 0,
         left: 0,
         width: "100vw",
-        height: `${panelHeight}px`,
+        height: isCompact ? "auto" : `${panelHeight}px`,
         zIndex: Z_INDEX.DEBUG_PANEL,
       }}
     >
@@ -314,139 +315,191 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
         isResizing={isResizing}
         isCompact={isCompact}
       >
-        <TerminalLayoutHeader>
-          <TerminalLayoutResizeHandle
-            onResizeStart={handleResizeStart}
-            isResizing={isResizing}
-          />
-        </TerminalLayoutHeader>
+        {!isCompact && (
+          <>
+            <TerminalLayoutHeader>
+              <TerminalLayoutResizeHandle
+                onResizeStart={handleResizeStart}
+                isResizing={isResizing}
+              />
+            </TerminalLayoutHeader>
 
-        {panelHeight > 0 && (
-          <TerminalLayoutBody>
-            <TerminalLayoutContent>
-              <TerminalLayoutLogsContainer<
-                DebugLogEntry & { _uniqueId: string }
-              >
-                containerRef={logsContainerRef}
-                items={activeLogs.slice(0, MAX_RENDERED).map((log, idx) => ({
-                  ...log,
-                  _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
-                }))}
-                renderItem={(
-                  log: DebugLogEntry & { _uniqueId: string },
-                  index
-                ) => {
-                  const entry = {
-                    id: index,
-                    timestamp: new Date(log.timestamp).toLocaleTimeString(),
-                    point: log.point,
-                    message: log.message,
-                    level: log.level as "info" | "warn" | "error" | undefined,
-                    data: log.data,
-                  };
-                  return (
-                    <LogEntry
-                      entry={entry}
-                      index={index}
-                      isExpanded={expandedEntries.has(index)}
-                      onToggleExpand={() => {
-                        setExpandedEntries((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(index)) {
-                            next.delete(index);
-                          } else {
-                            next.add(index);
-                          }
-                          return next;
-                        });
-                      }}
-                    />
-                  );
-                }}
-                keyExtractor={(log: DebugLogEntry & { _uniqueId: string }) =>
-                  log._uniqueId
-                }
-                topBanners={[
-                  {
-                    show: pauseState.isPaused,
-                    content: (
-                      <Banner
-                        emoji="⏸️"
-                        message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
-                        variant="paused"
-                        onClick={() => pauseState.resume()}
-                        title="Click to resume log rendering"
-                      />
-                    ),
-                  },
-                  {
-                    show: !scrollFollowing.isFollowing && !pauseState.isPaused,
-                    content: (
-                      <Banner
-                        emoji="📌"
-                        message={`Viewing snapshot at ${scrollFollowing.snapshotItems.length > 0 ? scrollFollowing.snapshotItems.length : activeLogs.length} logs - Click to return to live stream`}
-                        variant="snapshot"
-                        onClick={() => {
-                          scrollFollowing.returnToFollowing();
-                          setDisplayContent({
-                            message: "Returned to following live logs",
-                            type: "success",
-                            duration: 2000,
+            <TerminalLayoutBody>
+              <TerminalLayoutContent>
+                <TerminalLayoutLogsContainer<
+                  DebugLogEntry & { _uniqueId: string }
+                >
+                  containerRef={logsContainerRef}
+                  items={activeLogs.slice(0, MAX_RENDERED).map((log, idx) => ({
+                    ...log,
+                    _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
+                  }))}
+                  renderItem={(
+                    log: DebugLogEntry & { _uniqueId: string },
+                    index
+                  ) => {
+                    const entry = {
+                      id: index,
+                      timestamp: new Date(log.timestamp).toLocaleTimeString(),
+                      point: log.point,
+                      message: log.message,
+                      level: log.level as "info" | "warn" | "error" | undefined,
+                      data: log.data,
+                    };
+                    return (
+                      <LogEntry
+                        entry={entry}
+                        index={index}
+                        isExpanded={expandedEntries.has(index)}
+                        onToggleExpand={() => {
+                          setExpandedEntries((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(index)) {
+                              next.delete(index);
+                            } else {
+                              next.add(index);
+                            }
+                            return next;
                           });
                         }}
-                        title="Click to return to following live logs"
                       />
-                    ),
-                  },
-                ]}
-                truncation={{
-                  hiddenCount,
-                  totalCount: totalLogs,
-                  maxRendered: MAX_RENDERED,
-                  renderedCount: activeLogs.length,
-                  onCopyAll: handleCopyAllLogs,
-                  onClearAll: handleClearAllLogs,
-                }}
-                TruncationPanel={TruncationPanel}
-                VirtualizedList={VirtualizedList}
-                itemHeight={24}
-                virtualizationThreshold={50}
-                overscan={5}
-              />
-            </TerminalLayoutContent>
+                    );
+                  }}
+                  keyExtractor={(log: DebugLogEntry & { _uniqueId: string }) =>
+                    log._uniqueId
+                  }
+                  topBanners={[
+                    {
+                      show: pauseState.isPaused,
+                      content: (
+                        <Banner
+                          emoji="⏸️"
+                          message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
+                          variant="paused"
+                          onClick={() => pauseState.resume()}
+                          title="Click to resume log rendering"
+                        />
+                      ),
+                    },
+                    {
+                      show: !scrollFollowing.isFollowing && !pauseState.isPaused,
+                      content: (
+                        <Banner
+                          emoji="📌"
+                          message={`Viewing snapshot at ${scrollFollowing.snapshotItems.length > 0 ? scrollFollowing.snapshotItems.length : activeLogs.length} logs - Click to return to live stream`}
+                          variant="snapshot"
+                          onClick={() => {
+                            scrollFollowing.returnToFollowing();
+                            setDisplayContent({
+                              message: "Returned to following live logs",
+                              type: "success",
+                              duration: 2000,
+                            });
+                          }}
+                          title="Click to return to following live logs"
+                        />
+                      ),
+                    },
+                    {
+                      show: clearConfirmation,
+                      content: (
+                        <Banner
+                          emoji="🔄"
+                          message="Storage cleared. Press Clear again to clear snapshot and resume following."
+                          variant="warning"
+                          onClick={handleSmartClear}
+                          title="Click to complete clear and resume"
+                        />
+                      ),
+                    },
+                  ]}
+                  truncation={{
+                    hiddenCount,
+                    totalCount: totalLogs,
+                    maxRendered: MAX_RENDERED,
+                    renderedCount: activeLogs.length,
+                    onCopyAll: handleCopyAllLogs,
+                    onClearAll: handleClearAllLogs,
+                  }}
+                  TruncationPanel={TruncationPanel}
+                  VirtualizedList={VirtualizedList}
+                  itemHeight={24}
+                  virtualizationThreshold={50}
+                  overscan={5}
+                />
+              </TerminalLayoutContent>
 
-            <TerminalLayoutActions>
-              <DebugsyActions
-                activeLogs={activeLogs}
-                filteredLogs={filteredLogs}
-                copyState={copyState}
-                pauseState={pauseState}
-                scrollFollowing={scrollFollowing}
-                hoverMessage={hoverMessage}
-              />
-            </TerminalLayoutActions>
+              <TerminalLayoutActions>
+                <DebugsyActions
+                  activeLogs={activeLogs}
+                  filteredLogs={filteredLogs}
+                  copyState={copyState}
+                  pauseState={pauseState}
+                  scrollFollowing={scrollFollowing}
+                  hoverMessage={hoverMessage}
+                />
+              </TerminalLayoutActions>
 
-            <TerminalLayoutSidebar>
-              <DebugsyStats
-                totalLogs={totalLogs}
-                filteredLogs={filteredCount}
-                activeLogs={activeLogs.length}
-                activePoints={activePoints}
-                panelHeight={panelHeight}
-              />
+              <TerminalLayoutSidebar>
+                <DebugsyStats
+                  totalLogs={totalLogs}
+                  filteredLogs={filteredCount}
+                  activeLogs={activeLogs.length}
+                  activePoints={activePoints}
+                  panelHeight={panelHeight}
+                />
 
-              <DebugsyShortcutsDisplay shortcuts={shortcuts} />
+                <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
-              <div style={{ flexGrow: 1 }} />
+                <TerminalLayoutResizePresets
+                  presets={[200, 400, 600, getMaxHeight()]}
+                  currentHeight={panelHeight}
+                  maxHeight={getMaxHeight()}
+                  onResize={setPanelHeight}
+                />
 
-              <TerminalLayoutResizePresets
-                presets={[200, 400, 600, getMaxHeight()]}
-                currentHeight={panelHeight}
-                maxHeight={getMaxHeight()}
-                onResize={setPanelHeight}
-              />
-            </TerminalLayoutSidebar>
-          </TerminalLayoutBody>
+                {/* Settings Section */}
+                <TerminalLayoutSettings noBorder={true}>
+                  <IndicatorButtonGroup
+                    orientation="horizontal"
+                    wrap={true}
+                    justify="flex-start"
+                    align="center"
+                    buttons={[
+                      {
+                        label: "Click Outside",
+                        indicatorType: "toggle" as const,
+                        active: closeOnClickOutsideState,
+                        onClick: () => {
+                          setCloseOnClickOutsideState(!closeOnClickOutsideState);
+                          setDisplayContent({
+                            message: `Click outside: ${!closeOnClickOutsideState ? "ON" : "OFF"}`,
+                            type: "info",
+                            duration: 1500,
+                          });
+                        },
+                        buttonVariant: "ghost" as const,
+                        buttonSize: "xxs" as const,
+                        title: "Toggle click outside to close",
+                      },
+                    ]}
+                    theme={{
+                      color: "#d1d5db",
+                      style: {
+                        fontFamily: "monospace",
+                        fontWeight: "bold",
+                        borderRadius: "3px",
+                        padding: "3px 6px",
+                      },
+                    }}
+                    gap="3px"
+                  />
+                </TerminalLayoutSettings>
+
+                <div style={{ flexGrow: 1 }} />
+              </TerminalLayoutSidebar>
+            </TerminalLayoutBody>
+          </>
         )}
 
         <TerminalLayoutControlPanel>
@@ -466,7 +519,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                     });
                   },
                   buttonVariant: "ghost" as const,
-                  buttonSize: "xs" as const,
+                  buttonSize: "xxs" as const,
                 }))}
                 theme={controlButtonTheme}
                 orientation="grid"
@@ -499,12 +552,14 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                     ]
                   : []),
                 {
-                  icon: "🗑",
+                  icon: clearConfirmation ? "🔄" : "🗑️",
                   onClick: handleSmartClear,
-                  title: "Clear logs (Cmd+K)",
-                  backgroundColor: "#ffffff",
-                  hoverBackgroundColor: "#e5e7eb",
-                  color: "#4b5563",
+                  title: clearConfirmation
+                    ? "Click again to clear snapshot and resume"
+                    : "Clear logs (Cmd+K)",
+                  backgroundColor: clearConfirmation ? "#f59e0b" : "#ffffff",
+                  hoverBackgroundColor: clearConfirmation ? "#d97706" : "#e5e7eb",
+                  color: clearConfirmation ? "#ffffff" : "#4b5563",
                 },
                 {
                   icon: "✕",

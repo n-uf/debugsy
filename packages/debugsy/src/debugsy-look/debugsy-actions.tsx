@@ -3,6 +3,11 @@
 import {
   ActionToolbar,
   DEFAULT_COPY_CONFIG,
+  getProgressColor as getActionProgressColor,
+  getProgressWidth as getActionProgressWidth,
+  getDepthColor,
+  getDepthDescription,
+  getDepthWidth,
   getLogsToCopy,
   safeSuperjsonStringify,
   setDisplayContent,
@@ -12,6 +17,7 @@ import {
   type DepthSetting,
   type HoverMessageHandlers,
   type PauseState,
+  type ProgressControl,
   type ScrollFollowingState,
 } from "@workspace/harbuz";
 import React, { useCallback, useState } from "react";
@@ -133,14 +139,21 @@ export const DebugsyActions = <T,>({
     onChange: (newDepth) => {
       setDepthSetting(newDepth);
       setDisplayContent({
-        message: `Copy depth: ${newDepth === "str" ? "String only" : newDepth === "all" ? "Full depth" : `Max ${newDepth} levels`}`,
+        message: `${getDepthDescription(newDepth)}`,
         type: "info",
         duration: 2000,
       });
     },
-    getDescription: (v) => `Depth: ${v}`,
-    getColor: () => "#10b981",
-    getWidth: () => "100%",
+    getDescription: getDepthDescription,
+    getColor: getDepthColor,
+    getWidth: getDepthWidth,
+  };
+
+  const progressControl: ProgressControl<typeof copyState.state> = {
+    value: copyState.state,
+    getIcon: copyState.getIcon,
+    getWidth: getActionProgressWidth,
+    getColor: getActionProgressColor,
   };
 
   // Action buttons configuration
@@ -187,7 +200,13 @@ export const DebugsyActions = <T,>({
     },
   ];
 
-  return <ActionToolbar depthControl={depthControl} actions={actionButtons} />;
+  return (
+    <ActionToolbar
+      depthControl={depthControl}
+      actions={actionButtons}
+      progressControl={progressControl}
+    />
+  );
 };
 
 DebugsyActions.displayName = "DebugsyActions";
