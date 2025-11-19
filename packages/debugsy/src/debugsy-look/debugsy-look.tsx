@@ -309,7 +309,11 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
         zIndex: Z_INDEX.DEBUG_PANEL,
       }}
     >
-      <TerminalLayout height={panelHeight} isResizing={isResizing}>
+      <TerminalLayout
+        bodyHeight={panelHeight}
+        isResizing={isResizing}
+        isCompact={isCompact}
+      >
         <TerminalLayoutHeader>
           <TerminalLayoutResizeHandle
             onResizeStart={handleResizeStart}
