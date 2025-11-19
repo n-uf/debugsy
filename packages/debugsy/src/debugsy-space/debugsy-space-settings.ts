@@ -1,5 +1,5 @@
-import superjson from "superjson";
 import { safeSuperjsonStringify } from "@workspace/harbuz";
+import superjson from "superjson";
 import { notifySubscribers } from "../debugsy-logs/hooks/debugsy-notifications";
 import {
   type DebugPoint,
@@ -60,7 +60,11 @@ export function initializeDebugSettings(): void {
         if (typeof config.performance === "boolean") {
           globalDebugState.performance = config.performance;
         }
-        if (config.uiVersion === "v1" || config.uiVersion === "v2" || config.uiVersion === "auto") {
+        if (
+          config.uiVersion === "v1" ||
+          config.uiVersion === "v2" ||
+          config.uiVersion === "auto"
+        ) {
           globalDebugState.uiVersion = config.uiVersion;
         }
       }

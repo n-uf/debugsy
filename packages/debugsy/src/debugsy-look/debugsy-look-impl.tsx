@@ -46,12 +46,12 @@ import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import { type DebugsyLookProps } from "../debugsy-look-v1/debugsy-look";
-import { DebugDependencyControls } from "../debugsy-look-v1/ui-dependency/dependency-controls";
 import type { DebugLogEntry, DebugPoint } from "../debugsy-space";
 import {
   DEBUG_POINT_CONFIG,
   getLookDebugPoints,
 } from "../debugsy-space/debugsy-point";
+import { DependencyControlsV2 } from "./dependency-controls";
 
 // Re-export type for external consumers
 export type { DebugsyLookProps };
@@ -720,9 +720,9 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
               />
             </ControlPanelSection>
 
-            {/* Dependency Controls */}
+            {/* Dependency Controls - V2 with theme */}
             <ControlPanelSection separator className="pl-4">
-              <DebugDependencyControls />
+              <DependencyControlsV2 theme={controlButtonTheme} />
             </ControlPanelSection>
 
             <ControlPanelDisplaySection

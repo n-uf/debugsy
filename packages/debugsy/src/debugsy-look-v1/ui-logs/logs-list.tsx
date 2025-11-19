@@ -13,7 +13,7 @@ import { useDebugsy } from "../../debugsy-logs/use-debugsy";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-} from "../ui-display/debug-display-state";
+} from "../../shared/debug-display-state";
 
 // Import extracted components
 import {

@@ -3,7 +3,7 @@
 import { Z_INDEX } from "@workspace/harbuz";
 import React from "react";
 import type { DebugLogEntry } from "../../debugsy-logs/use-debugsy";
-import { useDebugDisplayContent } from "./debug-display-state";
+import { useDebugDisplayContent } from "../../shared/debug-display-state";
 // Import unified debug point configuration
 import { getDebugPointEmoji } from "../../debugsy-space/debugsy-constants";
 

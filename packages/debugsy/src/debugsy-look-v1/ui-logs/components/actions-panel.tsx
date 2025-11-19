@@ -3,11 +3,11 @@
 import { Z_INDEX } from "@workspace/harbuz";
 import React from "react";
 import type { DebugLogEntry } from "../../../debugsy-logs/use-debugsy";
-import { type DepthSetting } from "../../../shared/object-depth-utils";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-} from "../../ui-display/debug-display-state";
+} from "../../../shared/debug-display-state";
+import { type DepthSetting } from "../../../shared/object-depth-utils";
 import {
   DEFAULT_COPY_CONFIG,
   getButtonTransitionDuration,
