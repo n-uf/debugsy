@@ -1,18 +1,14 @@
 "use client";
 
 import {
-  ActionToolbar,
   clearDisplayContent,
   ControlPanel,
   ControlPanelDisplaySection,
   ControlPanelSection,
-  DEFAULT_COPY_CONFIG,
-  getLogsToCopy,
-  LogEntry,
-  safeSuperjsonStringify,
-  setDisplayContent,
   IndicatorButtonGroup,
   IndicatorButtonTheme,
+  LogEntry,
+  setDisplayContent,
   TerminalLayout,
   TerminalLayoutActions,
   TerminalLayoutBody,
@@ -22,11 +18,8 @@ import {
   TerminalLayoutLogsContainer,
   TerminalLayoutResizeHandle,
   TerminalLayoutResizePresets,
-  TerminalLayoutShortcut,
-  TerminalLayoutShortcuts,
   TerminalLayoutSidebar,
-  TerminalLayoutStatItem,
-  TerminalLayoutStats,
+  useClickOutside,
   useCopyState,
   useDisplay,
   useHoverMessage,
@@ -36,11 +29,8 @@ import {
   useResizable,
   useScrollFollowing,
   Z_INDEX,
-  type ActionButton,
-  type DepthControl,
-  type DepthSetting,
 } from "@workspace/harbuz";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 
 import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
@@ -51,7 +41,11 @@ import {
   DEBUG_POINT_CONFIG,
   getLookDebugPoints,
 } from "../debugsy-space/debugsy-point";
+import { DebugsyActions } from "./debugsy-actions";
+import { DebugsyShortcuts } from "./debugsy-shortcuts";
+import { DebugsyStats } from "./debugsy-stats";
 import { DependencyControlsV2 } from "./dependency-controls";
+import { useClear } from "./use-clear";
 
 // Re-export type for external consumers
 export type { DebugsyLookProps };
@@ -88,20 +82,15 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
-  const clearConfirmationTimeoutRef = useRef<
-    ReturnType<typeof setTimeout> | undefined
-  >(undefined);
 
   // State
   const [isVisible, setIsVisible] = useState(false);
-  const [clearConfirmation, setClearConfirmation] = useState(false);
   const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
     (() => void) | null
   >(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
     new Set()
   );
-  const [depthSetting, setDepthSetting] = useState<DepthSetting>("all");
 
   // Display system
   const displayContent = useDisplay();
@@ -198,155 +187,30 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     enabled: isVisible && !isResizing,
   });
 
-  // Smart clear function with double-action logic
-  const handleSmartClear = useCallback(() => {
-    const { isPaused } = pauseState;
-    const { isFollowing } = scrollFollowing;
-
-    // If following live logs, clear immediately
-    if (isFollowing && !isPaused) {
-      onClearLogs();
-      setDisplayContent({
-        message: "Logs cleared",
-        type: "success",
-        duration: 1500,
-      });
-      return;
-    }
-
-    // If paused or scrolled (not following), use two-step process
-    if (!clearConfirmation) {
-      // First action: Clear storage immediately but keep local state
-      onClearLogs();
-      setClearConfirmation(true);
-
-      setDisplayContent({
-        message:
-          "Logs cleared. Press again to clear snapshot and resume following.",
-        type: "info",
-        duration: 3000,
-      });
-
-      // Clear any existing timeout
-      if (clearConfirmationTimeoutRef.current) {
-        clearTimeout(clearConfirmationTimeoutRef.current);
-      }
-
-      // Auto-reset confirmation after 3 seconds
-      clearConfirmationTimeoutRef.current = setTimeout(() => {
-        setClearConfirmation(false);
-      }, 3000);
-    } else {
-      // Second action: Clear local state and resume following
-      setClearConfirmation(false);
-
-      // Clear the confirmation timeout
-      if (clearConfirmationTimeoutRef.current) {
-        clearTimeout(clearConfirmationTimeoutRef.current);
-      }
-
-      // Resume following
-      if (isPaused) {
+  // 7. Clear Hook - Double-action clear logic
+  const { handleClear: handleSmartClear } = useClear({
+    isPaused: pauseState.isPaused,
+    isFollowing: scrollFollowing.isFollowing,
+    onClearStorage: onClearLogs,
+    onResume: () => {
+      if (pauseState.isPaused) {
         pauseState.resume();
       }
       scrollFollowing.returnToFollowing();
-
-      // Clear local state
-      if (clearLocalStateCallback) {
-        clearLocalStateCallback();
-      }
-
-      setDisplayContent({
-        message: "Snapshot cleared, now following live logs",
-        type: "success",
-        duration: 2000,
-      });
-    }
-  }, [
-    pauseState,
-    scrollFollowing,
-    clearConfirmation,
-    onClearLogs,
-    clearLocalStateCallback,
-  ]);
+    },
+    onClearLocalState: clearLocalStateCallback ?? undefined,
+  });
 
   const onClose = useCallback(() => {
     setIsVisible(false);
   }, []);
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    if (isVisible && !isResizing && closeOnClickOutside) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isVisible, isResizing, closeOnClickOutside, onClose]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeydown = (event: KeyboardEvent) => {
-      // Cmd+D or Ctrl+D to cycle between compact and extended modes
-      if (event.key === "d" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-
-        if (!isVisible) {
-          // First time: show in compact mode
-          setIsVisible(true);
-          setPanelHeight(0);
-        } else {
-          // Toggle between compact (0) and extended (400) modes
-          const newHeight = panelHeight === 0 ? 400 : 0;
-          setPanelHeight(newHeight);
-        }
-        return;
-      }
-
-      // Only handle other shortcuts when panel is visible and not resizing
-      if (!isVisible || isResizing) return;
-
-      // Escape to close
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-
-      // Cmd+K or Ctrl+K to clear logs
-      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        handleSmartClear();
-        return;
-      }
-    };
-
-    document.addEventListener("keydown", handleKeydown);
-    return () => document.removeEventListener("keydown", handleKeydown);
-  }, [
-    isVisible,
-    isResizing,
-    panelHeight,
-    handleSmartClear,
+  // 8. Click Outside Hook - Close panel when clicking outside
+  useClickOutside(
+    containerRef,
     onClose,
-    setPanelHeight,
-  ]);
-
-  // Cleanup confirmation timeout
-  useEffect(() => {
-    return () => {
-      if (clearConfirmationTimeoutRef.current) {
-        clearTimeout(clearConfirmationTimeoutRef.current);
-      }
-    };
-  }, []);
+    isVisible && !isResizing && closeOnClickOutside
+  );
 
   // Calculate stats
   const activePoints = [...new Set(filteredLogs.map((log) => log.point))]
@@ -373,121 +237,6 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
   };
-
-  // 🔥 Health Snapshot Handler (from Showcase)
-  const handleHealthSnapshot = useCallback(() => {
-    const globalDebug = (globalThis as any).surfaceDebug;
-    if (globalDebug?.captureHealthSnapshot) {
-      globalDebug.captureHealthSnapshot();
-      // Capture snapshot when taking health snapshot (stops following)
-      scrollFollowing.setIsFollowing(false);
-      scrollFollowing.setSnapshotItems([...filteredLogs]);
-      setDisplayContent({
-        message: "Health snapshot captured and saved to logs",
-        type: "success",
-        duration: 2000,
-      });
-    } else {
-      setDisplayContent({
-        message: "Health snapshot captured (surfaceDebug not available)",
-        type: "info",
-        duration: 2000,
-      });
-    }
-  }, [filteredLogs, scrollFollowing]);
-
-  // 🔥 Copy Logs Handler with Depth Setting (from Showcase)
-  const handleCopyLogs = useCallback(() => {
-    const {
-      logs: logsToCopy,
-      nextState,
-      message,
-    } = getLogsToCopy(activeLogs, copyState.state, DEFAULT_COPY_CONFIG);
-
-    // Get depth as number for safeSuperjsonStringify
-    const depthMap: Record<DepthSetting, number | undefined> = {
-      str: 0,
-      "1": 1,
-      "3": 3,
-      "5": 5,
-      "10": 10,
-      all: undefined,
-    };
-    const depth = depthMap[depthSetting];
-
-    // Copy with depth setting
-    const serialized = safeSuperjsonStringify(logsToCopy, depth);
-    navigator.clipboard.writeText(serialized);
-
-    // Advance copy state
-    copyState.setState(nextState);
-
-    setDisplayContent({
-      message: `${message} (depth: ${depthSetting})`,
-      type: "success",
-      duration: 2000,
-    });
-  }, [activeLogs, copyState, depthSetting]);
-
-  // Actions for action toolbar
-  const depthControl: DepthControl<DepthSetting> = {
-    value: depthSetting,
-    options: ["str", "1", "3", "5", "10", "all"],
-    onChange: (newDepth) => {
-      setDepthSetting(newDepth);
-      setDisplayContent({
-        message: `Copy depth: ${newDepth === "str" ? "String only" : newDepth === "all" ? "Full depth" : `Max ${newDepth} levels`}`,
-        type: "info",
-        duration: 2000,
-      });
-    },
-    getDescription: (v) => `Depth: ${v}`,
-    getColor: () => "#10b981",
-    getWidth: () => "100%",
-  };
-
-  const actionButtons: ActionButton[] = [
-    {
-      icon: copyState.getIcon(),
-      title:
-        copyState.state === 0
-          ? `Copy ${activeLogs.length} logs to clipboard`
-          : copyState.state === 1
-            ? "Click again to copy all"
-            : "Copy complete",
-      variant: copyState.getVariant(),
-      onClick: handleCopyLogs,
-      disabled: activeLogs.length === 0,
-      ...hoverMessage.getHandlers(
-        `Copy ${activeLogs.length} logs (depth: ${depthSetting})`,
-        "info"
-      ),
-    },
-    {
-      icon: pauseState.isPaused ? "▶️" : "⏸",
-      title: pauseState.isPaused
-        ? "Resume log rendering"
-        : "Pause log rendering",
-      variant: pauseState.isPaused ? "paused" : "default",
-      onClick: () => pauseState.toggle(filteredLogs),
-      ...hoverMessage.getHandlers(
-        pauseState.isPaused
-          ? "Resume live log updates"
-          : "Pause live log updates",
-        "info"
-      ),
-    },
-    {
-      icon: "🏥",
-      title: "Capture health snapshot to debug logs",
-      variant: "success",
-      onClick: handleHealthSnapshot,
-      ...hoverMessage.getHandlers(
-        "Capture health snapshot and save to debug logs",
-        "info"
-      ),
-    },
-  ];
 
   // Truncation info
   const MAX_RENDERED = 1000;
@@ -637,50 +386,39 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
             </TerminalLayoutContent>
 
             <TerminalLayoutActions>
-              <ActionToolbar
-                depthControl={depthControl}
-                actions={actionButtons}
+              <DebugsyActions
+                activeLogs={activeLogs}
+                filteredLogs={filteredLogs}
+                copyState={copyState}
+                pauseState={pauseState}
+                scrollFollowing={scrollFollowing}
+                hoverMessage={hoverMessage}
               />
             </TerminalLayoutActions>
 
             <TerminalLayoutSidebar>
-              <TerminalLayoutStats title="Info">
-                <TerminalLayoutStatItem
-                  label="Total"
-                  value={totalLogs}
-                  color="#10b981"
-                />
-                <TerminalLayoutStatItem
-                  label="Filtered"
-                  value={filteredCount}
-                  color="#3b82f6"
-                />
-                <TerminalLayoutStatItem
-                  label="Active"
-                  value={activeLogs.length}
-                  color="#f59e0b"
-                />
-                <TerminalLayoutStatItem
-                  label="Points"
-                  value={activePoints}
-                  color="#60a5fa"
-                />
-                <TerminalLayoutStatItem
-                  label="Height"
-                  value={`${panelHeight}px`}
-                  color="#fbbf24"
-                />
-              </TerminalLayoutStats>
+              <DebugsyStats
+                totalLogs={totalLogs}
+                filteredLogs={filteredCount}
+                activeLogs={activeLogs.length}
+                activePoints={activePoints}
+                panelHeight={panelHeight}
+              />
 
-              <TerminalLayoutShortcuts title="Shortcuts">
-                <TerminalLayoutShortcut
-                  keys="⌘+D"
-                  description="Compact/Extended"
-                />
-                <TerminalLayoutShortcut keys="⌘+A" description="Select logs" />
-                <TerminalLayoutShortcut keys="⌘+K" description="Clear logs" />
-                <TerminalLayoutShortcut keys="Esc" description="Close panel" />
-              </TerminalLayoutShortcuts>
+              <DebugsyShortcuts
+                onToggleCompactExtended={() => {
+                  if (!isVisible) {
+                    setIsVisible(true);
+                    setPanelHeight(0);
+                  } else {
+                    const newHeight = panelHeight === 0 ? 400 : 0;
+                    setPanelHeight(newHeight);
+                  }
+                }}
+                onClear={handleSmartClear}
+                onClose={onClose}
+                enabled={isVisible && !isResizing}
+              />
 
               <div style={{ flexGrow: 1 }} />
 
