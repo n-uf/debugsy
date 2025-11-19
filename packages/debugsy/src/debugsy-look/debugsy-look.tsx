@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Banner,
   clearDisplayContent,
   ControlPanel,
   ControlPanelDisplaySection,
@@ -19,6 +20,7 @@ import {
   TerminalLayoutResizeHandle,
   TerminalLayoutResizePresets,
   TerminalLayoutSidebar,
+  TruncationPanel,
   useClickOutside,
   useCopyState,
   useDisplay,
@@ -28,6 +30,7 @@ import {
   usePauseState,
   useResizable,
   useScrollFollowing,
+  VirtualizedList,
   Z_INDEX,
 } from "@workspace/harbuz";
 import React, { useCallback, useRef, useState } from "react";
@@ -271,6 +274,25 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   const shouldShowTruncation = totalLogs > MAX_RENDERED;
   const hiddenCount = totalLogs - MAX_RENDERED;
 
+  // Truncation handlers (matching Showcase pattern)
+  const handleCopyAllLogs = useCallback(() => {
+    navigator.clipboard.writeText(JSON.stringify(logs, null, 2));
+    setDisplayContent({
+      message: `Copied all ${totalLogs} logs to clipboard`,
+      type: "success",
+      duration: 2000,
+    });
+  }, [logs, totalLogs]);
+
+  const handleClearAllLogs = useCallback(() => {
+    onClearLogs();
+    setDisplayContent({
+      message: "All logs cleared",
+      type: "success",
+      duration: 2000,
+    });
+  }, [onClearLogs]);
+
   if (!isVisible) {
     return null;
   }
@@ -342,74 +364,50 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                 }
                 topBanners={[
                   {
-                    content: (
-                      <>
-                        ⏸ Paused - {pauseState.pausedItems.length} logs frozen.{" "}
-                        <button
-                          onClick={() => pauseState.resume()}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "inherit",
-                            textDecoration: "underline",
-                            cursor: "pointer",
-                            padding: 0,
-                            font: "inherit",
-                          }}
-                          title="Resume log rendering"
-                        >
-                          Click to resume
-                        </button>
-                      </>
-                    ),
                     show: pauseState.isPaused,
+                    content: (
+                      <Banner
+                        emoji="⏸️"
+                        message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
+                        variant="paused"
+                        onClick={() => pauseState.resume()}
+                        title="Click to resume log rendering"
+                      />
+                    ),
                   },
                   {
-                    content: (
-                      <>
-                        📌 Viewing snapshot at{" "}
-                        {scrollFollowing.snapshotItems.length > 0
-                          ? scrollFollowing.snapshotItems.length
-                          : activeLogs.length}{" "}
-                        logs.{" "}
-                        <button
-                          onClick={() => {
-                            scrollFollowing.returnToFollowing();
-                            setDisplayContent({
-                              message: "Returned to following live logs",
-                              type: "success",
-                              duration: 2000,
-                            });
-                          }}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "inherit",
-                            textDecoration: "underline",
-                            cursor: "pointer",
-                            padding: 0,
-                            font: "inherit",
-                          }}
-                          title="Return to following live logs"
-                        >
-                          Return to live stream
-                        </button>
-                      </>
-                    ),
                     show: !scrollFollowing.isFollowing && !pauseState.isPaused,
+                    content: (
+                      <Banner
+                        emoji="📌"
+                        message={`Viewing snapshot at ${scrollFollowing.snapshotItems.length > 0 ? scrollFollowing.snapshotItems.length : activeLogs.length} logs - Click to return to live stream`}
+                        variant="snapshot"
+                        onClick={() => {
+                          scrollFollowing.returnToFollowing();
+                          setDisplayContent({
+                            message: "Returned to following live logs",
+                            type: "success",
+                            duration: 2000,
+                          });
+                        }}
+                        title="Click to return to following live logs"
+                      />
+                    ),
                   },
                 ]}
-                truncation={
-                  shouldShowTruncation
-                    ? {
-                        hiddenCount,
-                        maxRendered: MAX_RENDERED,
-                        totalCount: totalLogs,
-                      }
-                    : undefined
-                }
-                virtualized={true}
+                truncation={{
+                  hiddenCount,
+                  totalCount: totalLogs,
+                  maxRendered: MAX_RENDERED,
+                  renderedCount: activeLogs.length,
+                  onCopyAll: handleCopyAllLogs,
+                  onClearAll: handleClearAllLogs,
+                }}
+                TruncationPanel={TruncationPanel}
+                VirtualizedList={VirtualizedList}
                 itemHeight={24}
+                virtualizationThreshold={50}
+                overscan={5}
               />
             </TerminalLayoutContent>
 
@@ -499,10 +497,15 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                 {
                   icon: "🗑",
                   onClick: handleSmartClear,
+                  title: "Clear logs (Cmd+K)",
+                  backgroundColor: "#ffffff",
+                  hoverBackgroundColor: "#e5e7eb",
+                  color: "#4b5563",
                 },
                 {
                   icon: "✕",
                   onClick: onClose,
+                  title: "Close panel (Esc)",
                   backgroundColor: "#dc2626",
                   hoverBackgroundColor: "#b91c1c",
                   color: "#ffffff",
