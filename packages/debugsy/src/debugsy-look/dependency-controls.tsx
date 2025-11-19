@@ -202,29 +202,27 @@ export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
             title: "Cycle between All → Func → Obj → Unstable filters",
           },
           {
-            label: isRunningProbe ? "..." : "Probe",
-            indicatorType: "none" as const,
+            label: "Probe",
+            indicatorType: "executing" as const,
+            executingLabel: "Probe",
             onClick: handleProbeTest,
             disabled: isRunningProbe,
             buttonVariant: "ghost" as const,
             buttonSize: "xs" as const,
             width: "narrow" as const,
             justify: "center" as const,
-            className: isRunningProbe ? "text-gray-400" : "text-gray-600",
             title:
               "Run comprehensive re-render probe to verify dependency tracking",
           },
           {
             label: "Adv.",
-            indicatorType: "none" as const,
+            indicatorType: "toggle" as const,
+            active: showAdvanced,
             onClick: handleAdvancedToggle,
             buttonVariant: "ghost" as const,
             buttonSize: "xs" as const,
             width: "narrow" as const,
             justify: "center" as const,
-            className: showAdvanced
-              ? "bg-blue-100 text-blue-900 hover:bg-blue-200"
-              : "",
             title: "Toggle advanced dependency controls panel",
           },
         ]}
