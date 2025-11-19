@@ -42,19 +42,20 @@ import {
   getLookDebugPoints,
 } from "../debugsy-space/debugsy-point";
 import { DebugsyActions } from "./debugsy-actions";
-import { DebugsyShortcuts } from "./debugsy-shortcuts";
+import { DebugsyShortcutsDisplay } from "./debugsy-shortcuts";
 import { DebugsyStats } from "./debugsy-stats";
-import { DependencyControlsV2 } from "./dependency-controls";
+import { DependencyControls } from "./dependency-controls";
 import { useClear } from "./use-clear";
+import { useDebugsyShortcuts } from "./use-debugsy-shortcuts";
 
 // Re-export type for external consumers
 export type { DebugsyLookProps };
 
 /**
- * DebugsyLook - Harbuz-based implementation (V2)
+ * DebugsyLook - Harbuz-based implementation
  *
  * Full implementation using @workspace/harbuz UI components.
- * Maintains feature parity with V1 while using modern TerminalLayout structure.
+ * Modern TerminalLayout structure with comprehensive debugging features.
  */
 export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
@@ -62,15 +63,15 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   _onToggleVersion,
 }) => {
   // Enhanced tracking
-  useRenderTracker("DebugsyLookV2", {
+  useRenderTracker("DebugsyLook", {
     renderThreshold: 15,
     mountThreshold: 5,
     trackRenders: true,
     trackMounts: true,
     onExcessiveRenders: (info) =>
-      console.warn("DebugsyLookV2 excessive renders:", info),
+      console.warn("DebugsyLook excessive renders:", info),
     onExcessiveMounts: (info) =>
-      console.warn("DebugsyLookV2 excessive mounts:", info),
+      console.warn("DebugsyLook excessive mounts:", info),
   });
 
   // Debug system integration
@@ -85,6 +86,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
   // State
   const [isVisible, setIsVisible] = useState(false);
+  const [isCompact, setIsCompact] = useState(true); // Compact mode (controls only) vs Extended mode (full logs)
   const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
     (() => void) | null
   >(null);
@@ -176,8 +178,8 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     isResizing,
     handleResizeStart,
   } = useResizable({
-    initialHeight: 400,
-    minHeight: 200,
+    initialHeight: 0, // Start compact (controls only)
+    minHeight: 0, // Allow compact mode (0 height)
     maxHeight: getMaxHeight(),
   });
 
@@ -203,7 +205,9 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
   const onClose = useCallback(() => {
     setIsVisible(false);
-  }, []);
+    setIsCompact(true); // Reset to compact for next activation
+    setPanelHeight(0);
+  }, [setPanelHeight]);
 
   // 8. Click Outside Hook - Close panel when clicking outside
   useClickOutside(
@@ -211,6 +215,30 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     onClose,
     isVisible && !isResizing && closeOnClickOutside
   );
+
+  // 9. Keyboard Shortcuts Hook - Always active (especially ⌘+D for global toggle)
+  const { shortcuts } = useDebugsyShortcuts({
+    onToggleCompactExtended: () => {
+      // First activation: show compact (controls only)
+      if (!isVisible) {
+        setIsVisible(true);
+        setIsCompact(true);
+        setPanelHeight(0);
+        return;
+      }
+
+      // Once visible, toggle between compact and extended
+      // isCompact is the source of truth
+      const nextIsCompact = !isCompact;
+      const nextHeight = nextIsCompact ? 0 : 400;
+
+      setIsCompact(nextIsCompact);
+      setPanelHeight(nextHeight);
+    },
+    onClear: handleSmartClear,
+    onClose,
+    enabled: isVisible && !isResizing,
+  });
 
   // Calculate stats
   const activePoints = [...new Set(filteredLogs.map((log) => log.point))]
@@ -405,20 +433,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                 panelHeight={panelHeight}
               />
 
-              <DebugsyShortcuts
-                onToggleCompactExtended={() => {
-                  if (!isVisible) {
-                    setIsVisible(true);
-                    setPanelHeight(0);
-                  } else {
-                    const newHeight = panelHeight === 0 ? 400 : 0;
-                    setPanelHeight(newHeight);
-                  }
-                }}
-                onClear={handleSmartClear}
-                onClose={onClose}
-                enabled={isVisible && !isResizing}
-              />
+              <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
               <div style={{ flexGrow: 1 }} />
 
@@ -458,9 +473,9 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
               />
             </ControlPanelSection>
 
-            {/* Dependency Controls - V2 with theme */}
+            {/* Dependency Controls */}
             <ControlPanelSection separator className="pl-4">
-              <DependencyControlsV2 theme={controlButtonTheme} />
+              <DependencyControls theme={controlButtonTheme} />
             </ControlPanelSection>
 
             <ControlPanelDisplaySection

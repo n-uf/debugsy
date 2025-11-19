@@ -10,7 +10,7 @@ import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";
 import { setDebugDisplayContent } from "../shared/debug-display-state";
 import { DependencyAdvancedPanel } from "./dependency-advanced-panel";
 
-export interface DependencyControlsV2Props {
+export interface DependencyControlsProps {
   theme?: IndicatorButtonTheme;
   className?: string;
   onAdvancedToggle?: (show: boolean) => void;
@@ -18,12 +18,12 @@ export interface DependencyControlsV2Props {
 }
 
 /**
- * Dependency Controls V2 - Harbuz-themed implementation
+ * DependencyControls - Harbuz-themed implementation
  *
  * Follows exact structure and pattern from Showcase control buttons.
  * Uses IndicatorButtonGroup for consistent theming and layout.
  */
-export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
+export const DependencyControls: React.FC<DependencyControlsProps> = ({
   theme,
   className = "",
   onAdvancedToggle,

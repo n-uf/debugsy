@@ -20,8 +20,8 @@ export {
 // V2 Sub-components (for composition and customization)
 export { DebugsyActions, type DebugsyActionsProps } from "./debugsy-actions";
 export {
-  DebugsyShortcuts,
-  type DebugsyShortcutsProps,
+  DebugsyShortcutsDisplay,
+  type DebugsyShortcutsDisplayProps,
 } from "./debugsy-shortcuts";
 export { DebugsyStats, type DebugsyStatsProps } from "./debugsy-stats";
 export {
@@ -29,16 +29,21 @@ export {
   type DependencyAdvancedPanelProps,
 } from "./dependency-advanced-panel";
 export {
-  DependencyControlsV2,
-  type DependencyControlsV2Props,
+  DependencyControls,
+  type DependencyControlsProps,
 } from "./dependency-controls";
 
-// V2 Hooks (for advanced composition)
+// Hooks (for advanced composition)
 export {
   useClear,
   type UseClearConfig,
   type UseClearReturn,
 } from "./use-clear";
+export {
+  useDebugsyShortcuts,
+  type UseDebugsyShortcutsConfig,
+  type UseDebugsyShortcutsReturn,
+} from "./use-debugsy-shortcuts";
 
 // V1 UI Components (legacy, may be deprecated)
 export {
