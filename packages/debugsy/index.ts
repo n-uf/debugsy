@@ -40,6 +40,8 @@ export {
   DebugResizePresets,
   DebugStatsPanel,
   DebugsyLook,
+  DebugsyLookV1,
+  DebugsyLookV2,
 } from "./src/debugsy-look";
 
 // === LOG FORMATTERS ===
@@ -88,6 +90,7 @@ export type {
   DebugResizePresetsProps,
   DebugStatsPanelProps,
   DebugsyLookProps,
+  UIVersion,
 } from "./src/debugsy-look";
 
 // === ADVANCED DEPENDENCY CONTROLS ===

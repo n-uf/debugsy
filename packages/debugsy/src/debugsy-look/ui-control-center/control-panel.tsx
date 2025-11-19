@@ -19,6 +19,8 @@ export interface DebugControlPanelProps {
   onDisplayInlineLogsChange?: (display: boolean) => void;
   onDisplayClick?: () => void;
   showDependencyControls?: boolean;
+  uiVersion?: "v1" | "v2";
+  onToggleVersion?: () => void;
 }
 
 /**
@@ -34,6 +36,8 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
   onDisplayInlineLogsChange,
   onDisplayClick,
   showDependencyControls = true,
+  uiVersion,
+  onToggleVersion,
 }) => {
   // SUBSCRIBE to debug state changes so button indicators update
   useDebugsySubscription();
@@ -97,6 +101,8 @@ export const DebugControlPanel: React.FC<DebugControlPanelProps> = ({
             displayInlineLogs={displayInlineLogs}
             onDisplayInlineLogsChange={onDisplayInlineLogsChange}
             onDisplayClick={onDisplayClick}
+            uiVersion={uiVersion}
+            onToggleVersion={onToggleVersion}
           />
         </div>
       </div>

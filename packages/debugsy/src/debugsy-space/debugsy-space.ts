@@ -69,6 +69,8 @@ export interface DebugsySpace {
   setConsoleEnabled: (enabled: boolean) => void;
   setVisualEnabled: (enabled: boolean) => void;
   setPerformanceEnabled: (enabled: boolean) => void;
+  setUIVersion: (version: "v1" | "v2" | "auto") => void;
+  getUIVersion: () => "v1" | "v2" | "auto" | undefined;
 
   // === LOGS MANAGEMENT ===
   getLogs: () => DebugLogEntry[];
@@ -289,6 +291,15 @@ function createDebugsySpace(): DebugsySpace {
       notifySubscribers();
     },
 
+    setUIVersion: (version: "v1" | "v2" | "auto"): void => {
+      debugSettingsControls.setUIVersion(version);
+      // notifySubscribers() is called inside debugSettingsControls.setUIVersion
+    },
+
+    getUIVersion: (): "v1" | "v2" | "auto" | undefined => {
+      return debugSettingsControls.getUIVersion();
+    },
+
     // === LOGS MANAGEMENT ===
     getLogs: (): DebugLogEntry[] => {
       const globalState = getGlobalDebugState();
@@ -446,6 +457,8 @@ export function getDebugsy(): DebugsySpaceWithCLI {
       setConsoleEnabled: () => {},
       setVisualEnabled: () => {},
       setPerformanceEnabled: () => {},
+      setUIVersion: () => {},
+      getUIVersion: () => undefined,
       getLogs: () => [],
       clearLogs: () => {},
       getDebugState: () => ({}),

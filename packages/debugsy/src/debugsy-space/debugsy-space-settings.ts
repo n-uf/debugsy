@@ -60,6 +60,9 @@ export function initializeDebugSettings(): void {
         if (typeof config.performance === "boolean") {
           globalDebugState.performance = config.performance;
         }
+        if (config.uiVersion === "v1" || config.uiVersion === "v2" || config.uiVersion === "auto") {
+          globalDebugState.uiVersion = config.uiVersion;
+        }
       }
     } catch (e) {
       console.warn("Failed to parse stored debug config:", e);
@@ -107,6 +110,7 @@ export function saveDebugSettings(): void {
       console: globalDebugState.console,
       visual: globalDebugState.visual,
       performance: globalDebugState.performance,
+      uiVersion: globalDebugState.uiVersion,
     };
     // Use unified safe superjson wrapper
     localStorage.setItem(
@@ -175,6 +179,15 @@ export const debugSettingsControls = {
     console.log("[debugsy] Clearing logs");
     globalDebugState.logs = [];
     // No need to save config for log clearing - it's transient state
+  },
+  setUIVersion: (version: "v1" | "v2" | "auto") => {
+    globalDebugState.uiVersion = version;
+    debouncedSaveDebugSettings();
+    // Notify subscribers for reactive UI updates
+    notifySubscribers();
+  },
+  getUIVersion: (): "v1" | "v2" | "auto" | undefined => {
+    return globalDebugState.uiVersion;
   },
 };
 

@@ -17,6 +17,8 @@ export interface DebugDisplayPanelProps {
   displayInlineLogs?: boolean;
   onDisplayInlineLogsChange?: (display: boolean) => void;
   onDisplayClick?: () => void;
+  uiVersion?: "v1" | "v2";
+  onToggleVersion?: () => void;
 }
 
 /**
@@ -32,6 +34,8 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
   displayInlineLogs,
   onDisplayInlineLogsChange,
   onDisplayClick,
+  uiVersion,
+  onToggleVersion,
 }) => {
   const { content: displayContent } = useDebugDisplayContent();
 
@@ -359,6 +363,7 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
                   fontSize: "11px",
                   fontFamily: "monospace",
                   marginLeft: "auto",
+                  marginRight: uiVersion ? "90px" : "60px", // Add margin to avoid overlapping with buttons
                 }}
               >
                 External panel open ↗
@@ -431,7 +436,49 @@ export const DebugDisplayPanel: React.FC<DebugDisplayPanelProps> = ({
           )}
         </div>
 
+        {/* Version toggle button */}
+        {uiVersion && onToggleVersion && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVersion();
+            }}
+            style={{
+              position: "absolute",
+              top: "12px",
+              right: "60px",
+              backgroundColor: uiVersion === "v2" ? "#10b981" : "#3b82f6",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "3px",
+              width: "20px",
+              height: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "8px",
+              fontWeight: "600",
+              fontFamily: "monospace",
+              cursor: "pointer",
+              zIndex: Z_INDEX.DEBUG_DISPLAY,
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor =
+                uiVersion === "v2" ? "#059669" : "#2563eb";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor =
+                uiVersion === "v2" ? "#10b981" : "#3b82f6";
+            }}
+            title="Toggle UI version (Cmd+Shift+D)"
+          >
+            {uiVersion.toUpperCase()}
+          </button>
+        )}
+
         {/* Clear logs button */}
+
         <button
           onClick={handleClearClick}
           style={{
