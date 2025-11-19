@@ -182,6 +182,7 @@ export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
             buttonSize: "xs" as const,
             title: "Cycle between Quiet → Normal → Verbose modes",
           },
+          { type: "row-break" as const }, // Start new row (V1 layout: 2+3 buttons)
           {
             label: "All",
             indicatorType: "parallel" as const,
@@ -202,20 +203,25 @@ export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
           },
           {
             label: isRunningProbe ? "..." : "Probe",
+            indicatorType: "none" as const,
             onClick: handleProbeTest,
             disabled: isRunningProbe,
             buttonVariant: "ghost" as const,
             buttonSize: "xs" as const,
+            width: "narrow" as const,
+            justify: "center" as const,
             className: isRunningProbe ? "text-gray-400" : "text-gray-600",
             title:
               "Run comprehensive re-render probe to verify dependency tracking",
           },
           {
             label: "Adv.",
+            indicatorType: "none" as const,
             onClick: handleAdvancedToggle,
             buttonVariant: "ghost" as const,
             buttonSize: "xs" as const,
-            active: showAdvanced,
+            width: "narrow" as const,
+            justify: "center" as const,
             className: showAdvanced
               ? "bg-blue-100 text-blue-900 hover:bg-blue-200"
               : "",
@@ -223,8 +229,6 @@ export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
           },
         ]}
         theme={theme}
-        orientation="grid"
-        gridRows={2}
         gap="2px"
         className={className}
       />
