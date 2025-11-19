@@ -29,7 +29,7 @@ import {
   enterRenderPhase,
   exitRenderPhase,
 } from "../debugsy-logs/hooks/debugsy-notifications";
-import { setDebugDisplayContent } from "../debugsy-look/ui-display/debug-display-state";
+import { setDebugDisplayContent } from "../shared/debug-display-state";
 import {
   DEPS_CONFIG_DEFAULTS,
   getMountRateSeverity,

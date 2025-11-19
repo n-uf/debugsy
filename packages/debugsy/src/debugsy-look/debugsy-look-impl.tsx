@@ -2,13 +2,17 @@
 
 import {
   ActionToolbar,
+  clearDisplayContent,
   ControlPanel,
   ControlPanelDisplaySection,
   ControlPanelSection,
+  DEFAULT_COPY_CONFIG,
+  getLogsToCopy,
   LogEntry,
   safeSuperjsonStringify,
   setDisplayContent,
   StatusButtonGroup,
+  StatusButtonTheme,
   TerminalLayout,
   TerminalLayoutActions,
   TerminalLayoutBody,
@@ -23,28 +27,42 @@ import {
   TerminalLayoutSidebar,
   TerminalLayoutStatItem,
   TerminalLayoutStats,
+  useCopyState,
   useDisplay,
+  useHoverMessage,
+  useKeyboardSelection,
+  useLogFiltering,
+  usePauseState,
   useResizable,
+  useScrollFollowing,
   Z_INDEX,
   type ActionButton,
-  type CopyState,
   type DepthControl,
+  type DepthSetting,
 } from "@workspace/harbuz";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
-import type { DebugLogEntry } from "../debugsy-space";
-import type { DebugsyLookProps } from "./debugsy-look-v1";
+import { type DebugsyLookProps } from "../debugsy-look-v1/debugsy-look";
+import { DebugDependencyControls } from "../debugsy-look-v1/ui-dependency/dependency-controls";
+import type { DebugLogEntry, DebugPoint } from "../debugsy-space";
+import {
+  DEBUG_POINT_CONFIG,
+  getLookDebugPoints,
+} from "../debugsy-space/debugsy-point";
+
+// Re-export type for external consumers
+export type { DebugsyLookProps };
 
 /**
- * DebugsyLookV2 - Harbuz-based implementation
+ * DebugsyLook - Harbuz-based implementation (V2)
  *
  * Full implementation using @workspace/harbuz UI components.
  * Maintains feature parity with V1 while using modern TerminalLayout structure.
  */
-export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
+export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
   _uiVersion,
   _onToggleVersion,
@@ -70,30 +88,95 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
-  const clearConfirmationTimeoutRef = useRef<NodeJS.Timeout | undefined>(
-    undefined
-  );
+  const clearConfirmationTimeoutRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
 
   // State
   const [isVisible, setIsVisible] = useState(false);
   const [clearConfirmation, setClearConfirmation] = useState(false);
-  const [debugLogsState, setDebugLogsState] = useState({
-    isPaused: false,
-    isFollowing: true,
-  });
   const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
     (() => void) | null
   >(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
     new Set()
   );
-  const [copyState, setCopyState] = useState<CopyState>(0);
-  const [depthSetting, setDepthSetting] = useState<
-    "str" | "1" | "3" | "5" | "10" | "all"
-  >("all");
+  const [depthSetting, setDepthSetting] = useState<DepthSetting>("all");
 
   // Display system
   const displayContent = useDisplay();
+
+  // 🔥 HARBUZ HOOKS INTEGRATION 🔥
+
+  // 1. Pause State Hook - Preserves logs when paused
+  const pauseState = usePauseState<DebugLogEntry>({
+    onPauseChange: (paused) => {
+      setDisplayContent({
+        message: paused ? "Log rendering paused" : "Log rendering resumed",
+        type: paused ? "info" : "success",
+        duration: 2000,
+      });
+    },
+  });
+
+  // 2. Scroll Following Hook - Smart scroll with snapshots
+  const scrollFollowing = useScrollFollowing<DebugLogEntry>({
+    items: logs,
+    containerRef: logsContainerRef as React.RefObject<HTMLElement | null>,
+    config: {
+      itemHeight: 24,
+      thresholdItems: 3,
+      isPaused: pauseState.isPaused,
+      onFollowingChange: (following) => {
+        if (!following) {
+          setDisplayContent({
+            message: "Viewing snapshot - scroll to top to resume following",
+            type: "info",
+            duration: 2000,
+          });
+        }
+      },
+    },
+  });
+
+  // 3. Log Filtering Hook - Filter by debug point state
+  const filteredLogs = useLogFiltering({
+    items: logs,
+    getPoint: (log) => log.point,
+    isEnabled: (point) => debug.isEnabled(point as DebugPoint),
+    alwaysInclude: ["health"], // Always show health logs
+  });
+
+  // 4. Copy State Hook - 3-state copy indicator with auto-reset
+  const copyState = useCopyState({
+    autoResetDelay: 3000,
+    onStateChange: (state) => {
+      if (state === 2) {
+        setDisplayContent({
+          message: "Logs copied to clipboard!",
+          type: "success",
+          duration: 2000,
+        });
+      }
+    },
+  });
+
+  // 5. Hover Message Hook - Display messages on button hover
+  const hoverMessage = useHoverMessage({
+    setMessage: (message, type = "info") => {
+      setDisplayContent({ message, type, duration: 0 }); // duration: 0 = don't auto-clear
+    },
+    clearMessage: clearDisplayContent,
+  });
+
+  // Determine which logs to display (paused, snapshot, or live)
+  const activeLogs = pauseState.isPaused
+    ? pauseState.pausedItems
+    : scrollFollowing.isFollowing
+      ? filteredLogs
+      : scrollFollowing.snapshotItems.length > 0
+        ? scrollFollowing.snapshotItems
+        : filteredLogs;
 
   // Resizable panel
   const getMaxHeight = () =>
@@ -109,13 +192,25 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
     maxHeight: getMaxHeight(),
   });
 
+  // 6. Keyboard Selection Hook - Cmd+A selects only logs (after isResizing is defined)
+  useKeyboardSelection({
+    containerRef: logsContainerRef as React.RefObject<HTMLElement | null>,
+    enabled: isVisible && !isResizing,
+  });
+
   // Smart clear function with double-action logic
   const handleSmartClear = useCallback(() => {
-    const { isPaused, isFollowing } = debugLogsState;
+    const { isPaused } = pauseState;
+    const { isFollowing } = scrollFollowing;
 
     // If following live logs, clear immediately
     if (isFollowing && !isPaused) {
       onClearLogs();
+      setDisplayContent({
+        message: "Logs cleared",
+        type: "success",
+        duration: 1500,
+      });
       return;
     }
 
@@ -124,6 +219,13 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
       // First action: Clear storage immediately but keep local state
       onClearLogs();
       setClearConfirmation(true);
+
+      setDisplayContent({
+        message:
+          "Logs cleared. Press again to clear snapshot and resume following.",
+        type: "info",
+        duration: 3000,
+      });
 
       // Clear any existing timeout
       if (clearConfirmationTimeoutRef.current) {
@@ -143,12 +245,30 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
         clearTimeout(clearConfirmationTimeoutRef.current);
       }
 
+      // Resume following
+      if (isPaused) {
+        pauseState.resume();
+      }
+      scrollFollowing.returnToFollowing();
+
       // Clear local state
       if (clearLocalStateCallback) {
         clearLocalStateCallback();
       }
+
+      setDisplayContent({
+        message: "Snapshot cleared, now following live logs",
+        type: "success",
+        duration: 2000,
+      });
     }
-  }, [debugLogsState, clearConfirmation, onClearLogs, clearLocalStateCallback]);
+  }, [
+    pauseState,
+    scrollFollowing,
+    clearConfirmation,
+    onClearLogs,
+    clearLocalStateCallback,
+  ]);
 
   const onClose = useCallback(() => {
     setIsVisible(false);
@@ -229,15 +349,98 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
   }, []);
 
   // Calculate stats
-  const activePoints = [...new Set(logs.map((log) => log.point))].length;
+  const activePoints = [...new Set(filteredLogs.map((log) => log.point))]
+    .length;
   const totalLogs = logs.length;
-  const enabledPoints = [...new Set(logs.map((log) => log.point))];
+  const filteredCount = filteredLogs.length;
+
+  // 🔥 Get debug points from centralized config (matching Showcase)
+  const debugPoints = React.useMemo(
+    () =>
+      getLookDebugPoints().map((key) => ({
+        key,
+        emoji: DEBUG_POINT_CONFIG[key].emoji,
+        label: DEBUG_POINT_CONFIG[key].label,
+      })),
+    []
+  );
+
+  // 🔥 Button theme for control panel buttons (matching Showcase)
+  const controlButtonTheme: StatusButtonTheme = {
+    fontSize: "10px",
+    lineHeight: "12px",
+    style: {
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    },
+  };
+
+  // 🔥 Health Snapshot Handler (from Showcase)
+  const handleHealthSnapshot = useCallback(() => {
+    const globalDebug = (globalThis as any).surfaceDebug;
+    if (globalDebug?.captureHealthSnapshot) {
+      globalDebug.captureHealthSnapshot();
+      // Capture snapshot when taking health snapshot (stops following)
+      scrollFollowing.setIsFollowing(false);
+      scrollFollowing.setSnapshotItems([...filteredLogs]);
+      setDisplayContent({
+        message: "Health snapshot captured and saved to logs",
+        type: "success",
+        duration: 2000,
+      });
+    } else {
+      setDisplayContent({
+        message: "Health snapshot captured (surfaceDebug not available)",
+        type: "info",
+        duration: 2000,
+      });
+    }
+  }, [filteredLogs, scrollFollowing]);
+
+  // 🔥 Copy Logs Handler with Depth Setting (from Showcase)
+  const handleCopyLogs = useCallback(() => {
+    const {
+      logs: logsToCopy,
+      nextState,
+      message,
+    } = getLogsToCopy(activeLogs, copyState.state, DEFAULT_COPY_CONFIG);
+
+    // Get depth as number for safeSuperjsonStringify
+    const depthMap: Record<DepthSetting, number | undefined> = {
+      str: 0,
+      "1": 1,
+      "3": 3,
+      "5": 5,
+      "10": 10,
+      all: undefined,
+    };
+    const depth = depthMap[depthSetting];
+
+    // Copy with depth setting
+    const serialized = safeSuperjsonStringify(logsToCopy, depth);
+    navigator.clipboard.writeText(serialized);
+
+    // Advance copy state
+    copyState.setState(nextState);
+
+    setDisplayContent({
+      message: `${message} (depth: ${depthSetting})`,
+      type: "success",
+      duration: 2000,
+    });
+  }, [activeLogs, copyState, depthSetting]);
 
   // Actions for action toolbar
-  const depthControl: DepthControl<typeof depthSetting> = {
+  const depthControl: DepthControl<DepthSetting> = {
     value: depthSetting,
     options: ["str", "1", "3", "5", "10", "all"],
-    onChange: setDepthSetting,
+    onChange: (newDepth) => {
+      setDepthSetting(newDepth);
+      setDisplayContent({
+        message: `Copy depth: ${newDepth === "str" ? "String only" : newDepth === "all" ? "Full depth" : `Max ${newDepth} levels`}`,
+        type: "info",
+        duration: 2000,
+      });
+    },
     getDescription: (v) => `Depth: ${v}`,
     getColor: () => "#10b981",
     getWidth: () => "100%",
@@ -245,42 +448,44 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
 
   const actionButtons: ActionButton[] = [
     {
-      icon: ["📋", "📋", "✅"][copyState] ?? "📋",
-      title: "Copy logs",
-      variant: copyState === 2 ? "success" : "default",
-      onClick: () => {
-        const nextState = ((copyState + 1) % 3) as CopyState;
-        setCopyState(nextState);
-
-        if (nextState === 1) {
-          const logsToCopy = safeSuperjsonStringify(logs, 2);
-          navigator.clipboard.writeText(logsToCopy);
-          setDisplayContent({
-            message: "Logs copied!",
-            type: "success",
-            duration: 1500,
-          });
-        }
-      },
+      icon: copyState.getIcon(),
+      title:
+        copyState.state === 0
+          ? `Copy ${activeLogs.length} logs to clipboard`
+          : copyState.state === 1
+            ? "Click again to copy all"
+            : "Copy complete",
+      variant: copyState.getVariant(),
+      onClick: handleCopyLogs,
+      disabled: activeLogs.length === 0,
+      ...hoverMessage.getHandlers(
+        `Copy ${activeLogs.length} logs (depth: ${depthSetting})`,
+        "info"
+      ),
     },
     {
-      icon: debugLogsState.isPaused ? "▶️" : "⏸",
-      title: debugLogsState.isPaused ? "Resume" : "Pause",
-      variant: debugLogsState.isPaused ? "paused" : "default",
-      onClick: () => {
-        setDebugLogsState((prev) => ({ ...prev, isPaused: !prev.isPaused }));
-      },
+      icon: pauseState.isPaused ? "▶️" : "⏸",
+      title: pauseState.isPaused
+        ? "Resume log rendering"
+        : "Pause log rendering",
+      variant: pauseState.isPaused ? "paused" : "default",
+      onClick: () => pauseState.toggle(filteredLogs),
+      ...hoverMessage.getHandlers(
+        pauseState.isPaused
+          ? "Resume live log updates"
+          : "Pause live log updates",
+        "info"
+      ),
     },
     {
-      icon: "💊",
-      title: "Health snapshot",
-      onClick: () => {
-        setDisplayContent({
-          message: "Health snapshot captured",
-          type: "info",
-          duration: 1500,
-        });
-      },
+      icon: "🏥",
+      title: "Capture health snapshot to debug logs",
+      variant: "success",
+      onClick: handleHealthSnapshot,
+      ...hoverMessage.getHandlers(
+        "Capture health snapshot and save to debug logs",
+        "info"
+      ),
     },
   ];
 
@@ -320,7 +525,7 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
                 DebugLogEntry & { _uniqueId: string }
               >
                 containerRef={logsContainerRef}
-                items={logs.slice(0, MAX_RENDERED).map((log, idx) => ({
+                items={activeLogs.slice(0, MAX_RENDERED).map((log, idx) => ({
                   ...log,
                   _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
                 }))}
@@ -362,14 +567,9 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
                   {
                     content: (
                       <>
-                        ⏸ Paused - New logs won't appear.{" "}
+                        ⏸ Paused - {pauseState.pausedItems.length} logs frozen.{" "}
                         <button
-                          onClick={() =>
-                            setDebugLogsState((prev) => ({
-                              ...prev,
-                              isPaused: false,
-                            }))
-                          }
+                          onClick={() => pauseState.resume()}
                           style={{
                             background: "none",
                             border: "none",
@@ -379,24 +579,31 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
                             padding: 0,
                             font: "inherit",
                           }}
+                          title="Resume log rendering"
                         >
-                          Resume
+                          Click to resume
                         </button>
                       </>
                     ),
-                    show: debugLogsState.isPaused,
+                    show: pauseState.isPaused,
                   },
                   {
                     content: (
                       <>
-                        📸 Viewing snapshot.{" "}
+                        📌 Viewing snapshot at{" "}
+                        {scrollFollowing.snapshotItems.length > 0
+                          ? scrollFollowing.snapshotItems.length
+                          : activeLogs.length}{" "}
+                        logs.{" "}
                         <button
-                          onClick={() =>
-                            setDebugLogsState((prev) => ({
-                              ...prev,
-                              isFollowing: true,
-                            }))
-                          }
+                          onClick={() => {
+                            scrollFollowing.returnToFollowing();
+                            setDisplayContent({
+                              message: "Returned to following live logs",
+                              type: "success",
+                              duration: 2000,
+                            });
+                          }}
                           style={{
                             background: "none",
                             border: "none",
@@ -406,12 +613,13 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
                             padding: 0,
                             font: "inherit",
                           }}
+                          title="Return to following live logs"
                         >
-                          Follow live
+                          Return to live stream
                         </button>
                       </>
                     ),
-                    show: !debugLogsState.isFollowing,
+                    show: !scrollFollowing.isFollowing && !pauseState.isPaused,
                   },
                 ]}
                 truncation={
@@ -438,9 +646,19 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
             <TerminalLayoutSidebar>
               <TerminalLayoutStats title="Info">
                 <TerminalLayoutStatItem
-                  label="Logs"
+                  label="Total"
                   value={totalLogs}
                   color="#10b981"
+                />
+                <TerminalLayoutStatItem
+                  label="Filtered"
+                  value={filteredCount}
+                  color="#3b82f6"
+                />
+                <TerminalLayoutStatItem
+                  label="Active"
+                  value={activeLogs.length}
+                  color="#f59e0b"
                 />
                 <TerminalLayoutStatItem
                   label="Points"
@@ -459,8 +677,9 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
                   keys="⌘+D"
                   description="Compact/Extended"
                 />
-                <TerminalLayoutShortcut keys="Esc" description="Close panel" />
+                <TerminalLayoutShortcut keys="⌘+A" description="Select logs" />
                 <TerminalLayoutShortcut keys="⌘+K" description="Clear logs" />
+                <TerminalLayoutShortcut keys="Esc" description="Close panel" />
               </TerminalLayoutShortcuts>
 
               <div style={{ flexGrow: 1 }} />
@@ -477,37 +696,53 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
 
         <TerminalLayoutControlPanel>
           <ControlPanel>
+            {/* Debug Point Buttons - 2 rows */}
             <ControlPanelSection>
               <StatusButtonGroup
-                buttons={enabledPoints.map((point) => ({
-                  label: point,
-                  active: true,
+                buttons={debugPoints.map((point) => ({
+                  label: point.label,
+                  active: debug.isEnabled(point.key),
                   onClick: () => {
+                    debug.toggle(point.key);
                     setDisplayContent({
-                      message: `Toggle ${point}`,
+                      message: `${debug.isEnabled(point.key) ? "Disabled" : "Enabled"} ${point.label}`,
                       type: "info",
-                      duration: 1000,
+                      duration: 1500,
                     });
                   },
-                  indicators: [{ active: true, tooltip: "Active" }],
+                  buttonVariant: "ghost" as const,
+                  buttonSize: "xs" as const,
                 }))}
+                theme={controlButtonTheme}
                 orientation="grid"
                 gridRows={2}
+                gap="2px"
               />
+            </ControlPanelSection>
+
+            {/* Dependency Controls */}
+            <ControlPanelSection separator className="pl-4">
+              <DebugDependencyControls />
             </ControlPanelSection>
 
             <ControlPanelDisplaySection
               entries={[]}
               content={displayContent}
               actions={[
-                ..._uiVersion ? [{
-                  icon: _uiVersion.toUpperCase(),
-                  onClick: () => _onToggleVersion?.(),
-                  backgroundColor: _uiVersion === "v2" ? "#10b981" : "#3b82f6",
-                  hoverBackgroundColor: _uiVersion === "v2" ? "#059669" : "#2563eb",
-                  color: "#ffffff",
-                  title: "Toggle UI version (Cmd+Shift+D)",
-                }] : [],
+                ...(_uiVersion
+                  ? [
+                      {
+                        icon: _uiVersion.toUpperCase(),
+                        onClick: () => _onToggleVersion?.(),
+                        backgroundColor:
+                          _uiVersion === "v2" ? "#10b981" : "#3b82f6",
+                        hoverBackgroundColor:
+                          _uiVersion === "v2" ? "#059669" : "#2563eb",
+                        color: "#ffffff",
+                        title: "Toggle UI version (Cmd+Shift+D)",
+                      },
+                    ]
+                  : []),
                 {
                   icon: "🗑",
                   onClick: handleSmartClear,
@@ -528,4 +763,4 @@ export const DebugsyLookV2: React.FC<DebugsyLookProps> = ({
   );
 };
 
-DebugsyLookV2.displayName = "DebugsyLookV2";
+DebugsyLook.displayName = "DebugsyLook";

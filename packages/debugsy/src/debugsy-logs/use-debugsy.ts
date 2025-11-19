@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   clearDebugDisplayContent,
   setDebugDisplayContent,
-} from "../debugsy-look/ui-display/debug-display-state";
+} from "../shared/debug-display-state";
 import {
   type DebugLogEntry,
   type DebugPoint,

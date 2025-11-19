@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { getDebugsy } from "../debugsy-space";
 import {
-  DebugsyLookV1,
+  DebugsyLook as DebugsyLookV1,
   type DebugsyLookProps as DebugsyLookV1Props,
-} from "./debugsy-look-v1";
-import { DebugsyLookV2 } from "./debugsy-look-v2";
-import { setDebugDisplayContent } from "./ui-display/debug-display-state";
+} from "../debugsy-look-v1/debugsy-look";
+import { getDebugsy } from "../debugsy-space";
+import { setDebugDisplayContent } from "../shared/debug-display-state";
+import { DebugsyLook as DebugsyLookV2 } from "./debugsy-look-impl";
 
 export type UIVersion = "v1" | "v2" | "auto";
 
@@ -84,7 +84,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = (props) => {
     ...restProps,
     _uiVersion: activeVersion,
     _onToggleVersion: handleToggle,
-    };
+  };
 
   if (activeVersion === "v2") {
     return <DebugsyLookV2 {...sharedProps} />;

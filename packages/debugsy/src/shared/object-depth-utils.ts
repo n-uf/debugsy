@@ -3,8 +3,8 @@
  * Optimized for low-latency operations on huge objects
  */
 
-// Import safe serialization function
-import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
+// Import safe serialization function from Harbuz (central location)
+import { safeSuperjsonStringify } from "@workspace/harbuz";
 
 export type DepthSetting = "all" | "10" | "5" | "3" | "1" | "str";
 

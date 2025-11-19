@@ -1,6 +1,6 @@
 import superjson from "superjson";
+import { safeSuperjsonStringify } from "@workspace/harbuz";
 import { notifySubscribers } from "../debugsy-logs/hooks/debugsy-notifications";
-import { safeSuperjsonStringify } from "../debugsy-look/ui-logs/utils/json/json-core";
 import {
   type DebugPoint,
   type DebugsySettings,

@@ -50,7 +50,7 @@ export {
   DependencyExpansionContent,
   HealthExpansionContent,
   SanitizedDataExpansionContent,
-} from "./src/debugsy-look/ui-logs/formatters";
+} from "./src/debugsy-look-v1/ui-logs/formatters";
 
 export {
   FORMATTER_REGISTRY,
@@ -59,17 +59,17 @@ export {
   registerFormatter,
   type FormatterConfig,
   type FormatterMeta,
-} from "./src/debugsy-look/ui-logs/formatters/formatter-routing";
+} from "./src/debugsy-look-v1/ui-logs/formatters/formatter-routing";
 
-export { type LogSeverity } from "./src/debugsy-look/ui-logs/formatters/default-log-formatter";
+export { type LogSeverity } from "./src/debugsy-look-v1/ui-logs/formatters/default-log-formatter";
 
-export { getDependencyLogMeta } from "./src/debugsy-look/ui-logs/formatters/deps";
+export { getDependencyLogMeta } from "./src/debugsy-look-v1/ui-logs/formatters/deps";
 
-export { getHealthLogMeta } from "./src/debugsy-look/ui-logs/formatters/health-expansion-formatter";
+export { getHealthLogMeta } from "./src/debugsy-look-v1/ui-logs/formatters/health-expansion-formatter";
 
-export { getSanitizedDataLogMeta } from "./src/debugsy-look/ui-logs/formatters/sanitized-data-expansion-formatter";
+export { getSanitizedDataLogMeta } from "./src/debugsy-look-v1/ui-logs/formatters/sanitized-data-expansion-formatter";
 
-export { getRegisteredFormatterTypes } from "./src/debugsy-look/ui-logs/formatters/formatter-routing";
+export { getRegisteredFormatterTypes } from "./src/debugsy-look-v1/ui-logs/formatters/formatter-routing";
 
 // === TYPE EXPORTS ===
 export type {
@@ -94,7 +94,7 @@ export type {
 } from "./src/debugsy-look";
 
 // === ADVANCED DEPENDENCY CONTROLS ===
-export type { DebugDependencyAdvancedControlsProps } from "./src/debugsy-look/ui-dependency/dependency-advanced-controls";
+export type { DebugDependencyAdvancedControlsProps } from "./src/debugsy-look-v1/ui-dependency/dependency-advanced-controls";
 
 // Object depth utilities
 export {

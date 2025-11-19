@@ -21,13 +21,13 @@ export interface DebugsyLookProps {
 }
 
 /**
- * DebugsyLookV1 - Full-screen resizable debug console (Original Implementation)
+ * DebugsyLook - Full-screen resizable debug console (V1 Implementation)
  * SELF-CONTAINED: Manages its own debug state, logs, and clearing internally
  *
  * This is the V1 implementation using custom debugsy-look UI components.
- * Maintained during parallel migration to Harbuz UI (V2).
+ * Maintained in parallel with Harbuz-based V2 implementation.
  */
-export const DebugsyLookV1: React.FC<DebugsyLookProps> = ({
+export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
   _uiVersion,
   _onToggleVersion,
@@ -426,4 +426,4 @@ export const DebugsyLookV1: React.FC<DebugsyLookProps> = ({
   );
 };
 
-DebugsyLookV1.displayName = "DebugsyLookV1";
+DebugsyLook.displayName = "DebugsyLook";
