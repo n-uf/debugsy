@@ -1,6 +1,6 @@
 "use client";
 
-import { StatusButtonTheme } from "@workspace/harbuz";
+import { IndicatorButtonTheme } from "@workspace/harbuz";
 import React, { useState } from "react";
 import type { DepsFilter } from "../debugsy-space/debugsy-constants";
 import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";
@@ -14,7 +14,7 @@ export interface DependencyAdvancedPanelProps {
   /** Callback when visibility changes */
   onVisibilityChange?: (visible: boolean) => void;
   /** Theme for button styling */
-  theme?: StatusButtonTheme;
+  theme?: IndicatorButtonTheme;
 }
 
 /**

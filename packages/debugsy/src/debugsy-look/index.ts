@@ -1,9 +1,9 @@
-// Debug UI Components - Main entry point
+// Debug UI Components - Main entry point (V1/V2 Switcher)
 export {
   DebugsyLook,
   type DebugsyLookProps,
   type UIVersion,
-} from "./debugsy-look";
+} from "./debugsy-look-switcher";
 
 // V1 Components (for advanced usage)
 export {
@@ -15,7 +15,7 @@ export {
 export {
   DebugsyLook as DebugsyLookV2,
   type DebugsyLookProps as DebugsyLookV2Props,
-} from "./debugsy-look-impl";
+} from "./debugsy-look";
 
 // V1 UI Components (legacy, may be deprecated)
 export {

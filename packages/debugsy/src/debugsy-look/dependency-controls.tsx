@@ -1,6 +1,9 @@
 "use client";
 
-import { Button, Indicator, StatusButtonTheme } from "@workspace/harbuz";
+import {
+  IndicatorButtonGroup,
+  type IndicatorButtonTheme,
+} from "@workspace/harbuz";
 import React, { useState } from "react";
 import { ProbeReRenderDetection } from "../debugsy-look-v1/ui-dependency/probe-rerender-detection";
 import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";
@@ -8,45 +11,17 @@ import { setDebugDisplayContent } from "../shared/debug-display-state";
 import { DependencyAdvancedPanel } from "./dependency-advanced-panel";
 
 export interface DependencyControlsV2Props {
-  theme?: StatusButtonTheme;
+  theme?: IndicatorButtonTheme;
   className?: string;
   onAdvancedToggle?: (show: boolean) => void;
   showAdvanced?: boolean;
 }
 
 /**
- * Three-dot indicator for dependency controls
- */
-interface ThreeDotIndicatorProps {
-  activeDots: boolean[];
-}
-
-const ThreeDotIndicator: React.FC<ThreeDotIndicatorProps> = ({
-  activeDots,
-}) => {
-  const isDisabled = activeDots.every((dot) => !dot);
-
-  return (
-    <div className="flex items-center gap-0.5 w-4 h-2">
-      {activeDots.map((isActive, index) => (
-        <Indicator
-          key={index}
-          size="sm"
-          variant={isDisabled ? "error" : isActive ? "success" : "neutral"}
-          active={!isDisabled && isActive}
-          inactiveVariant={isDisabled ? "error" : "neutral"}
-          className="w-1.5 h-1.5"
-        />
-      ))}
-    </div>
-  );
-};
-
-/**
  * Dependency Controls V2 - Harbuz-themed implementation
  *
- * Provides compact controls with enhanced theme support via Harbuz components.
- * All buttons represent and modify the same global state as console commands.
+ * Follows exact structure and pattern from Showcase control buttons.
+ * Uses IndicatorButtonGroup for consistent theming and layout.
  */
 export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
   theme,
@@ -62,13 +37,6 @@ export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
     externalShowAdvanced !== undefined
       ? externalShowAdvanced
       : internalShowAdvanced;
-
-  // Apply theme styling
-  const buttonStyle = {
-    fontSize: theme?.fontSize ?? "10px",
-    lineHeight: theme?.lineHeight ?? "12px",
-    ...theme?.style,
-  };
 
   // Button handlers
   const handleDependenciesToggle = () => {
@@ -180,142 +148,86 @@ export const DependencyControlsV2: React.FC<DependencyControlsV2Props> = ({
     onAdvancedToggle?.(newValue);
   };
 
-  // Display helpers
-  const getDependenciesColor = () =>
-    dependencyState.enabled ? "bg-green-500" : "bg-red-500";
-
-  const getQuietDisplayText = () => {
-    if (!dependencyState.enabled) return "Quiet";
-    const level = dependencyState.logLevel;
-    if (level === "quiet") return "Quiet";
-    if (level === "verbose") return "Verbose";
-    return "Normal";
-  };
-
-  const renderLevelIndicator = () => {
-    if (!dependencyState.enabled) {
-      return <ThreeDotIndicator activeDots={[false, false, false]} />;
-    }
-
-    const level = dependencyState.logLevel;
-    if (level === "quiet") {
-      return <ThreeDotIndicator activeDots={[true, false, false]} />;
-    } else if (level === "normal") {
-      return <ThreeDotIndicator activeDots={[true, true, false]} />;
-    } else {
-      return <ThreeDotIndicator activeDots={[true, true, true]} />;
-    }
-  };
-
-  const getFilterDisplayText = () => {
-    if (!dependencyState.enabled) return "All";
-    const filter = dependencyState.filter;
-    if (filter === "functions-only") return "Func";
-    if (filter === "objects-only") return "Obj";
-    if (filter === "unstable-only") return "Unstable";
-    return "All";
-  };
-
-  const renderFilterIndicator = () => {
-    if (!dependencyState.enabled) {
-      return <ThreeDotIndicator activeDots={[false, false, false]} />;
-    }
-
-    const currentFilter = dependencyState.filter;
-    const isAll = currentFilter === "all" || !currentFilter;
-
-    const activeDots = [
-      isAll || currentFilter === "functions-only",
-      isAll || currentFilter === "objects-only",
-      isAll || currentFilter === "unstable-only",
-    ];
-
-    return <ThreeDotIndicator activeDots={activeDots} />;
-  };
-
+  // IndicatorButtonGroup configuration with type-based indicators
   return (
     <>
-      <div
-        className={`flex flex-col shrink-0 ${className}`}
-        style={{ gap: "0px" }}
-      >
-        {/* Row 1: Deps | Quiet/Normal/Verbose */}
-        <div className="flex items-center gap-0.5 h-[20px]">
-          <Button
-            onClick={handleDependenciesToggle}
-            variant="ghost"
-            size="xs"
-            className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
-            style={buttonStyle}
-            title={
-              dependencyState.enabled
-                ? "Click to disable (surfaceDebug.deps.off)"
-                : "Click to enable (surfaceDebug.deps.normal)"
-            }
-          >
-            <div
-              className={`w-2 h-1 rounded-sm transition-colors duration-150 ${getDependenciesColor()}`}
-            />
-            <span className="leading-none truncate">Deps</span>
-          </Button>
-
-          <Button
-            onClick={handleQuietCycle}
-            variant="ghost"
-            size="xs"
-            className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
-            style={buttonStyle}
-            title="Cycle between Quiet → Normal → Verbose modes"
-          >
-            {renderLevelIndicator()}
-            <span className="leading-none truncate">
-              {getQuietDisplayText()}
-            </span>
-          </Button>
-        </div>
-
-        {/* Row 2: Filter | Probe | Adv. */}
-        <div className="flex items-center gap-0.5 overflow-x-auto h-[20px]">
-          <Button
-            onClick={handleFilterCycle}
-            variant="ghost"
-            size="xs"
-            className="flex items-center justify-start gap-1 px-1.5 py-0.5 w-20 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
-            style={buttonStyle}
-            title="Cycle between All → Func → Obj → Unstable filters"
-          >
-            {renderFilterIndicator()}
-            <span className="leading-none truncate">
-              {getFilterDisplayText()}
-            </span>
-          </Button>
-
-          <Button
-            onClick={handleProbeTest}
-            disabled={isRunningProbe}
-            variant="ghost"
-            size="xs"
-            className="justify-center px-1.5 py-0.5 w-10 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
-            style={buttonStyle}
-            title="Run comprehensive re-render probe to verify dependency tracking"
-          >
-            <span className="leading-none truncate">
-              {isRunningProbe ? "..." : "Probe"}
-            </span>
-          </Button>
-
-          <Button
-            onClick={handleAdvancedToggle}
-            variant="ghost"
-            size="xs"
-            className="justify-center px-1.5 py-0.5 w-10 h-auto rounded font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200"
-            style={buttonStyle}
-            title="Toggle advanced dependency controls panel"
-          >
-            <span className="leading-none truncate">Adv.</span>
-          </Button>
-        </div>
-      </div>
+      <IndicatorButtonGroup
+        buttons={[
+          {
+            label: "Deps",
+            indicatorType: "single" as const,
+            onClick: handleDependenciesToggle,
+            buttonVariant: "ghost" as const,
+            buttonSize: "xs" as const,
+            variant: "success" as const,
+            active: dependencyState.enabled,
+            inactiveVariant: "error" as const,
+            title: dependencyState.enabled
+              ? "Click to disable (surfaceDebug.deps.off)"
+              : "Click to enable (surfaceDebug.deps.normal)",
+          },
+          {
+            label: "Quiet",
+            indicatorType: "sequential" as const,
+            value: dependencyState.logLevel,
+            levels: ["quiet", "normal", "verbose"],
+            labelMap: {
+              quiet: "Quiet",
+              normal: "Normal",
+              verbose: "Verbose",
+            },
+            disabled: !dependencyState.enabled,
+            onClick: handleQuietCycle,
+            buttonVariant: "ghost" as const,
+            buttonSize: "xs" as const,
+            title: "Cycle between Quiet → Normal → Verbose modes",
+          },
+          {
+            label: "All",
+            indicatorType: "parallel" as const,
+            value: dependencyState.filter ?? "all",
+            options: ["functions-only", "objects-only", "unstable-only"],
+            allValue: "all",
+            labelMap: {
+              all: "All",
+              "functions-only": "Func",
+              "objects-only": "Obj",
+              "unstable-only": "Unstable",
+            },
+            disabled: !dependencyState.enabled,
+            onClick: handleFilterCycle,
+            buttonVariant: "ghost" as const,
+            buttonSize: "xs" as const,
+            title: "Cycle between All → Func → Obj → Unstable filters",
+          },
+          {
+            label: isRunningProbe ? "..." : "Probe",
+            onClick: handleProbeTest,
+            disabled: isRunningProbe,
+            buttonVariant: "ghost" as const,
+            buttonSize: "xs" as const,
+            className: isRunningProbe ? "text-gray-400" : "text-gray-600",
+            title:
+              "Run comprehensive re-render probe to verify dependency tracking",
+          },
+          {
+            label: "Adv.",
+            onClick: handleAdvancedToggle,
+            buttonVariant: "ghost" as const,
+            buttonSize: "xs" as const,
+            active: showAdvanced,
+            className: showAdvanced
+              ? "bg-blue-100 text-blue-900 hover:bg-blue-200"
+              : "",
+            title: "Toggle advanced dependency controls panel",
+          },
+        ]}
+        theme={theme}
+        orientation="grid"
+        gridRows={2}
+        gap="2px"
+        className={className}
+      />
 
       {/* Probe component (hidden until triggered) */}
       {isRunningProbe && (
