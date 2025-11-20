@@ -317,89 +317,103 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       >
         {!isCompact && (
           <>
-            <TerminalLayoutHeader>
-              <TerminalLayoutResizeHandle
-                onResizeStart={handleResizeStart}
-                isResizing={isResizing}
-              />
-            </TerminalLayoutHeader>
+        <TerminalLayoutHeader>
+          <TerminalLayoutResizeHandle
+            onResizeStart={handleResizeStart}
+            isResizing={isResizing}
+          />
+        </TerminalLayoutHeader>
 
-            <TerminalLayoutBody>
-              <TerminalLayoutContent>
-                <TerminalLayoutLogsContainer<
-                  DebugLogEntry & { _uniqueId: string }
-                >
-                  containerRef={logsContainerRef}
-                  items={activeLogs.slice(0, MAX_RENDERED).map((log, idx) => ({
-                    ...log,
-                    _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
-                  }))}
-                  renderItem={(
-                    log: DebugLogEntry & { _uniqueId: string },
-                    index
-                  ) => {
-                    const entry = {
-                      id: index,
-                      timestamp: new Date(log.timestamp).toLocaleTimeString(),
-                      point: log.point,
-                      message: log.message,
-                      level: log.level as "info" | "warn" | "error" | undefined,
-                      data: log.data,
-                    };
-                    return (
-                      <LogEntry
-                        entry={entry}
-                        index={index}
-                        isExpanded={expandedEntries.has(index)}
-                        onToggleExpand={() => {
-                          setExpandedEntries((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(index)) {
-                              next.delete(index);
-                            } else {
-                              next.add(index);
-                            }
-                            return next;
+          <TerminalLayoutBody>
+            <TerminalLayoutContent>
+              <TerminalLayoutLogsContainer<
+                DebugLogEntry & { _uniqueId: string }
+              >
+                containerRef={logsContainerRef}
+                items={[...activeLogs]
+                  .slice(-MAX_RENDERED)
+                  .reverse()
+                  .map((log, idx) => ({
+                  ...log,
+                  _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
+                }))}
+                renderItem={(
+                  log: DebugLogEntry & { _uniqueId: string },
+                  index
+                ) => {
+                  const entry = {
+                    id: index,
+                    timestamp: new Date(log.timestamp).toLocaleTimeString(),
+                    point: log.point,
+                    message: log.message,
+                    level: log.level as "info" | "warn" | "error" | undefined,
+                    data: log.data,
+                  };
+                  return (
+                    <LogEntry
+                      entry={entry}
+                      index={index}
+                      isExpanded={expandedEntries.has(index)}
+                      onToggleExpand={() => {
+                        setExpandedEntries((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(index)) {
+                            next.delete(index);
+                          } else {
+                            next.add(index);
+                          }
+                          return next;
+                        });
+                      }}
+                    />
+                  );
+                }}
+                keyExtractor={(log: DebugLogEntry & { _uniqueId: string }) =>
+                  log._uniqueId
+                }
+                topBanners={[
+                  {
+                    show: shouldShowTruncation,
+                    content: (
+                      <Banner
+                        emoji="⚠️"
+                        message={`Showing latest ${MAX_RENDERED} of ${totalLogs} logs (performance limit)`}
+                        variant="warning"
+                        title="Older logs are hidden for performance"
+                      />
+                    ),
+                  },
+                  {
+                    show: pauseState.isPaused,
+                    content: (
+                      <Banner
+                        emoji="⏸️"
+                        message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
+                        variant="paused"
+                        onClick={() => pauseState.resume()}
+                        title="Click to resume log rendering"
+                      />
+                    ),
+                  },
+                  {
+                    show: !scrollFollowing.isFollowing && !pauseState.isPaused,
+                    content: (
+                      <Banner
+                        emoji="📌"
+                        message={`Viewing snapshot at ${scrollFollowing.snapshotItems.length > 0 ? scrollFollowing.snapshotItems.length : activeLogs.length} logs - Click to return to live stream`}
+                        variant="snapshot"
+                        onClick={() => {
+                          scrollFollowing.returnToFollowing();
+                          setDisplayContent({
+                            message: "Returned to following live logs",
+                            type: "success",
+                            duration: 2000,
                           });
                         }}
+                        title="Click to return to following live logs"
                       />
-                    );
-                  }}
-                  keyExtractor={(log: DebugLogEntry & { _uniqueId: string }) =>
-                    log._uniqueId
-                  }
-                  topBanners={[
-                    {
-                      show: pauseState.isPaused,
-                      content: (
-                        <Banner
-                          emoji="⏸️"
-                          message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
-                          variant="paused"
-                          onClick={() => pauseState.resume()}
-                          title="Click to resume log rendering"
-                        />
-                      ),
-                    },
-                    {
-                      show: !scrollFollowing.isFollowing && !pauseState.isPaused,
-                      content: (
-                        <Banner
-                          emoji="📌"
-                          message={`Viewing snapshot at ${scrollFollowing.snapshotItems.length > 0 ? scrollFollowing.snapshotItems.length : activeLogs.length} logs - Click to return to live stream`}
-                          variant="snapshot"
-                          onClick={() => {
-                            scrollFollowing.returnToFollowing();
-                            setDisplayContent({
-                              message: "Returned to following live logs",
-                              type: "success",
-                              duration: 2000,
-                            });
-                          }}
-                          title="Click to return to following live logs"
-                        />
-                      ),
-                    },
+                    ),
+                  },
                     {
                       show: clearConfirmation,
                       content: (
@@ -409,54 +423,54 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                           variant="warning"
                           onClick={handleSmartClear}
                           title="Click to complete clear and resume"
-                        />
-                      ),
-                    },
-                  ]}
-                  truncation={{
-                    hiddenCount,
-                    totalCount: totalLogs,
-                    maxRendered: MAX_RENDERED,
-                    renderedCount: activeLogs.length,
-                    onCopyAll: handleCopyAllLogs,
-                    onClearAll: handleClearAllLogs,
-                  }}
-                  TruncationPanel={TruncationPanel}
-                  VirtualizedList={VirtualizedList}
-                  itemHeight={24}
-                  virtualizationThreshold={50}
-                  overscan={5}
-                />
-              </TerminalLayoutContent>
+                      />
+                    ),
+                  },
+                ]}
+                truncation={{
+                  hiddenCount,
+                  totalCount: totalLogs,
+                  maxRendered: MAX_RENDERED,
+                  renderedCount: activeLogs.length,
+                  onCopyAll: handleCopyAllLogs,
+                  onClearAll: handleClearAllLogs,
+                }}
+                TruncationPanel={TruncationPanel}
+                VirtualizedList={VirtualizedList}
+                itemHeight={24}
+                virtualizationThreshold={50}
+                overscan={5}
+              />
+            </TerminalLayoutContent>
 
-              <TerminalLayoutActions>
-                <DebugsyActions
-                  activeLogs={activeLogs}
-                  filteredLogs={filteredLogs}
-                  copyState={copyState}
-                  pauseState={pauseState}
-                  scrollFollowing={scrollFollowing}
-                  hoverMessage={hoverMessage}
-                />
-              </TerminalLayoutActions>
+            <TerminalLayoutActions>
+              <DebugsyActions
+                activeLogs={activeLogs}
+                filteredLogs={filteredLogs}
+                copyState={copyState}
+                pauseState={pauseState}
+                scrollFollowing={scrollFollowing}
+                hoverMessage={hoverMessage}
+              />
+            </TerminalLayoutActions>
 
-              <TerminalLayoutSidebar>
-                <DebugsyStats
-                  totalLogs={totalLogs}
-                  filteredLogs={filteredCount}
-                  activeLogs={activeLogs.length}
-                  activePoints={activePoints}
-                  panelHeight={panelHeight}
-                />
+            <TerminalLayoutSidebar>
+              <DebugsyStats
+                totalLogs={totalLogs}
+                filteredLogs={filteredCount}
+                activeLogs={activeLogs.length}
+                activePoints={activePoints}
+                panelHeight={panelHeight}
+              />
 
-                <DebugsyShortcutsDisplay shortcuts={shortcuts} />
+              <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
-                <TerminalLayoutResizePresets
-                  presets={[200, 400, 600, getMaxHeight()]}
-                  currentHeight={panelHeight}
-                  maxHeight={getMaxHeight()}
-                  onResize={setPanelHeight}
-                />
+              <TerminalLayoutResizePresets
+                presets={[200, 400, 600, getMaxHeight()]}
+                currentHeight={panelHeight}
+                maxHeight={getMaxHeight()}
+                onResize={setPanelHeight}
+              />
 
                 {/* Settings Section */}
                 <TerminalLayoutSettings noBorder={true}>
@@ -497,8 +511,8 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                 </TerminalLayoutSettings>
 
                 <div style={{ flexGrow: 1 }} />
-              </TerminalLayoutSidebar>
-            </TerminalLayoutBody>
+            </TerminalLayoutSidebar>
+          </TerminalLayoutBody>
           </>
         )}
 
@@ -534,7 +548,28 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
             </ControlPanelSection>
 
             <ControlPanelDisplaySection
-              entries={[]}
+              entries={
+                isCompact
+                  ? // Show recent logs in compact mode (newest first)
+                    [...filteredLogs]
+                      .reverse()
+                      .slice(0, 3)
+                      .map((log, idx) => ({
+                        id: idx,
+                        timestamp: new Date(log.timestamp).toLocaleTimeString(
+                          "en-US",
+                          {
+                            hour12: false,
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          }
+                        ),
+                        emoji: DEBUG_POINT_CONFIG[log.point as DebugPoint]?.emoji ?? "📝",
+                        message: log.message,
+                      }))
+                  : []
+              }
               content={displayContent}
               actions={[
                 ...(_uiVersion
