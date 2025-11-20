@@ -9,6 +9,8 @@ import {
   IndicatorButtonGroup,
   IndicatorButtonTheme,
   LogEntry,
+  PauseState,
+  ScrollFollowingState,
   setDisplayContent,
   TerminalLayout,
   TerminalLayoutActions,
@@ -27,6 +29,7 @@ import {
   useDisplay,
   useHoverMessage,
   useKeyboardSelection,
+  useLogEntryCopy,
   useLogFiltering,
   usePauseState,
   useResizable,
@@ -40,11 +43,16 @@ import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import { type DebugsyLookProps } from "../debugsy-look-v1/debugsy-look";
+import { safeSuperjsonStringify } from "../debugsy-look-v1/ui-logs/utils/json/json-core";
 import type { DebugLogEntry, DebugPoint } from "../debugsy-space";
 import {
   DEBUG_POINT_CONFIG,
   getLookDebugPoints,
 } from "../debugsy-space/debugsy-point";
+import {
+  processObjectForDisplay,
+  type DepthSetting,
+} from "../shared/object-depth-utils";
 import { DebugsyActions } from "./debugsy-actions";
 import { DebugsyShortcutsDisplay } from "./debugsy-shortcuts";
 import { DebugsyStats } from "./debugsy-stats";
@@ -92,6 +100,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   // State
   const [isVisible, setIsVisible] = useState(false);
   const [isCompact, setIsCompact] = useState(true); // Compact mode (controls only) vs Extended mode (full logs)
+  const [depthSetting, setDepthSetting] = useState<DepthSetting>("all"); // Depth setting for copy operations
   const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
     (() => void) | null
   >(null);
@@ -99,7 +108,8 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     new Set()
   );
   // Local setting states (demo placeholders for now, consistent with Showcase)
-  const [closeOnClickOutsideState, setCloseOnClickOutsideState] = useState(closeOnClickOutside);
+  const [closeOnClickOutsideState, setCloseOnClickOutsideState] =
+    useState(closeOnClickOutside);
 
   // Display system
   const displayContent = useDisplay();
@@ -125,6 +135,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       itemHeight: 24,
       thresholdItems: 3,
       isPaused: pauseState.isPaused,
+      logOrder: "desc", // Logs are reversed (newest at top)
       onFollowingChange: (following) => {
         if (!following) {
           setDisplayContent({
@@ -235,7 +246,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       // Once visible, toggle between compact and extended
       const nextIsCompact = !isCompact;
       setIsCompact(nextIsCompact);
-      
+
       setDisplayContent({
         message: `Mode: ${nextIsCompact ? "Compact" : "Extended"}`,
         type: "info",
@@ -248,8 +259,10 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   });
 
   // Calculate stats
-  const activePoints = [...new Set(filteredLogs.map((log) => log.point))]
-    .length;
+  const debugState = debug.getDebugState();
+  const enabledPointsSet = debugState?.enabled; // This is a Set<DebugPoint>
+  const activePoints =
+    enabledPointsSet instanceof Set ? enabledPointsSet.size : 0; // Count of enabled debug points
   const totalLogs = logs.length;
   const filteredCount = filteredLogs.length;
 
@@ -295,6 +308,42 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     });
   }, [onClearLogs]);
 
+  // Long-press copy handler (generic hook from Harbuz UI with custom formatter)
+  const handleLongPressCopyLog = useLogEntryCopy({
+    onSuccess: (message) =>
+      setDisplayContent({ message, type: "success", duration: 2000 }),
+    onError: (message) =>
+      setDisplayContent({ message, type: "error", duration: 2000 }),
+    formatter: useCallback(
+      (entry: {
+        id: number;
+        timestamp: string;
+        point: string;
+        message: string;
+        data?: unknown;
+      }) => {
+        // Find the original log entry for depth processing
+        const originalLog = activeLogs.find(
+          (log) => log.point === entry.point && log.message === entry.message
+        );
+
+        if (!originalLog?.data) {
+          // No data, use simple format
+          return `[${entry.timestamp}] ${entry.point}: ${entry.message}`;
+        }
+
+        // Apply depth setting and format with safeSuperjsonStringify
+        const processedData = processObjectForDisplay(
+          originalLog.data,
+          depthSetting
+        );
+        const dataStr = ` | ${safeSuperjsonStringify(processedData)}`;
+        return `[${entry.timestamp}] ${entry.point}: ${entry.message}${dataStr}`;
+      },
+      [activeLogs, depthSetting]
+    ),
+  });
+
   if (!isVisible) {
     return null;
   }
@@ -318,104 +367,92 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       >
         {!isCompact && (
           <>
-        <TerminalLayoutHeader>
-          <TerminalLayoutResizeHandle
-            onResizeStart={handleResizeStart}
-            isResizing={isResizing}
-          />
-        </TerminalLayoutHeader>
+            <TerminalLayoutHeader>
+              <TerminalLayoutResizeHandle
+                onResizeStart={handleResizeStart}
+                isResizing={isResizing}
+              />
+            </TerminalLayoutHeader>
 
-          <TerminalLayoutBody>
-            <TerminalLayoutContent>
-              <TerminalLayoutLogsContainer<
-                DebugLogEntry & { _uniqueId: string }
-              >
-                containerRef={logsContainerRef}
-                logsOnlyRef={logsOnlyRef}
-                items={[...activeLogs]
-                  .slice(-MAX_RENDERED)
-                  .reverse()
-                  .map((log, idx) => ({
-                  ...log,
-                  _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
-                }))}
-                renderItem={(
-                  log: DebugLogEntry & { _uniqueId: string },
-                  index
-                ) => {
-                  const entry = {
-                    id: index,
-                    timestamp: new Date(log.timestamp).toLocaleTimeString(),
-                    point: log.point,
-                    message: log.message,
-                    level: log.level as "info" | "warn" | "error" | undefined,
-                    data: log.data,
-                  };
-                  return (
-                    <LogEntry
-                      entry={entry}
-                      index={index}
-                      isExpanded={expandedEntries.has(index)}
-                      onToggleExpand={() => {
-                        setExpandedEntries((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(index)) {
-                            next.delete(index);
-                          } else {
-                            next.add(index);
-                          }
-                          return next;
-                        });
-                      }}
-                    />
-                  );
-                }}
-                keyExtractor={(log: DebugLogEntry & { _uniqueId: string }) =>
-                  log._uniqueId
-                }
-                topBanners={[
-                  {
-                    show: shouldShowTruncation,
-                    content: (
-                      <Banner
-                        emoji="⚠️"
-                        message={`Showing latest ${MAX_RENDERED} of ${totalLogs} logs (performance limit)`}
-                        variant="warning"
-                        title="Older logs are hidden for performance"
-                      />
-                    ),
-                  },
-                  {
-                    show: pauseState.isPaused,
-                    content: (
-                      <Banner
-                        emoji="⏸️"
-                        message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
-                        variant="paused"
-                        onClick={() => pauseState.resume()}
-                        title="Click to resume log rendering"
-                      />
-                    ),
-                  },
-                  {
-                    show: !scrollFollowing.isFollowing && !pauseState.isPaused,
-                    content: (
-                      <Banner
-                        emoji="📌"
-                        message={`Viewing snapshot at ${scrollFollowing.snapshotItems.length > 0 ? scrollFollowing.snapshotItems.length : activeLogs.length} logs - Click to return to live stream`}
-                        variant="snapshot"
-                        onClick={() => {
-                          scrollFollowing.returnToFollowing();
-                          setDisplayContent({
-                            message: "Returned to following live logs",
-                            type: "success",
-                            duration: 2000,
+            <TerminalLayoutBody>
+              <TerminalLayoutContent>
+                <TerminalLayoutLogsContainer<
+                  DebugLogEntry & { _uniqueId: string }
+                >
+                  containerRef={logsContainerRef}
+                  logsOnlyRef={logsOnlyRef}
+                  items={[...activeLogs]
+                    .slice(-MAX_RENDERED)
+                    .reverse()
+                    .map((log, idx) => ({
+                      ...log,
+                      _uniqueId: `${log.timestamp}-${log.point}-${log.sessionId}-${idx}`,
+                    }))}
+                  renderItem={(
+                    log: DebugLogEntry & { _uniqueId: string },
+                    index
+                  ) => {
+                    const entry = {
+                      id: index,
+                      timestamp: new Date(log.timestamp).toLocaleTimeString(),
+                      point: log.point,
+                      message: log.message,
+                      level: log.level as "info" | "warn" | "error" | undefined,
+                      data: log.data,
+                    };
+                    return (
+                      <LogEntry
+                        entry={entry}
+                        index={index}
+                        isExpanded={expandedEntries.has(index)}
+                        onToggleExpand={() => {
+                          setExpandedEntries((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(index)) {
+                              next.delete(index);
+                            } else {
+                              next.add(index);
+                            }
+                            return next;
                           });
                         }}
-                        title="Click to return to following live logs"
+                        onLongPress={handleLongPressCopyLog}
                       />
-                    ),
-                  },
+                    );
+                  }}
+                  keyExtractor={(log: DebugLogEntry & { _uniqueId: string }) =>
+                    log._uniqueId
+                  }
+                  scrollFollowingState={
+                    scrollFollowing as unknown as ScrollFollowingState<
+                      DebugLogEntry & { _uniqueId: string }
+                    >
+                  }
+                  pauseState={
+                    pauseState as unknown as PauseState<
+                      DebugLogEntry & { _uniqueId: string }
+                    >
+                  }
+                  onDisplayMessage={(message, type) => {
+                    setDisplayContent({
+                      message,
+                      type: type ?? "info",
+                      duration: 2000,
+                    });
+                  }}
+                  BannerComponent={Banner}
+                  topBanners={[
+                    {
+                      show: shouldShowTruncation,
+                      content: (
+                        <Banner
+                          emoji="⚠️"
+                          message={`Showing latest ${MAX_RENDERED} of ${totalLogs} logs (performance limit)`}
+                          variant="warning"
+                          title="Older logs are hidden for performance"
+                        />
+                      ),
+                    },
                     {
                       show: clearConfirmation,
                       content: (
@@ -425,54 +462,58 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                           variant="warning"
                           onClick={handleSmartClear}
                           title="Click to complete clear and resume"
-                      />
-                    ),
-                  },
-                ]}
-                truncation={{
-                  hiddenCount,
-                  totalCount: totalLogs,
-                  maxRendered: MAX_RENDERED,
-                  renderedCount: activeLogs.length,
-                  onCopyAll: handleCopyAllLogs,
-                  onClearAll: handleClearAllLogs,
-                }}
-                TruncationPanel={TruncationPanel}
-                VirtualizedList={VirtualizedList}
-                itemHeight={24}
-                virtualizationThreshold={50}
-                overscan={5}
-              />
-            </TerminalLayoutContent>
+                        />
+                      ),
+                    },
+                  ]}
+                  truncation={{
+                    hiddenCount,
+                    totalCount: totalLogs,
+                    maxRendered: MAX_RENDERED,
+                    renderedCount: activeLogs.length,
+                    onCopyAll: handleCopyAllLogs,
+                    onClearAll: handleClearAllLogs,
+                  }}
+                  TruncationPanel={TruncationPanel}
+                  VirtualizedList={VirtualizedList}
+                  itemHeight={24}
+                  virtualizationThreshold={50}
+                  overscan={5}
+                  emptyMessage={`No debug logs yet.
+Enable debug points and interact with the surface to see logs here.`}
+                />
+              </TerminalLayoutContent>
 
-            <TerminalLayoutActions>
-              <DebugsyActions
-                activeLogs={activeLogs}
-                filteredLogs={filteredLogs}
-                copyState={copyState}
-                pauseState={pauseState}
-                scrollFollowing={scrollFollowing}
-                hoverMessage={hoverMessage}
-              />
-            </TerminalLayoutActions>
+              <TerminalLayoutActions>
+                <DebugsyActions
+                  activeLogs={activeLogs}
+                  filteredLogs={filteredLogs}
+                  copyState={copyState}
+                  pauseState={pauseState}
+                  scrollFollowing={scrollFollowing}
+                  hoverMessage={hoverMessage}
+                  depthSetting={depthSetting}
+                  onDepthChange={setDepthSetting}
+                />
+              </TerminalLayoutActions>
 
-            <TerminalLayoutSidebar>
-              <DebugsyStats
-                totalLogs={totalLogs}
-                filteredLogs={filteredCount}
-                activeLogs={activeLogs.length}
-                activePoints={activePoints}
-                panelHeight={panelHeight}
-              />
+              <TerminalLayoutSidebar>
+                <DebugsyStats
+                  totalLogs={totalLogs}
+                  filteredLogs={filteredCount}
+                  activeLogs={activeLogs.length}
+                  activePoints={activePoints}
+                  panelHeight={panelHeight}
+                />
 
-              <DebugsyShortcutsDisplay shortcuts={shortcuts} />
+                <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
-              <TerminalLayoutResizePresets
-                presets={[200, 400, 600, getMaxHeight()]}
-                currentHeight={panelHeight}
-                maxHeight={getMaxHeight()}
-                onResize={setPanelHeight}
-              />
+                <TerminalLayoutResizePresets
+                  presets={[200, 400, 600, getMaxHeight()]}
+                  currentHeight={panelHeight}
+                  maxHeight={getMaxHeight()}
+                  onResize={setPanelHeight}
+                />
 
                 {/* Settings Section */}
                 <TerminalLayoutSettings noBorder={true}>
@@ -487,7 +528,9 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                         indicatorType: "toggle" as const,
                         active: closeOnClickOutsideState,
                         onClick: () => {
-                          setCloseOnClickOutsideState(!closeOnClickOutsideState);
+                          setCloseOnClickOutsideState(
+                            !closeOnClickOutsideState
+                          );
                           setDisplayContent({
                             message: `Click outside: ${!closeOnClickOutsideState ? "ON" : "OFF"}`,
                             type: "info",
@@ -513,8 +556,8 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                 </TerminalLayoutSettings>
 
                 <div style={{ flexGrow: 1 }} />
-            </TerminalLayoutSidebar>
-          </TerminalLayoutBody>
+              </TerminalLayoutSidebar>
+            </TerminalLayoutBody>
           </>
         )}
 
@@ -552,7 +595,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
             <ControlPanelDisplaySection
               entries={
                 isCompact
-                  ? // Show recent logs in compact mode (newest first)
+                  ? // COMPACT MODE: Show recent logs (3 entries)
                     [...filteredLogs]
                       .reverse()
                       .slice(0, 3)
@@ -567,12 +610,27 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                             second: "2-digit",
                           }
                         ),
-                        emoji: DEBUG_POINT_CONFIG[log.point as DebugPoint]?.emoji ?? "📝",
+                        emoji:
+                          DEBUG_POINT_CONFIG[log.point as DebugPoint]?.emoji ??
+                          "📝",
                         message: log.message,
                       }))
-                  : []
+                  : // FULL MODE: Show status info (matching V1 behavior)
+                    [
+                      {
+                        id: 0,
+                        timestamp: "",
+                        emoji: "🚧",
+                        message: `Debugsy  ${activePoints} points • ${totalLogs} logs`,
+                      },
+                    ]
               }
               content={displayContent}
+              emptyMessage={
+                isCompact
+                  ? "No debug logs yet. Enable debug points and interact."
+                  : "" // Full mode: empty message not used (status entry always present)
+              }
               actions={[
                 ...(_uiVersion
                   ? [
@@ -595,7 +653,9 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                     ? "Click again to clear snapshot and resume"
                     : "Clear logs (Cmd+K)",
                   backgroundColor: clearConfirmation ? "#f59e0b" : "#ffffff",
-                  hoverBackgroundColor: clearConfirmation ? "#d97706" : "#e5e7eb",
+                  hoverBackgroundColor: clearConfirmation
+                    ? "#d97706"
+                    : "#e5e7eb",
                   color: clearConfirmation ? "#ffffff" : "#4b5563",
                 },
                 {

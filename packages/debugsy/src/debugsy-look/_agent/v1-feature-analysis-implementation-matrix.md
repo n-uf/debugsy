@@ -84,7 +84,7 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 | **Truncation Banner (Top)** | ✅ Sticky banner at top | ❌ Not in Showcase | ✅ Banner in `topBanners` | **FIXED** - V2 added truncation banner |
 | **Log Order** | ✅ Newest on top (reversed) | ❌ Not specified | ✅ Newest on top (reversed) | **FIXED** - V2 now reverses logs |
 | **Hidden Logs Indicator** | ✅ Inline div | ✅ `hiddenLogsIndicator` prop | ✅ `hiddenLogsIndicator` prop | Aligned |
-| **Empty State Message** | ✅ "No debug logs yet. Enable debug points and interact with the surface to see logs here." | ✅ Generic "No entries yet." | 🐛 **BUG** - Shows generic message instead of specific guidance | Not aligned |
+| **Empty State Message** | ✅ "No debug logs yet. Enable debug points and interact with the surface to see logs here." | ✅ Generic "No entries yet." | ✅ **FIXED** - Shows specific messages for both compact and full modes | Aligned |
 
 ### 2.3 Copy System Features
 
@@ -101,7 +101,7 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 | **No Cycle Back on Complete** | ✅ `resetOnComplete: false` | ✅ `resetOnComplete: false` | ✅ `resetOnComplete: false` | Aligned |
 | **Hover Message** | ✅ Display panel integration | ✅ `useHoverMessage` hook | ✅ `useHoverMessage` hook | Aligned |
 | **Copy All Logs** | ✅ Truncation panel button | ✅ Truncation panel button | ✅ Truncation panel button | Aligned |
-| **Copy Individual Log** | ✅ Long-press (500ms) | ❌ Not in Showcase | ❌ Not in V2 | V1-specific |
+| **Copy Individual Log** | ✅ Long-press (500ms) | ✅ **IMPLEMENTED** - Generic `useLogEntryCopy` hook | ✅ **IMPLEMENTED** - Uses Harbuz generic hook | Fully aligned at UI level |
 
 ### 2.4 Depth Control Features
 
@@ -257,7 +257,34 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 | **Health Snapshot** | "Health snapshot captured" | "Health snapshot captured" | "Health snapshot captured" | Aligned |
 | **Depth Change** | "Copy depth: String only / Max N levels / Full depth" | Same | Same | Aligned |
 
-### 5.2 Banner Messages
+### 5.2 Empty State Messages
+
+| Context | V1 Message | Showcase Message | V2 Message | Status |
+|---------|-----------|---------|-----------|--------|
+| **Compact Mode Display** | "No debug logs yet. Enable debug points and interact." | "No entries yet." | "No debug logs yet. Enable debug points and interact." | ✅ **FIXED** - V2 matches V1 |
+| **Full Mode Logs Terminal** | "No debug logs yet.<br/>Enable debug points and interact with the surface to see logs here." | "No entries yet." | "No debug logs yet.<br/>Enable debug points and interact with the surface to see logs here." | ✅ **FIXED** - V2 matches V1 with multi-line support |
+
+**Implementation Details:**
+
+**Compact Mode (scr1, scr2):**
+- When `isCompact=true`, the `ControlPanelDisplaySection` shows inline logs (3 most recent)
+- When no logs exist, displays: "No debug logs yet. Enable debug points and interact."
+- **Priority Logic:** `content (toast)` → `entries (logs)` → `emptyMessage`
+
+**Full Mode (scr3, scr4):**
+- When `isCompact=false`, the `TerminalLayoutLogsContainer` displays the full log list
+- When no logs exist, displays 2-line message:
+  - Line 1: "No debug logs yet."
+  - Line 2: "Enable debug points and interact with the surface to see logs here."
+- **Priority Logic:** `items.length > 0` (show logs) → `items.length === 0` (show empty state)
+- **Always displays content:** Terminal never shows blank space, always shows logs OR empty state
+
+**V2 Fixes Applied:**
+1. Added `emptyMessage` prop to `Display`, `ControlPanelDisplaySection`, and `TerminalLayoutLogsContainer`
+2. Added `whiteSpace: "pre-line"` to `TerminalLayoutLogsContainer` empty state for multi-line support
+3. Verified priority logic ensures terminal always shows content (never blank)
+
+### 5.3 Banner Messages
 
 | Banner Type | V1 | Showcase | V2 | Status |
 |-------------|----|----|----|----|
@@ -266,11 +293,11 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 | **Clear Confirmation** | ❌ None | "🔄 Storage cleared. Press Clear again to clear snapshot and resume following." | "🔄 Storage cleared. Press Clear again to clear snapshot and resume following." | V2 added |
 | **Truncation** | "⚠️ Showing latest 400 of N logs (performance limit)" | "⚠️ Showing latest 400 of N logs (performance limit)" | "⚠️ Showing latest 400 of N logs (performance limit)" | Aligned |
 
-### 5.3 Tooltip Messages
+### 5.4 Tooltip Messages
 
 | Element | V1 Tooltip | Showcase Tooltip | V2 Tooltip | Status |
 |---------|-----------|---------|-----------|--------|
-| **Copy Button** | "🔸 Click to expand \| 📋 Long-press to copy log entry" | "Copy logs" | "Copy logs" | V1 has long-press feature |
+| **Copy Button** | "🔸 Click to expand \| 📋 Long-press to copy log entry" | "Copy logs" | "🔸 Click to expand \| 📋 Long-press to copy log entry" | Aligned |
 | **Pause Button** | "Pause log rendering" / "Resume log rendering" | Same | Same | Aligned |
 | **Health Button** | "Capture health snapshot to debug logs" | "Capture health snapshot" | "Capture health snapshot" | Aligned |
 | **Depth Switcher** | "Object depth: Full depth (no limits) (click to increase)" | Same | Same | Aligned |
@@ -283,10 +310,11 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 
 ### 6.1 Missing in V2 (High Priority)
 
-1. **❌ Long-Press Copy Individual Log**
+1. **✅ Long-Press Copy Individual Log - FIXED**
    - **V1:** 500ms long-press on log entry copies it
+   - **V2:** Now implemented with `useLongPress` hook
    - **Impact:** Convenient for debugging specific entries
-   - **Recommendation:** Consider adding to V2 if user feedback requests it
+   - **Status:** Feature parity achieved
 
 2. **❌ Advanced Log Formatters**
    - **V1:** Health, Dependency, Sanitized Data formatters with rich expansion content
@@ -327,15 +355,16 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 |----------|----------|---------|------|----------|
 | **Core UI** | 12 | 12 | 0 | 100% |
 | **Log Management** | 12 | 12 | 0 | 100% |
-| **Copy System** | 11 | 10 | 1 (long-press) | 91% |
+| **Copy System** | 11 | 11 | 0 | 100% |
 | **Depth Control** | 6 | 6 | 0 | 100% |
 | **Log Entry Display** | 14 | 14 | 0 | 100% |
 | **Edge Cases** | 23 | 23 | 0 | 100% |
 | **Advanced Features** | 17 | 14 | 3 (specialized formatters) | 82% |
-| **TOTAL** | **95** | **91** | **4** | **96%** |
+| **TOTAL** | **95** | **92** | **3** | **97%** |
 
 **Updated Assessment:**
 - ✅ All critical gaps from screenshot analysis FIXED
+- ✅ Long-press copy individual log IMPLEMENTED
 - ✅ Delta calculation system implemented
 - ✅ Frequency tracking implemented
 - ✅ Performance impact indicators implemented
@@ -343,7 +372,9 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 - ✅ Log order fixed (newest on top)
 - ✅ Inline logs in compact mode implemented
 - ✅ Truncation banner added
-- ❌ Remaining gaps: Long-press copy, specialized formatters (health, sanitized) - low priority
+- ❌ Remaining gaps: Specialized formatters (health, sanitized) - low priority
+
+**Status:** V2 is production-ready with 97% feature coverage. ✅
 
 ---
 
@@ -428,7 +459,7 @@ const { panelHeight, setPanelHeight, isResizing, handleResizeStart } = useResiza
 
 ### 8.1 Overall Assessment (UPDATED)
 
-DebugsyLook V2 has successfully adopted **96% of V1's functionality**, with all core features, edge cases, and critical UI patterns properly implemented. The remaining 4% consists of specialized formatters (health, sanitized data) and long-press copy feature that are optional enhancements.
+DebugsyLook V2 has successfully adopted **97% of V1's functionality**, with all core features, edge cases, and critical UI patterns properly implemented. The remaining 3% consists of specialized formatters (health, sanitized data) that are optional enhancements.
 
 ### 8.2 Key Achievements
 
@@ -441,9 +472,8 @@ DebugsyLook V2 has successfully adopted **96% of V1's functionality**, with all 
 
 ### 8.3 Remaining Work (Optional)
 
-1. **Low Priority:** Long-press copy for individual logs
-2. **Low Priority:** Advanced formatters (Health, Dependency, Sanitized Data)
-3. **Low Priority:** Large object placeholder optimization
+1. **Low Priority:** Advanced formatters (Health, Dependency, Sanitized Data)
+2. **Low Priority:** Large object placeholder optimization
 
 ### 8.4 V2 Advantages
 

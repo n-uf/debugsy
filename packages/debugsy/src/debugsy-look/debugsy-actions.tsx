@@ -47,6 +47,14 @@ export interface DebugsyActionsProps<T> {
    * Hover message handlers
    */
   hoverMessage: HoverMessageHandlers;
+  /**
+   * Depth setting for copy operations (optional, defaults to "all")
+   */
+  depthSetting?: DepthSetting;
+  /**
+   * Callback when depth setting changes
+   */
+  onDepthChange?: (depth: DepthSetting) => void;
 }
 
 /**
@@ -74,8 +82,15 @@ export const DebugsyActions = <T,>({
   pauseState,
   scrollFollowing,
   hoverMessage,
+  depthSetting: externalDepthSetting,
+  onDepthChange,
 }: DebugsyActionsProps<T>): React.ReactElement => {
-  const [depthSetting, setDepthSetting] = useState<DepthSetting>("all");
+  const [internalDepthSetting, setInternalDepthSetting] =
+    useState<DepthSetting>("all");
+
+  // Use external depth setting if provided, otherwise use internal
+  const depthSetting = externalDepthSetting ?? internalDepthSetting;
+  const setDepthSetting = onDepthChange ?? setInternalDepthSetting;
 
   // Health Snapshot Handler
   const handleHealthSnapshot = useCallback(() => {
