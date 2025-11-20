@@ -11,6 +11,8 @@ import {
   getLogsToCopy,
   safeSuperjsonStringify,
   setDisplayContent,
+  setLoadingDisplay,
+  setProgressDisplay,
   type ActionButton,
   type CopyStateReturn,
   type DepthControl,
@@ -115,7 +117,7 @@ export const DebugsyActions = <T,>({
   }, [filteredLogs, scrollFollowing]);
 
   // Copy Logs Handler with Depth Setting
-  const handleCopyLogs = useCallback(() => {
+  const handleCopyLogs = useCallback(async () => {
     const {
       logs: logsToCopy,
       nextState,
@@ -133,16 +135,32 @@ export const DebugsyActions = <T,>({
     };
     const depth = depthMap[depthSetting];
 
-    // Copy with depth setting
-    const serialized = safeSuperjsonStringify(logsToCopy, depth);
-    navigator.clipboard.writeText(serialized);
+    // Show loading state while copying
+    setLoadingDisplay(`Copying ${logsToCopy.length} logs...`, {
+      type: "info",
+      color: getActionProgressColor(copyState.state),
+    });
+
+    // Copy with depth setting (wrapped in promise for async/await)
+    await new Promise<void>((resolve) => {
+      setTimeout(() => {
+        const serialized = safeSuperjsonStringify(logsToCopy, depth);
+        navigator.clipboard.writeText(serialized);
+        resolve();
+      }, 50); // Small delay to show loading state
+    });
 
     // Advance copy state
     copyState.setState(nextState);
 
-    setDisplayContent({
-      message: `${message} (depth: ${depthSetting})`,
+    // Calculate progress value (0-100) based on next state
+    const progressValue = nextState === 0 ? 0 : nextState === 1 ? 50 : 100;
+
+    // Show progress state with completion message
+    setProgressDisplay(`${message} (depth: ${depthSetting})`, progressValue, {
       type: "success",
+      color: getActionProgressColor(nextState),
+      height: 2,
       duration: 2000,
     });
   }, [activeLogs, copyState, depthSetting]);

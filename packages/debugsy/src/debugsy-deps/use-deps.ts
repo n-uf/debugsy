@@ -24,13 +24,13 @@
  * - Unstable prop changes
  */
 
+import { setDisplayContent } from "@workspace/harbuz";
 import { useEffect, useRef } from "react";
 import {
   enterRenderPhase,
   exitRenderPhase,
 } from "../debugsy-logs/hooks/debugsy-notifications";
 import { setDebugDisplayContent } from "../shared/debug-display-state";
-import { setDisplayContent } from "@workspace/harbuz";
 import {
   DEPS_CONFIG_DEFAULTS,
   getMountRateSeverity,
@@ -102,7 +102,7 @@ function notifyHighRenderRate(
   try {
     // 🎨 UI Notification with enhanced visual feedback (both systems)
     const singleLineMessage = `⚠️ High Render Rate Component: ${componentName} Rate: ${renderRate.toFixed(1)} renders/sec Threshold: ${threshold} renders`;
-    
+
     setDebugDisplayContent({
       message: singleLineMessage,
       type: severity,
@@ -179,7 +179,7 @@ function notifyHighMountRate(
   try {
     // 🎨 UI Notification with enhanced visual feedback (both systems)
     const singleLineMessage = `🔄 High Mount Rate Component: ${componentName} Rate: ${mountRate.toFixed(1)} mounts/sec Threshold: ${threshold} mounts`;
-    
+
     setDebugDisplayContent({
       message: singleLineMessage,
       type: severity,

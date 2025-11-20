@@ -6,12 +6,14 @@ import {
   ControlPanel,
   ControlPanelDisplaySection,
   ControlPanelSection,
+  getProgressColor as getActionProgressColor,
   IndicatorButtonGroup,
   IndicatorButtonTheme,
   LogEntry,
   PauseState,
   ScrollFollowingState,
   setDisplayContent,
+  setProgressDisplay,
   TerminalLayout,
   TerminalLayoutActions,
   TerminalLayoutBody,
@@ -173,7 +175,27 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   // 5. Hover Message Hook - Display messages on button hover
   const hoverMessage = useHoverMessage({
     setMessage: (message, type = "info") => {
-      setDisplayContent({ message, type, duration: 0 }); // duration: 0 = don't auto-clear
+      // Show progress on hover for copy button
+      const isCopyMessage = message.toLowerCase().includes("copy");
+      
+      if (isCopyMessage) {
+        const progressValue = copyState.state === 0 ? 0 : copyState.state === 1 ? 50 : 100;
+        
+        // Use progress display for copy messages
+        setProgressDisplay(message, progressValue, {
+          type,
+          color: getActionProgressColor(copyState.state),
+          height: 2,
+          duration: 0, // Manual clear on hover
+        });
+      } else {
+        // Regular display for non-copy messages
+        setDisplayContent({ 
+          message, 
+          type, 
+          duration: 0,
+        });
+      }
     },
     clearMessage: clearDisplayContent,
   });
