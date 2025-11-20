@@ -30,6 +30,7 @@ import {
   exitRenderPhase,
 } from "../debugsy-logs/hooks/debugsy-notifications";
 import { setDebugDisplayContent } from "../shared/debug-display-state";
+import { setDisplayContent } from "@workspace/harbuz";
 import {
   DEPS_CONFIG_DEFAULTS,
   getMountRateSeverity,
@@ -99,12 +100,18 @@ function notifyHighRenderRate(
   const severity = getRenderRateSeverity(renderRate, threshold, config);
 
   try {
-    // 🎨 UI Notification with enhanced visual feedback
+    // 🎨 UI Notification with enhanced visual feedback (both systems)
+    const singleLineMessage = `⚠️ High Render Rate Component: ${componentName} Rate: ${renderRate.toFixed(1)} renders/sec Threshold: ${threshold} renders`;
+    
     setDebugDisplayContent({
-      message: `⚠️ High Render Rate
-Component: ${componentName}
-Rate: ${renderRate.toFixed(1)} renders/sec
-Threshold: ${threshold} renders`,
+      message: singleLineMessage,
+      type: severity,
+      duration: renderRateNotifier.displayDuration,
+    });
+
+    // 🎨 Also notify Harbuz display system (V2 system)
+    setDisplayContent({
+      message: singleLineMessage,
       type: severity,
       duration: renderRateNotifier.displayDuration,
     });
@@ -170,12 +177,18 @@ function notifyHighMountRate(
   const severity = getMountRateSeverity(mountRate, threshold, config);
 
   try {
-    // 🎨 UI Notification with enhanced visual feedback
+    // 🎨 UI Notification with enhanced visual feedback (both systems)
+    const singleLineMessage = `🔄 High Mount Rate Component: ${componentName} Rate: ${mountRate.toFixed(1)} mounts/sec Threshold: ${threshold} mounts`;
+    
     setDebugDisplayContent({
-      message: `🔄 High Mount Rate
-Component: ${componentName}
-Rate: ${mountRate.toFixed(1)} mounts/sec
-Threshold: ${threshold} mounts`,
+      message: singleLineMessage,
+      type: severity,
+      duration: mountRateNotifier.displayDuration,
+    });
+
+    // 🎨 Also notify Harbuz display system (V2 system)
+    setDisplayContent({
+      message: singleLineMessage,
       type: severity,
       duration: mountRateNotifier.displayDuration,
     });

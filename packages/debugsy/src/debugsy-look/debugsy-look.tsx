@@ -441,18 +441,10 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                     });
                   }}
                   BannerComponent={Banner}
+                  truncationThreshold={1000}
+                  maxRendered={MAX_RENDERED}
+                  totalCount={totalLogs}
                   topBanners={[
-                    {
-                      show: shouldShowTruncation,
-                      content: (
-                        <Banner
-                          emoji="⚠️"
-                          message={`Showing latest ${MAX_RENDERED} of ${totalLogs} logs (performance limit)`}
-                          variant="warning"
-                          title="Older logs are hidden for performance"
-                        />
-                      ),
-                    },
                     {
                       show: clearConfirmation,
                       content: (
@@ -467,10 +459,6 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                     },
                   ]}
                   truncation={{
-                    hiddenCount,
-                    totalCount: totalLogs,
-                    maxRendered: MAX_RENDERED,
-                    renderedCount: activeLogs.length,
                     onCopyAll: handleCopyAllLogs,
                     onClearAll: handleClearAllLogs,
                   }}
