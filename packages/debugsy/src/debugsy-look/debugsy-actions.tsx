@@ -10,9 +10,9 @@ import {
   getDepthWidth,
   getLogsToCopy,
   safeSuperjsonStringify,
-  setDisplayContent,
-  setLoadingDisplay,
-  setProgressDisplay,
+  // Context-based queue system (isolated)
+  useDisplayQueueHelpers,
+  useLegacyDisplayCompat,
   type ActionButton,
   type CopyStateReturn,
   type DepthControl,
@@ -87,6 +87,10 @@ export const DebugsyActions = <T,>({
   depthSetting: externalDepthSetting,
   onDepthChange,
 }: DebugsyActionsProps<T>): React.ReactElement => {
+  // Context-based display queue helpers (isolated to this component tree)
+  const { startLoading, completeLoading } = useDisplayQueueHelpers();
+  const { setDisplayContent } = useLegacyDisplayCompat();
+  
   const [internalDepthSetting, setInternalDepthSetting] =
     useState<DepthSetting>("all");
 
@@ -135,10 +139,12 @@ export const DebugsyActions = <T,>({
     };
     const depth = depthMap[depthSetting];
 
-    // Show loading state while copying
-    setLoadingDisplay(`Copying ${logsToCopy.length} logs...`, {
+    // Start loading (NEW: returns ID for later update)
+    const loadingId = startLoading(`Copying ${logsToCopy.length} logs...`, {
+      priority: 5,
       type: "info",
       color: getActionProgressColor(copyState.state),
+      showProcessingTime: false,
     });
 
     // Copy with depth setting (wrapped in promise for async/await)
@@ -156,11 +162,9 @@ export const DebugsyActions = <T,>({
     // Calculate progress value (0-100) based on next state
     const progressValue = nextState === 0 ? 0 : nextState === 1 ? 50 : 100;
 
-    // Show progress state with completion message
-    setProgressDisplay(`${message} (depth: ${depthSetting})`, progressValue, {
-      type: "success",
-      color: getActionProgressColor(nextState),
-      height: 2,
+    // Complete loading with success (NEW: updates item by ID)
+    completeLoading(loadingId, `${message} (depth: ${depthSetting})`, {
+      progressValue,
       duration: 2000,
     });
   }, [activeLogs, copyState, depthSetting]);

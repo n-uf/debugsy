@@ -1,5 +1,10 @@
-import { setDisplayContent } from "@workspace/harbuz";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+export interface DisplayContentParams {
+  message: string;
+  type: "success" | "error" | "warning" | "info";
+  duration?: number;
+}
 
 export interface UseClearConfig<T> {
   /**
@@ -22,6 +27,10 @@ export interface UseClearConfig<T> {
    * Optional callback to clear local state
    */
   onClearLocalState?: () => void;
+  /**
+   * Display content function (scoped or global)
+   */
+  setDisplayContent: (content: DisplayContentParams) => void;
 }
 
 export interface UseClearReturn {
@@ -58,7 +67,7 @@ export interface UseClearReturn {
  * ```
  */
 export function useClear<T>(config: UseClearConfig<T>): UseClearReturn {
-  const { isPaused, isFollowing, onClearStorage, onResume, onClearLocalState } =
+  const { isPaused, isFollowing, onClearStorage, onResume, onClearLocalState, setDisplayContent } =
     config;
 
   const [clearConfirmation, setClearConfirmation] = useState(false);
@@ -130,6 +139,7 @@ export function useClear<T>(config: UseClearConfig<T>): UseClearReturn {
     onClearStorage,
     onResume,
     onClearLocalState,
+    setDisplayContent,
   ]);
 
   // Cleanup confirmation timeout

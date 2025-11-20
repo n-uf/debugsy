@@ -2,17 +2,16 @@
 
 import {
   Banner,
-  clearDisplayContent,
   ControlPanel,
   ControlPanelDisplaySection,
   ControlPanelSection,
+  DisplayQueueProvider,
   getProgressColor as getActionProgressColor,
   IndicatorButtonGroup,
   IndicatorButtonTheme,
   LogEntry,
   PauseState,
   ScrollFollowingState,
-  setDisplayContent,
   setProgressDisplay,
   TerminalLayout,
   TerminalLayoutActions,
@@ -29,8 +28,10 @@ import {
   useClickOutside,
   useCopyState,
   useDisplay,
+  useDisplayQueueScoped,
   useHoverMessage,
   useKeyboardSelection,
+  useLegacyDisplayCompat,
   useLogEntryCopy,
   useLogFiltering,
   usePauseState,
@@ -66,12 +67,10 @@ import { useDebugsyShortcuts } from "./use-debugsy-shortcuts";
 export type { DebugsyLookProps };
 
 /**
- * DebugsyLook - Harbuz-based implementation
- *
- * Full implementation using @workspace/harbuz UI components.
- * Modern TerminalLayout structure with comprehensive debugging features.
+ * DebugsyLookInternal - Core implementation
+ * (Wrapped by DisplayQueueProvider in the exported component)
  */
-export const DebugsyLook: React.FC<DebugsyLookProps> = ({
+const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
   _uiVersion,
   _onToggleVersion,
@@ -113,8 +112,10 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   const [closeOnClickOutsideState, setCloseOnClickOutsideState] =
     useState(closeOnClickOutside);
 
-  // Display system
-  const displayContent = useDisplay();
+  // Display system (NEW: context-based isolated queue)
+  const displayQueue = useDisplayQueueScoped(3); // Max 3 rows (scoped to this component)
+  const displayContent = useDisplay(); // Legacy single-item display (fallback)
+  const { setDisplayContent, clearDisplayContent } = useLegacyDisplayCompat(); // Scoped legacy compat
 
   // 🔥 HARBUZ HOOKS INTEGRATION 🔥
 
@@ -241,6 +242,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
       scrollFollowing.returnToFollowing();
     },
     onClearLocalState: clearLocalStateCallback ?? undefined,
+    setDisplayContent, // Use scoped display from compat hook
   });
 
   const onClose = useCallback(() => {
@@ -603,6 +605,7 @@ Enable debug points and interact with the surface to see logs here.`}
             </ControlPanelSection>
 
             <ControlPanelDisplaySection
+              queueItems={displayQueue}
               entries={
                 isCompact
                   ? // COMPACT MODE: Show recent logs (3 entries)
@@ -700,6 +703,25 @@ Enable debug points and interact with the surface to see logs here.`}
         </TerminalLayoutControlPanel>
       </TerminalLayout>
     </div>
+  );
+};
+
+DebugsyLookInternal.displayName = "DebugsyLookInternal";
+
+/**
+ * DebugsyLook - Harbuz-based implementation with isolated display queue
+ *
+ * Full implementation using @workspace/harbuz UI components.
+ * Modern TerminalLayout structure with comprehensive debugging features.
+ *
+ * Wrapped with DisplayQueueProvider to ensure display messages are isolated
+ * from other components (e.g., Showcase).
+ */
+export const DebugsyLook: React.FC<DebugsyLookProps> = (props) => {
+  return (
+    <DisplayQueueProvider>
+      <DebugsyLookInternal {...props} />
+    </DisplayQueueProvider>
   );
 };
 
