@@ -87,6 +87,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
+  const logsOnlyRef = useRef<HTMLDivElement>(null); // For Cmd+A selection (logs only, no banners)
 
   // State
   const [isVisible, setIsVisible] = useState(false);
@@ -191,7 +192,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
 
   // 6. Keyboard Selection Hook - Cmd+A selects only logs (after isResizing is defined)
   useKeyboardSelection({
-    containerRef: logsContainerRef as React.RefObject<HTMLElement | null>,
+    containerRef: logsOnlyRef as React.RefObject<HTMLElement | null>,
     enabled: isVisible && !isResizing && !isCompact,
   });
 
@@ -330,6 +331,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
                 DebugLogEntry & { _uniqueId: string }
               >
                 containerRef={logsContainerRef}
+                logsOnlyRef={logsOnlyRef}
                 items={[...activeLogs]
                   .slice(-MAX_RENDERED)
                   .reverse()

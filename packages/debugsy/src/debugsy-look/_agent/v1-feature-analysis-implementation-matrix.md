@@ -77,7 +77,9 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 | **Smart Clear (2-step)** | ✅ Manual logic | ✅ `useClear` hook | ✅ `useClear` hook | Aligned |
 | **Clear Confirmation Banner** | ❌ None | ✅ `Banner` in `topBanners` | ✅ `Banner` in `topBanners` | V2 added after audit |
 | **Paused State Banner** | ✅ `DebugStatusPanels` | ✅ `Banner` in `topBanners` | ✅ `Banner` in `topBanners` | Aligned |
-| **Snapshot State Banner** | ✅ `DebugStatusPanels` | ✅ `Banner` in `topBanners` | ✅ `Banner` in `topBanners` | Aligned |
+| **Snapshot State Banner** | ✅ "📌 Viewing snapshot at 98 logs – Click to return to live stream" | ✅ `Banner` in `topBanners` | 🔄 **VERIFYING** - Implementation exists, needs testing | Needs verification |
+| **Render Rate Warning in Display** | ✅ "High Render Rate Component: DebugsyLookV1 Rate: 1.3 renders/sec" | ❌ Not in Showcase | 🐛 **BUG** - Not showing in compact mode display | Missing |
+| **Copy Progress Bar in Display** | ✅ Shows animated progress bar in display panel during copy operations | ❌ Not in Showcase | 🐛 **BUG** - Only shows text, missing progress bar visualization | Missing |
 | **Truncation Warning** | ✅ `TruncationInfoPanel` | ✅ `TruncationPanel` | ✅ `TruncationPanel` | Aligned |
 | **Truncation Banner (Top)** | ✅ Sticky banner at top | ❌ Not in Showcase | ✅ Banner in `topBanners` | **FIXED** - V2 added truncation banner |
 | **Log Order** | ✅ Newest on top (reversed) | ❌ Not specified | ✅ Newest on top (reversed) | **FIXED** - V2 now reverses logs |
@@ -185,7 +187,7 @@ This document provides a comprehensive audit of DebugsyLook V1's features, edge 
 | **Cmd+D Toggle** | ✅ Compact ↔ Extended | ✅ Same | ✅ Same | Aligned |
 | **Cmd+K Clear** | ✅ Smart clear | ✅ Same | ✅ Same | Aligned |
 | **Esc Close** | ✅ Hide panel | ✅ Same | ✅ Same | Aligned |
-| **Cmd+A Select Logs** | ✅ Select logs container only | ✅ `useKeyboardSelection` | ✅ `useKeyboardSelection` | Aligned |
+| **Cmd+A Select Logs** | ✅ Select logs container only (container has `tabIndex={0}`) | ✅ `useKeyboardSelection` hook | 🐛 **BUG** - Container missing `tabIndex={0}` | **FIXED** - Added `tabIndex={0}` to logs container |
 | **Shortcuts Disabled When Resizing** | ✅ Yes | ✅ Yes | ✅ Yes | Aligned |
 
 ### 3.6 Log Entry Edge Cases
