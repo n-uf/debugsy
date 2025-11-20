@@ -219,7 +219,7 @@ export const DebugsyLook: React.FC<DebugsyLookProps> = ({
     handleResizeStart,
   } = useResizable({
     initialHeight: 400, // Default height when expanded
-    minHeight: 200,
+    minHeight: 0,
     maxHeight: getMaxHeight(),
   });
 
@@ -656,6 +656,24 @@ Enable debug points and interact with the surface to see logs here.`}
                       },
                     ]
                   : []),
+                {
+                  icon: isCompact ? "⬇️" : "⬆️",
+                  onClick: () => {
+                    const nextIsCompact = !isCompact;
+                    setIsCompact(nextIsCompact);
+                    setDisplayContent({
+                      message: `Mode: ${nextIsCompact ? "Compact" : "Extended"}`,
+                      type: "info",
+                      duration: 1500,
+                    });
+                  },
+                  title: isCompact
+                    ? "Switch to Extended mode (⌘+D)"
+                    : "Switch to Compact mode (⌘+D)",
+                  backgroundColor: "#64748b",
+                  hoverBackgroundColor: "#475569",
+                  color: "#ffffff",
+                },
                 {
                   icon: clearConfirmation ? "🔄" : "🗑️",
                   onClick: handleSmartClear,
