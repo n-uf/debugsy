@@ -28,7 +28,7 @@ import {
   useClickOutside,
   useCopyState,
   useDisplayQueueContext,
-  useDisplayQueueScoped,
+  useDisplayQueueFullScoped,
   useHoverMessage,
   useKeyboardSelection,
   useLegacyDisplayCompat,
@@ -113,7 +113,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     useState(closeOnClickOutside);
 
   // Display system (NEW: context-based isolated queue)
-  const displayQueue = useDisplayQueueScoped(); // Scoped to this component
+  const { visible: displayQueue, memorized: memorizedItems } = useDisplayQueueFullScoped();
   const { configureQueue } = useDisplayQueueContext();
   // REMOVED: useDisplay() uses global state - we use scoped queue only
   const { setDisplayContent, clearDisplayContent } = useLegacyDisplayCompat(); // Scoped legacy compat
@@ -613,6 +613,7 @@ Enable debug points and interact with the surface to see logs here.`}
 
             <ControlPanelDisplaySection
               queueItems={displayQueue}
+              memorizedItems={memorizedItems}
               entries={
                 isCompact
                   ? // COMPACT MODE: Show recent logs (3 entries)

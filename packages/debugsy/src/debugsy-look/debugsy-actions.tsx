@@ -141,9 +141,7 @@ export const DebugsyActions = <T,>({
 
     // Start loading (NEW: returns ID for later update)
     const loadingId = startLoading(`Copying ${logsToCopy.length} logs...`, {
-      priority: 5,
       type: "info",
-      color: getActionProgressColor(copyState.state),
       showProcessingTime: false,
     });
 
