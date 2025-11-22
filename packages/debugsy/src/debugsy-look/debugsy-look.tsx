@@ -27,7 +27,7 @@ import {
   TruncationPanel,
   useClickOutside,
   useCopyState,
-  useDisplay,
+  useDisplayQueueContext,
   useDisplayQueueScoped,
   useHoverMessage,
   useKeyboardSelection,
@@ -40,7 +40,7 @@ import {
   VirtualizedList,
   Z_INDEX,
 } from "@workspace/harbuz";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
@@ -113,9 +113,15 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     useState(closeOnClickOutside);
 
   // Display system (NEW: context-based isolated queue)
-  const displayQueue = useDisplayQueueScoped(3); // Max 3 rows (scoped to this component)
-  const displayContent = useDisplay(); // Legacy single-item display (fallback)
+  const displayQueue = useDisplayQueueScoped(); // Scoped to this component
+  const { configureQueue } = useDisplayQueueContext();
+  // REMOVED: useDisplay() uses global state - we use scoped queue only
   const { setDisplayContent, clearDisplayContent } = useLegacyDisplayCompat(); // Scoped legacy compat
+
+  // Configure display slots (3 rows max)
+  useEffect(() => {
+    configureQueue({ maxSlots: 3 });
+  }, [configureQueue]);
 
   // 🔥 HARBUZ HOOKS INTEGRATION 🔥
 
@@ -178,10 +184,11 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     setMessage: (message, type = "info") => {
       // Show progress on hover for copy button
       const isCopyMessage = message.toLowerCase().includes("copy");
-      
+
       if (isCopyMessage) {
-        const progressValue = copyState.state === 0 ? 0 : copyState.state === 1 ? 50 : 100;
-        
+        const progressValue =
+          copyState.state === 0 ? 0 : copyState.state === 1 ? 50 : 100;
+
         // Use progress display for copy messages
         setProgressDisplay(message, progressValue, {
           type,
@@ -191,9 +198,9 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
         });
       } else {
         // Regular display for non-copy messages
-        setDisplayContent({ 
-          message, 
-          type, 
+        setDisplayContent({
+          message,
+          type,
           duration: 0,
         });
       }
@@ -638,7 +645,6 @@ Enable debug points and interact with the surface to see logs here.`}
                       },
                     ]
               }
-              content={displayContent}
               emptyMessage={
                 isCompact
                   ? "No debug logs yet. Enable debug points and interact."

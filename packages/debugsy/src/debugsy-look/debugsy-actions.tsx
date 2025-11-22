@@ -150,8 +150,8 @@ export const DebugsyActions = <T,>({
     // Copy with depth setting (wrapped in promise for async/await)
     await new Promise<void>((resolve) => {
       setTimeout(() => {
-        const serialized = safeSuperjsonStringify(logsToCopy, depth);
-        navigator.clipboard.writeText(serialized);
+    const serialized = safeSuperjsonStringify(logsToCopy, depth);
+    navigator.clipboard.writeText(serialized);
         resolve();
       }, 50); // Small delay to show loading state
     });

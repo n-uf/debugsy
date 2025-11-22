@@ -24,7 +24,6 @@
  * - Unstable prop changes
  */
 
-import { setDisplayContent } from "@workspace/harbuz";
 import { useEffect, useRef } from "react";
 import {
   enterRenderPhase,
@@ -100,7 +99,7 @@ function notifyHighRenderRate(
   const severity = getRenderRateSeverity(renderRate, threshold, config);
 
   try {
-    // 🎨 UI Notification with enhanced visual feedback (both systems)
+    // 🎨 UI Notification (V1 system only - V2 uses component callbacks)
     const singleLineMessage = `⚠️ High Render Rate Component: ${componentName} Rate: ${renderRate.toFixed(1)} renders/sec Threshold: ${threshold} renders`;
 
     setDebugDisplayContent({
@@ -109,12 +108,8 @@ function notifyHighRenderRate(
       duration: renderRateNotifier.displayDuration,
     });
 
-    // 🎨 Also notify Harbuz display system (V2 system)
-    setDisplayContent({
-      message: singleLineMessage,
-      type: severity,
-      duration: renderRateNotifier.displayDuration,
-    });
+    // NOTE: V2 (Harbuz) notifications should be handled via onExcessiveRenders callback
+    // to use scoped display context instead of global state
   } catch (error) {
     // Fallback to unified logging if UI system unavailable
     logWarnToDebugSystem(
@@ -177,7 +172,7 @@ function notifyHighMountRate(
   const severity = getMountRateSeverity(mountRate, threshold, config);
 
   try {
-    // 🎨 UI Notification with enhanced visual feedback (both systems)
+    // 🎨 UI Notification (V1 system only - V2 uses component callbacks)
     const singleLineMessage = `🔄 High Mount Rate Component: ${componentName} Rate: ${mountRate.toFixed(1)} mounts/sec Threshold: ${threshold} mounts`;
 
     setDebugDisplayContent({
@@ -186,12 +181,8 @@ function notifyHighMountRate(
       duration: mountRateNotifier.displayDuration,
     });
 
-    // 🎨 Also notify Harbuz display system (V2 system)
-    setDisplayContent({
-      message: singleLineMessage,
-      type: severity,
-      duration: mountRateNotifier.displayDuration,
-    });
+    // NOTE: V2 (Harbuz) notifications should be handled via onExcessiveMounts callback
+    // to use scoped display context instead of global state
   } catch (error) {
     // Fallback to unified logging if UI system unavailable
     logWarnToDebugSystem(
