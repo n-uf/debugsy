@@ -9,14 +9,19 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@workspace/harbuz": "workspace:*",
     "@workspace/shadcn": "workspace:*",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "react-window": "^2.2.3",
     "react-window-infinite-loader": "^2.0.0",
-    "react18-json-view": "^0.2.9",
     "superjson": "^2.2.5"
   },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react18-json-view": "^0.2.9"
+  },
   "devDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react18-json-view": "^0.2.9",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
