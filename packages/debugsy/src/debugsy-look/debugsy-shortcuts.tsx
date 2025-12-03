@@ -2,8 +2,8 @@
 
 import {
   type KeyboardShortcut,
-  TerminalLayoutShortcut,
-  TerminalLayoutShortcuts,
+  TerminalWindowShortcut,
+  TerminalWindowShortcuts,
 } from "@workspace/harbuz";
 import React from "react";
 
@@ -30,15 +30,15 @@ export const DebugsyShortcutsDisplay: React.FC<
   DebugsyShortcutsDisplayProps
 > = ({ shortcuts }) => {
   return (
-    <TerminalLayoutShortcuts title="Shortcuts">
+    <TerminalWindowShortcuts title="Shortcuts">
       {shortcuts.map((shortcut, index) => (
-        <TerminalLayoutShortcut
+        <TerminalWindowShortcut
           key={`${shortcut.key}-${index}`}
           keys={shortcut.keys}
           description={shortcut.description}
         />
       ))}
-    </TerminalLayoutShortcuts>
+    </TerminalWindowShortcuts>
   );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { TerminalLayoutStatItem, TerminalLayoutStats } from "@workspace/harbuz";
+import { TerminalWindowStatItem, TerminalWindowStats } from "@workspace/harbuz";
 import React from "react";
 
 export interface DebugsyStatsProps {
@@ -51,29 +51,29 @@ export const DebugsyStats: React.FC<DebugsyStatsProps> = ({
   panelHeight,
 }) => {
   return (
-    <TerminalLayoutStats title="Info">
-      <TerminalLayoutStatItem label="Total" value={totalLogs} color="#10b981" />
-      <TerminalLayoutStatItem
+    <TerminalWindowStats title="Info">
+      <TerminalWindowStatItem label="Total" value={totalLogs} color="#10b981" />
+      <TerminalWindowStatItem
         label="Filtered"
         value={filteredLogs}
         color="#3b82f6"
       />
-      <TerminalLayoutStatItem
+      <TerminalWindowStatItem
         label="Active"
         value={activeLogs}
         color="#f59e0b"
       />
-      <TerminalLayoutStatItem
+      <TerminalWindowStatItem
         label="Points"
         value={activePoints}
         color="#60a5fa"
       />
-      <TerminalLayoutStatItem
+      <TerminalWindowStatItem
         label="Height"
         value={`${panelHeight}px`}
         color="#fbbf24"
       />
-    </TerminalLayoutStats>
+    </TerminalWindowStats>
   );
 };
 

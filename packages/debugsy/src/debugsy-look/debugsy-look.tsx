@@ -2,9 +2,6 @@
 
 import {
   Banner,
-  ControlPanel,
-  ControlPanelDisplaySection,
-  ControlPanelSection,
   DisplayQueueProvider,
   getProgressColor as getActionProgressColor,
   IndicatorButtonGroup,
@@ -13,17 +10,20 @@ import {
   PauseState,
   ScrollFollowingState,
   setProgressDisplay,
-  TerminalLayout,
-  TerminalLayoutActions,
-  TerminalLayoutBody,
-  TerminalLayoutContent,
-  TerminalLayoutControlPanel,
-  TerminalLayoutHeader,
-  TerminalLayoutLogsContainer,
-  TerminalLayoutResizeHandle,
-  TerminalLayoutResizePresets,
-  TerminalLayoutSettings,
-  TerminalLayoutSidebar,
+  TerminalWindow,
+  TerminalWindowActions,
+  TerminalWindowBody,
+  TerminalWindowContent,
+  TerminalWindowControlPanel,
+  TerminalWindowHeader,
+  TerminalWindowLogsContainer,
+  TerminalWindowResizeHandle,
+  TerminalWindowResizePresets,
+  TerminalWindowSettings,
+  TerminalWindowSidebar,
+  Tray,
+  TrayDisplay,
+  TraySection,
   TruncationPanel,
   useClickOutside,
   useCopyState,
@@ -391,23 +391,23 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
         zIndex: Z_INDEX.DEBUG_PANEL,
       }}
     >
-      <TerminalLayout
+      <TerminalWindow
         bodyHeight={panelHeight}
         isResizing={isResizing}
         isCompact={isCompact}
       >
         {!isCompact && (
           <>
-            <TerminalLayoutHeader>
-              <TerminalLayoutResizeHandle
+            <TerminalWindowHeader>
+              <TerminalWindowResizeHandle
                 onResizeStart={handleResizeStart}
                 isResizing={isResizing}
               />
-            </TerminalLayoutHeader>
+            </TerminalWindowHeader>
 
-            <TerminalLayoutBody>
-              <TerminalLayoutContent>
-                <TerminalLayoutLogsContainer<
+            <TerminalWindowBody>
+              <TerminalWindowContent>
+                <TerminalWindowLogsContainer<
                   DebugLogEntry & { _uniqueId: string }
                 >
                   containerRef={logsContainerRef}
@@ -501,9 +501,9 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                   emptyMessage={`No debug logs yet.
 Enable debug points and interact with the surface to see logs here.`}
                 />
-              </TerminalLayoutContent>
+              </TerminalWindowContent>
 
-              <TerminalLayoutActions>
+              <TerminalWindowActions>
                 <DebugsyActions
                   activeLogs={activeLogs}
                   filteredLogs={filteredLogs}
@@ -514,9 +514,9 @@ Enable debug points and interact with the surface to see logs here.`}
                   depthSetting={depthSetting}
                   onDepthChange={setDepthSetting}
                 />
-              </TerminalLayoutActions>
+              </TerminalWindowActions>
 
-              <TerminalLayoutSidebar>
+              <TerminalWindowSidebar>
                 <DebugsyStats
                   totalLogs={totalLogs}
                   filteredLogs={filteredCount}
@@ -527,7 +527,7 @@ Enable debug points and interact with the surface to see logs here.`}
 
                 <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
-                <TerminalLayoutResizePresets
+                <TerminalWindowResizePresets
                   presets={[200, 400, 600, getMaxHeight()]}
                   currentHeight={panelHeight}
                   maxHeight={getMaxHeight()}
@@ -535,7 +535,7 @@ Enable debug points and interact with the surface to see logs here.`}
                 />
 
                 {/* Settings Section */}
-                <TerminalLayoutSettings noBorder={true}>
+                <TerminalWindowSettings noBorder={true}>
                   <IndicatorButtonGroup
                     orientation="horizontal"
                     wrap={true}
@@ -572,18 +572,18 @@ Enable debug points and interact with the surface to see logs here.`}
                     }}
                     gap="3px"
                   />
-                </TerminalLayoutSettings>
+                </TerminalWindowSettings>
 
                 <div style={{ flexGrow: 1 }} />
-              </TerminalLayoutSidebar>
-            </TerminalLayoutBody>
+              </TerminalWindowSidebar>
+            </TerminalWindowBody>
           </>
         )}
 
-        <TerminalLayoutControlPanel>
-          <ControlPanel>
+        <TerminalWindowControlPanel>
+          <Tray>
             {/* Debug Point Buttons - 2 rows */}
-            <ControlPanelSection>
+            <TraySection>
               <IndicatorButtonGroup
                 buttons={debugPoints.map((point) => ({
                   label: point.label,
@@ -604,14 +604,14 @@ Enable debug points and interact with the surface to see logs here.`}
                 gridRows={2}
                 gap="2px"
               />
-            </ControlPanelSection>
+            </TraySection>
 
             {/* Dependency Controls */}
-            <ControlPanelSection separator className="pl-4">
+            <TraySection separator className="pl-4">
               <DependencyControls theme={controlButtonTheme} />
-            </ControlPanelSection>
+            </TraySection>
 
-            <ControlPanelDisplaySection
+            <TrayDisplay
               queueItems={displayQueue}
               memorizedItems={memorizedItems}
               entries={
@@ -706,9 +706,9 @@ Enable debug points and interact with the surface to see logs here.`}
                 },
               ]}
             />
-          </ControlPanel>
-        </TerminalLayoutControlPanel>
-      </TerminalLayout>
+          </Tray>
+        </TerminalWindowControlPanel>
+      </TerminalWindow>
     </div>
   );
 };
