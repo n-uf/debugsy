@@ -1,6 +1,7 @@
 import { safeSuperjsonStringify } from "@workspace/harbuz";
 import superjson from "superjson";
 import { notifySubscribers } from "../debugsy-logs/hooks/debugsy-notifications";
+import { registerSuperjsonCustomSerializers } from "../shared/superjson-config";
 import {
   type DebugPoint,
   type DebugsySettings,
@@ -10,7 +11,7 @@ import {
 } from "./debugsy-constants";
 
 // Global debug state (shared across all hook instances)
-let globalDebugState: DebugsySettings = {
+const globalDebugState: DebugsySettings = {
   enabled: new Set(),
   console: true,
   visual: true,
@@ -41,15 +42,19 @@ export function getGlobalDebugState(): DebugsySettings {
 export function initializeDebugSettings(): void {
   if (typeof window === "undefined") return;
 
+  // ✅ FIX: Register custom serializers BEFORE parsing stored config
+  // This prevents "unknown custom value" errors when deserializing
+  registerSuperjsonCustomSerializers();
+
   // Check for debug configuration in localStorage
   const storedConfig = localStorage.getItem("surface-debug-config");
   if (storedConfig) {
     try {
       // Use superjson to safely parse any complex objects
-      const config = superjson.parse(storedConfig) as any;
+      const config = superjson.parse(storedConfig) as Record<string, unknown>;
       if (config && typeof config === "object") {
         if (config.enabled && Array.isArray(config.enabled)) {
-          globalDebugState.enabled = new Set(config.enabled);
+          globalDebugState.enabled = new Set(config.enabled as DebugPoint[]);
         }
         if (typeof config.console === "boolean") {
           globalDebugState.console = config.console;
@@ -69,7 +74,9 @@ export function initializeDebugSettings(): void {
         }
       }
     } catch (e) {
-      console.warn("Failed to parse stored debug config:", e);
+      // ✅ FIX: Clear corrupted/incompatible stored config instead of just warning
+      console.warn("Failed to parse stored debug config, clearing:", e);
+      localStorage.removeItem("surface-debug-config");
     }
   }
 
@@ -246,7 +253,7 @@ import { useCallback } from "react";
 export const useDepsSettings = () => {
   const getDepsLogs = useCallback(() => {
     return globalDebugState.logs.filter((log) => log.point === "dependencies");
-  }, [globalDebugState.logs]);
+  }, []); // globalDebugState is a module-level constant, not a React dependency
 
   return {
     // State - directly from unified system
