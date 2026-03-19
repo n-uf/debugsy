@@ -9,7 +9,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@workspace/harbuz": "workspace:*",
     "@workspace/shadcn": "workspace:*",
-    "react-window": "^2.2.5",
+    "react-window": "^2.2.7",
     "react-window-infinite-loader": "^2.0.1",
     "superjson": "^2.2.6"
   },
@@ -19,13 +19,13 @@
     "react18-json-view": "^0.2.9"
   },
   "devDependencies": {
-    "@types/node": "^25.0.9",
-    "@types/react": "^19.2.8",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react18-json-view": "^0.2.9",
     "typescript": "^5.9.3"
   },
