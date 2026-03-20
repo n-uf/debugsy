@@ -69,9 +69,6 @@ export interface DebugsySpace {
   setConsoleEnabled: (enabled: boolean) => void;
   setVisualEnabled: (enabled: boolean) => void;
   setPerformanceEnabled: (enabled: boolean) => void;
-  setUIVersion: (version: "v1" | "v2" | "auto") => void;
-  getUIVersion: () => "v1" | "v2" | "auto" | undefined;
-
   // === LOGS MANAGEMENT ===
   getLogs: () => DebugLogEntry[];
   clearLogs: () => void;
@@ -129,7 +126,7 @@ function createDebugsySpace(): DebugsySpace {
   ): void => {
     const globalState = getGlobalDebugState();
 
-    if (!globalState.enabled.has(point) && point !== "health") {
+    if (!globalState.enabled.has(point)) {
       return;
     }
 
@@ -218,9 +215,6 @@ function createDebugsySpace(): DebugsySpace {
 
     // === STATE CHECKING ===
     isEnabled: (point: DebugPoint): boolean => {
-      // Health debug point is always enabled
-      if (point === "health") return true;
-
       const globalState = getGlobalDebugState();
       return globalState.enabled.has(point);
     },
@@ -289,15 +283,6 @@ function createDebugsySpace(): DebugsySpace {
     setPerformanceEnabled: (enabled: boolean): void => {
       debugSettingsControls.setPerformanceEnabled(enabled);
       notifySubscribers();
-    },
-
-    setUIVersion: (version: "v1" | "v2" | "auto"): void => {
-      debugSettingsControls.setUIVersion(version);
-      // notifySubscribers() is called inside debugSettingsControls.setUIVersion
-    },
-
-    getUIVersion: (): "v1" | "v2" | "auto" | undefined => {
-      return debugSettingsControls.getUIVersion();
     },
 
     // === LOGS MANAGEMENT ===
@@ -457,8 +442,6 @@ export function getDebugsy(): DebugsySpaceWithCLI {
       setConsoleEnabled: () => {},
       setVisualEnabled: () => {},
       setPerformanceEnabled: () => {},
-      setUIVersion: () => {},
-      getUIVersion: () => undefined,
       getLogs: () => [],
       clearLogs: () => {},
       getDebugState: () => ({}),

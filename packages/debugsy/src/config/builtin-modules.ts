@@ -16,7 +16,7 @@ import { registerModule } from "./registry";
 // =============================================================================
 
 const SYSTEM_MODULE: DebugModuleDef = {
-  label: "System",
+  label: "DeBugsy",
   emoji: "⚙️",
   description: "Debugsy internals and system diagnostics",
   points: {
@@ -102,5 +102,5 @@ const PERF_MODULE: DebugModuleDef = {
 // Auto-register on import
 // =============================================================================
 
-registerModule("system", SYSTEM_MODULE);
-registerModule("perf", PERF_MODULE);
+registerModule("system", SYSTEM_MODULE, { builtin: true });
+registerModule("perf", PERF_MODULE, { builtin: true });

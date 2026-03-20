@@ -25,6 +25,9 @@ import type {
 
 const modules = new Map<string, DebugModuleDef>();
 
+/** Keys of builtin modules — always sorted first in getModules() */
+const BUILTIN_KEYS = new Set<string>();
+
 /** Flat lookup: pointKey → moduleKey (built lazily, invalidated on register) */
 let pointIndex: Map<string, string> | null = null;
 
@@ -50,8 +53,13 @@ function ensureIndex(): Map<string, string> {
  * Register a debug module. Idempotent — re-registering the same key
  * replaces the previous definition (safe for HMR).
  */
-export function registerModule(key: string, def: DebugModuleDef): void {
+export function registerModule(
+  key: string,
+  def: DebugModuleDef,
+  options?: { builtin?: boolean },
+): void {
   modules.set(key, def);
+  if (options?.builtin) BUILTIN_KEYS.add(key);
   pointIndex = null; // invalidate index
 }
 
@@ -59,9 +67,18 @@ export function registerModule(key: string, def: DebugModuleDef): void {
 // Query API
 // =============================================================================
 
-/** All registered modules in insertion order */
+/** All registered modules — builtins first, then external in insertion order */
 export function getModules(): ReadonlyMap<string, DebugModuleDef> {
-  return modules;
+  if (BUILTIN_KEYS.size === 0) return modules;
+  const sorted = new Map<string, DebugModuleDef>();
+  for (const key of BUILTIN_KEYS) {
+    const def = modules.get(key);
+    if (def) sorted.set(key, def);
+  }
+  for (const [key, def] of modules) {
+    if (!BUILTIN_KEYS.has(key)) sorted.set(key, def);
+  }
+  return sorted;
 }
 
 /** Get the module definition for a module key */

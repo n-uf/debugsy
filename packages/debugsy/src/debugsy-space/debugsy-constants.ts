@@ -43,9 +43,6 @@ export interface DebugLogEntry {
   logType?: LogType; // Automatically inferred from all debug point configurations
 }
 
-// UI version type for DebugsyLook
-export type UIVersion = "v1" | "v2" | "auto";
-
 // Debug state interface
 export interface DebugsySettings {
   enabled: Set<DebugPoint>;
@@ -61,6 +58,5 @@ export interface DebugsySettings {
     timestamp: number;
     duration: number;
   }>;
-  deps: DepsTrackingConfig; // Updated naming from "dependencies" to "deps"
-  uiVersion?: UIVersion; // UI version for DebugsyLook (v1 = original, v2 = Harbuz)
+  deps: DepsTrackingConfig;
 }

@@ -5,7 +5,7 @@ import {
   type IndicatorButtonTheme,
 } from "@workspace/harbuz";
 import React, { useState } from "react";
-import { ProbeReRenderDetection } from "../debugsy-look-v1/ui-dependency/probe-rerender-detection";
+import { ProbeReRenderDetection } from "./probe-rerender-detection";
 import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";
 import { setDebugDisplayContent } from "../shared/debug-display-state";
 import { DependencyAdvancedPanel } from "./dependency-advanced-panel";
