@@ -57,7 +57,7 @@ import { DebugsyShortcutsDisplay } from "./debugsy-shortcuts";
 import { DebugsyStats } from "./debugsy-stats";
 import { DependencyControls } from "./dependency-controls";
 import { ModuleNav, SYSTEM_MODULE_KEY } from "./module-nav";
-import { TagFilter, useDiscoveredTags } from "./tag-filter";
+import { TagFilter, useDiscoveredTags, type TagFilterMode } from "./tag-filter";
 import { useClear } from "./use-clear";
 import { useDebugsyShortcuts } from "./use-debugsy-shortcuts";
 
@@ -108,6 +108,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   );
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [tagSearch, setTagSearch] = useState("");
+  const [tagMode, setTagMode] = useState<TagFilterMode>("and");
   // Local setting states (demo placeholders for now, consistent with Showcase)
   const [closeOnClickOutsideState, setCloseOnClickOutsideState] =
     useState(closeOnClickOutside);
@@ -168,13 +169,19 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   // 3b. Discover tags from actual log records (arrival order)
   const knownTags = useDiscoveredTags(pointFilteredLogs);
 
-  // 3c. Tag Filtering — apply after point filtering
+  // 3c. Tag Filtering — apply after point filtering (AND/OR mode)
   const filteredLogs = useMemo(() => {
     if (selectedTags.size === 0) return pointFilteredLogs;
+    if (tagMode === "or") {
+      return pointFilteredLogs.filter(
+        (log) => log.tags?.some((t: string) => selectedTags.has(t)) ?? false
+      );
+    }
+    const required = [...selectedTags];
     return pointFilteredLogs.filter(
-      (log) => log.tags?.some((t: string) => selectedTags.has(t)) ?? false
+      (log) => required.every((t) => log.tags?.includes(t) ?? false)
     );
-  }, [pointFilteredLogs, selectedTags]);
+  }, [pointFilteredLogs, selectedTags, tagMode]);
 
   // 4. Copy State Hook - 3-state copy indicator with auto-reset
   const copyState = useCopyState({
@@ -442,6 +449,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                       message: log.message,
                       level: log.level as "info" | "warn" | "error" | undefined,
                       data: log.data,
+                      tags: log.tags,
                     };
                     return (
                       <LogEntry
@@ -460,6 +468,8 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                           });
                         }}
                         onLongPress={handleLongPressCopyLog}
+                        onTagClick={handleToggleTag}
+                        activeTags={selectedTags}
                       />
                     );
                   }}
@@ -536,6 +546,8 @@ Enable debug points and interact with the surface to see logs here.`}
                   onClearAll={handleClearTags}
                   searchQuery={tagSearch}
                   onSearchChange={setTagSearch}
+                  mode={tagMode}
+                  onModeChange={setTagMode}
                 />
 
                 <DebugsyStats
