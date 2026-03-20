@@ -47,7 +47,6 @@ export function useDiscoveredTags(logs: DebugLogEntry[]): {
       orderedRef.current = [...orderedRef.current, ...pending];
     }
     return orderedRef.current;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logs, rev]);
 
   const refresh = useCallback(() => {
