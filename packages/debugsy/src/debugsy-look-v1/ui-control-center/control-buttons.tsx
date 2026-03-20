@@ -20,8 +20,8 @@ export interface DebugPointButtonConfig {
 export const getDebugPointsForButtons = (pointKeys: DebugPoint[]) => {
   return pointKeys.map((key) => ({
     key,
-    emoji: DEBUG_POINT_CONFIG[key].emoji,
-    label: DEBUG_POINT_CONFIG[key].label,
+    emoji: DEBUG_POINT_CONFIG[key]?.emoji ?? "🔧",
+    label: DEBUG_POINT_CONFIG[key]?.label ?? key,
   }));
 };
 

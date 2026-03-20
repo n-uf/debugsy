@@ -1,3 +1,18 @@
+// === MODULE REGISTRY ===
+export {
+  registerModule,
+  getModules,
+  getModuleDef,
+  getModuleForPoint,
+  getModulePointKeys,
+  getModuleLedState,
+  getAllPointKeys,
+  isKnownPoint,
+  type DebugModuleDef,
+  type DebugPointDef,
+  type ModuleLedState,
+} from "./src/config";
+
 // === SHARED CORE SYSTEM ===
 export {
   dsy, // ✅ Convenient short export for non-React usage

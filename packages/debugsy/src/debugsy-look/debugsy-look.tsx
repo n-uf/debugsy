@@ -48,10 +48,7 @@ import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import { type DebugsyLookProps } from "../debugsy-look-v1/debugsy-look";
 import { safeSuperjsonStringify } from "../debugsy-look-v1/ui-logs/utils/json/json-core";
 import type { DebugLogEntry, DebugPoint } from "../debugsy-space";
-import {
-  DEBUG_POINT_CONFIG,
-  getLookDebugPoints,
-} from "../debugsy-space/debugsy-point";
+import { getPointEmoji } from "../config";
 import {
   processObjectForDisplay,
   type DepthSetting,
@@ -60,6 +57,7 @@ import { DebugsyActions } from "./debugsy-actions";
 import { DebugsyShortcutsDisplay } from "./debugsy-shortcuts";
 import { DebugsyStats } from "./debugsy-stats";
 import { DependencyControls } from "./dependency-controls";
+import { ModuleNav } from "./module-nav";
 import { useClear } from "./use-clear";
 import { useDebugsyShortcuts } from "./use-debugsy-shortcuts";
 
@@ -297,18 +295,6 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   const totalLogs = logs.length;
   const filteredCount = filteredLogs.length;
 
-  // 🔥 Get debug points from centralized config (matching Showcase)
-  const debugPoints = React.useMemo(
-    () =>
-      getLookDebugPoints().map((key) => ({
-        key,
-        emoji: DEBUG_POINT_CONFIG[key].emoji,
-        label: DEBUG_POINT_CONFIG[key].label,
-      })),
-    []
-  );
-
-  // 🔥 Button theme for control panel buttons (matching Showcase)
   const controlButtonTheme: IndicatorButtonTheme = {
     style: {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -582,27 +568,13 @@ Enable debug points and interact with the surface to see logs here.`}
 
         <TerminalWindowControlPanel>
           <Tray>
-            {/* Debug Point Buttons - 2 rows */}
+            {/* Debug Point Buttons — Module Navigation */}
             <TraySection>
-              <IndicatorButtonGroup
-                buttons={debugPoints.map((point) => ({
-                  label: point.label,
-                  active: debug.isEnabled(point.key),
-                  onClick: () => {
-                    debug.toggle(point.key);
-                    setDisplayContent({
-                      message: `${debug.isEnabled(point.key) ? "Disabled" : "Enabled"} ${point.label}`,
-                      type: "info",
-                      duration: 1500,
-                    });
-                  },
-                  buttonVariant: "ghost" as const,
-                  buttonSize: "xxs" as const,
-                }))}
+              <ModuleNav
                 theme={controlButtonTheme}
-                orientation="grid"
-                gridRows={2}
-                gap="2px"
+                onDisplayMessage={(msg) =>
+                  setDisplayContent({ message: msg, type: "info", duration: 1500 })
+                }
               />
             </TraySection>
 
@@ -631,9 +603,7 @@ Enable debug points and interact with the surface to see logs here.`}
                             second: "2-digit",
                           }
                         ),
-                        emoji:
-                          DEBUG_POINT_CONFIG[log.point as DebugPoint]?.emoji ??
-                          "📝",
+                        emoji: getPointEmoji(log.point),
                         message: log.message,
                       }))
                   : // FULL MODE: Show status info (matching V1 behavior)
