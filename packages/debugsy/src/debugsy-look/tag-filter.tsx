@@ -103,8 +103,28 @@ export const TagFilter: React.FC<TagFilterProps> = ({
 
   return (
     <div style={{ padding: "4px" }}>
-      {onSearchChange && (
-        <div style={{ display: "flex", gap: "2px", marginBottom: "2px" }}>
+      <div style={{ display: "flex", gap: "2px", marginBottom: "2px" }}>
+        <button
+          type="button"
+          onClick={onClearAll}
+          title={hasActiveFilter ? "Clear tag filter" : "Showing all tags"}
+          style={{
+            flexShrink: 0,
+            padding: "2px 4px",
+            fontSize: "9px",
+            fontFamily: "monospace",
+            fontWeight: "bold",
+            color: hasActiveFilter ? "#f87171" : "#6b7280",
+            backgroundColor: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "2px",
+            cursor: "pointer",
+            lineHeight: 1,
+          }}
+        >
+          {hasActiveFilter ? "CLR" : "ALL"}
+        </button>
+        {onSearchChange && (
           <input
             type="text"
             value={searchQuery}
@@ -125,30 +145,30 @@ export const TagFilter: React.FC<TagFilterProps> = ({
               boxSizing: "border-box",
             }}
           />
-          {onModeChange && (
-            <button
-              type="button"
-              onClick={() => onModeChange(mode === "and" ? "or" : "and")}
-              title={mode === "and" ? "AND: all selected tags must match" : "OR: any selected tag matches"}
-              style={{
-                flexShrink: 0,
-                padding: "2px 4px",
-                fontSize: "9px",
-                fontFamily: "monospace",
-                fontWeight: "bold",
-                color: mode === "and" ? "#60a5fa" : "#f59e0b",
-                backgroundColor: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: "2px",
-                cursor: "pointer",
-                lineHeight: 1,
-              }}
-            >
-              {mode.toUpperCase()}
-            </button>
-          )}
-        </div>
-      )}
+        )}
+        {onModeChange && (
+          <button
+            type="button"
+            onClick={() => onModeChange(mode === "and" ? "or" : "and")}
+            title={mode === "and" ? "AND: all selected tags must match" : "OR: any selected tag matches"}
+            style={{
+              flexShrink: 0,
+              padding: "2px 4px",
+              fontSize: "9px",
+              fontFamily: "monospace",
+              fontWeight: "bold",
+              color: mode === "and" ? "#60a5fa" : "#f59e0b",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "2px",
+              cursor: "pointer",
+              lineHeight: 1,
+            }}
+          >
+            {mode.toUpperCase()}
+          </button>
+        )}
+      </div>
       <div
         style={{
           display: "grid",
@@ -156,18 +176,6 @@ export const TagFilter: React.FC<TagFilterProps> = ({
           gap: "1px",
         }}
       >
-        <IndicatorButton
-          label={hasActiveFilter ? "CLR" : "ALL"}
-          indicatorType="toggle"
-          active={!hasActiveFilter}
-          onClick={onClearAll}
-          buttonVariant="ghost"
-          buttonSize="xxs"
-          title={hasActiveFilter ? "Clear tag filter" : "Showing all tags"}
-          width="normal"
-          justify="start"
-          style={btnStyle}
-        />
         {knownTags.map((tag) => (
           <IndicatorButton
             key={tag}
