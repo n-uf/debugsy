@@ -8,11 +8,11 @@
 
 import {
   getAllPointKeys,
-  getLogTypeConfig as registryGetLogTypeConfig,
+  getTagDef as registryGetTagDef,
   getPointEmoji,
   buildFlatConfig,
 } from "../config";
-import type { LogTypeConfig } from "./debugsy-point-types";
+import type { TagDef } from "./debugsy-point-types";
 
 // ============================================================================
 // TYPES — widened to string for dynamic module registration
@@ -21,15 +21,12 @@ import type { LogTypeConfig } from "./debugsy-point-types";
 /** Runtime-validated debug point identifier */
 export type DebugPoint = string;
 
-/** Runtime-validated log type identifier */
-export type LogType = string;
-
 // ============================================================================
 // RE-EXPORTS (compatibility)
 // ============================================================================
 
 export { DEBUG_POINT_CONFIG } from "./debugsy-point-config";
-export type { DebugPointConfig, LogTypeConfig } from "./debugsy-point-types";
+export type { DebugPointConfig, TagDef } from "./debugsy-point-types";
 
 // ============================================================================
 // UTILITY FUNCTIONS — delegates to registry
@@ -62,11 +59,11 @@ export function getLookDebugPoints(): DebugPoint[] {
     .map(([key]) => key);
 }
 
-export function getLogTypeConfig(
+export function getTagDef(
   point: DebugPoint,
-  logType: string,
-): LogTypeConfig | null {
-  const cfg = registryGetLogTypeConfig(point, logType);
+  tag: string,
+): TagDef | null {
+  const cfg = registryGetTagDef(point, tag);
   if (!cfg) return null;
-  return cfg as LogTypeConfig;
+  return cfg as TagDef;
 }

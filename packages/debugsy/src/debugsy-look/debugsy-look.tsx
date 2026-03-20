@@ -41,7 +41,7 @@ import {
   VirtualizedList,
   Z_INDEX,
 } from "@workspace/harbuz";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useRenderTracker } from "../debugsy-deps";
 import { getPointEmoji } from "../config";
@@ -57,6 +57,7 @@ import { DebugsyShortcutsDisplay } from "./debugsy-shortcuts";
 import { DebugsyStats } from "./debugsy-stats";
 import { DependencyControls } from "./dependency-controls";
 import { ModuleNav, SYSTEM_MODULE_KEY } from "./module-nav";
+import { TagFilter, useDiscoveredTags } from "./tag-filter";
 import { useClear } from "./use-clear";
 import { useDebugsyShortcuts } from "./use-debugsy-shortcuts";
 
@@ -105,6 +106,8 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
     new Set()
   );
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [tagSearch, setTagSearch] = useState("");
   // Local setting states (demo placeholders for now, consistent with Showcase)
   const [closeOnClickOutsideState, setCloseOnClickOutsideState] =
     useState(closeOnClickOutside);
@@ -155,12 +158,23 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   });
 
   // 3. Log Filtering Hook - Filter by debug point state
-  const filteredLogs = useLogFiltering({
+  const pointFilteredLogs = useLogFiltering({
     items: logs,
     getPoint: (log) => log.point,
     isEnabled: (point) => debug.isEnabled(point as DebugPoint),
     alwaysInclude: [],
   });
+
+  // 3b. Discover tags from actual log records (arrival order)
+  const knownTags = useDiscoveredTags(pointFilteredLogs);
+
+  // 3c. Tag Filtering — apply after point filtering
+  const filteredLogs = useMemo(() => {
+    if (selectedTags.size === 0) return pointFilteredLogs;
+    return pointFilteredLogs.filter(
+      (log) => log.tags?.some((t: string) => selectedTags.has(t)) ?? false
+    );
+  }, [pointFilteredLogs, selectedTags]);
 
   // 4. Copy State Hook - 3-state copy indicator with auto-reset
   const copyState = useCopyState({
@@ -249,9 +263,22 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     setDisplayContent, // Use scoped display from compat hook
   });
 
+  const handleToggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }, []);
+
+  const handleClearTags = useCallback(() => {
+    setSelectedTags(new Set());
+  }, []);
+
   const onClose = useCallback(() => {
     setIsVisible(false);
-    setIsCompact(true); // Reset to compact for next activation
+    setIsCompact(true);
   }, []);
 
   // 8. Click Outside Hook - Close panel when clicking outside
@@ -502,6 +529,15 @@ Enable debug points and interact with the surface to see logs here.`}
               </TerminalWindowActions>
 
               <TerminalWindowSidebar>
+                <TagFilter
+                  activeTags={selectedTags}
+                  knownTags={knownTags}
+                  onToggleTag={handleToggleTag}
+                  onClearAll={handleClearTags}
+                  searchQuery={tagSearch}
+                  onSearchChange={setTagSearch}
+                />
+
                 <DebugsyStats
                   totalLogs={totalLogs}
                   filteredLogs={filteredCount}

@@ -5,7 +5,7 @@
 export type {
   DebugPointDef,
   DebugModuleDef,
-  LogTypeConfig,
+  TagDef,
   ModuleLedState,
 } from "./types";
 
@@ -19,7 +19,7 @@ export {
   getModulePointKeys,
   getPointEmoji,
   getPointLabel,
-  getLogTypeConfig,
+  getTagDef,
   isKnownPoint,
   getModuleLedState,
   buildFlatConfig,

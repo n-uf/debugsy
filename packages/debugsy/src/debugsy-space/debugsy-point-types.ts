@@ -6,9 +6,10 @@
  */
 
 /**
- * Log type metadata for specific log types within a debug point
+ * Tag definition — metadata for a tag within a debug point (observability taxonomy).
+ * Tags are labels attached to log entries for selective filtering and grouping.
  */
-export interface LogTypeConfig {
+export interface TagDef {
   icon: string;
   description?: string;
 }
@@ -20,9 +21,9 @@ export interface LogTypeConfig {
 export interface DebugPointConfig {
   emoji: string;
   description: string;
-  label: string; // Short display name for UI
+  label: string;
   category: "core" | "interaction" | "performance" | "system" | "surface";
-  priority?: number; // For interaction handlers
-  look?: boolean; // Whether to show in main control panel (defaults to true for non-system)
-  logTypes?: Record<string, LogTypeConfig>; // Custom log type configurations for this debug point
+  priority?: number;
+  look?: boolean;
+  tags?: Record<string, TagDef>;
 }

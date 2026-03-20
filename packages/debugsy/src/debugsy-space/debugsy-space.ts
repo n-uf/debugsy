@@ -8,9 +8,8 @@ import { captureHealthSnapshot as captureHealthSnapshotCore } from "../debugsy-l
 import { registerSuperjsonCustomSerializers } from "../shared/superjson-config";
 import {
   getDebugPointEmoji,
-  LogLevel,
-  LogType,
   MAX_STORED_LOGS,
+  type LogLevel,
   type DebugLogEntry,
   type DebugPoint,
 } from "./debugsy-constants";
@@ -30,25 +29,25 @@ export interface DebugsySpace {
     message: string,
     data?: any,
     level?: LogLevel,
-    logType?: LogType
+    tags?: string[]
   ) => void;
   warn: (
     point: DebugPoint,
     message: string,
     data?: any,
-    logType?: LogType
+    tags?: string[]
   ) => void;
   error: (
     point: DebugPoint,
     message: string,
     data?: any,
-    logType?: LogType
+    tags?: string[]
   ) => void;
   critical: (
     point: DebugPoint,
     message: string,
     data?: any,
-    logType?: LogType
+    tags?: string[]
   ) => void;
   time: (point: DebugPoint, label: string) => void;
   timeEnd: (point: DebugPoint, label: string) => void;
@@ -116,13 +115,12 @@ function createDebugsySpace(): DebugsySpace {
   // Register superjson serializers for complex object logging
   registerSuperjsonCustomSerializers();
 
-  // Core log function that will be reused by other methods
   const coreLog = (
     point: DebugPoint,
     message: string,
     data?: any,
     level: LogLevel = "info",
-    logType?: LogType
+    tags?: string[]
   ): void => {
     const globalState = getGlobalDebugState();
 
@@ -137,7 +135,7 @@ function createDebugsySpace(): DebugsySpace {
       message,
       data,
       sessionId: "default",
-      logType,
+      tags,
     };
 
     globalState.logs.push(logEntry);
@@ -172,27 +170,27 @@ function createDebugsySpace(): DebugsySpace {
       point: DebugPoint,
       message: string,
       data?: any,
-      logType?: LogType
+      tags?: string[]
     ): void => {
-      coreLog(point, message, data, "warn", logType);
+      coreLog(point, message, data, "warn", tags);
     },
 
     error: (
       point: DebugPoint,
       message: string,
       data?: any,
-      logType?: LogType
+      tags?: string[]
     ): void => {
-      coreLog(point, message, data, "error", logType);
+      coreLog(point, message, data, "error", tags);
     },
 
     critical: (
       point: DebugPoint,
       message: string,
       data?: any,
-      logType?: LogType
+      tags?: string[]
     ): void => {
-      coreLog(point, message, data, "critical", logType);
+      coreLog(point, message, data, "critical", tags);
     },
 
     time: (point: DebugPoint, label: string): void => {
@@ -356,9 +354,7 @@ function createDebugsySpace(): DebugsySpace {
  * Now properly separates core debug functionality from CLI
  */
 export function initializeDebugsySpace(): void {
-  if (globalThis.debugsy) {
-    return; // Already initialized
-  }
+  const isReinit = !!globalThis.debugsy;
 
   // Register superjson custom serializers for React Fiber and DOM elements
   registerSuperjsonCustomSerializers();
@@ -395,15 +391,15 @@ export function initializeDebugsySpace(): void {
   // Create the CLI interface that uses the core debug manager
   const cliInterface = createFullDebugsyCLI(coreDebugManager);
 
-  // Create unified interface that combines core + CLI for browser console
+  // Always (re-)create unified interface so HMR picks up new closures
   globalThis.debugsy = {
     ...coreDebugManager,
     ...cliInterface,
   } as DebugsySpaceWithCLI;
 
-  console.log("✅ Debugsy System initialized");
-
-  // CLI help is now available via debugsy.help()
+  if (!isReinit) {
+    console.log("✅ Debugsy System initialized");
+  }
 }
 
 /**

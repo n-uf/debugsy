@@ -56,32 +56,32 @@ const PERF_MODULE: DebugModuleDef = {
       emoji: "🧠",
       label: "Deps",
       description: "React hook dependency tracking and optimization",
-      logTypes: {
-        "dependency-change": {
+      tags: {
+        "dep-change": {
           icon: "🔄",
           description: "Dependencies changed in a component",
         },
-        "function-recreation": {
+        "fn-recreation": {
           icon: "📝",
           description: "Function reference changed",
         },
-        "object-recreation": {
+        "obj-recreation": {
           icon: "📦",
           description: "Object reference changed",
         },
-        "primitive-change": {
+        "prim-change": {
           icon: "🔧",
           description: "Primitive value changed",
         },
-        "render-warning": {
+        "render-warn": {
           icon: "⚠️",
           description: "High render count detected",
         },
-        "mount-warning": {
+        "mount-warn": {
           icon: "🔄",
           description: "High mount/unmount cycle count detected",
         },
-        "circuit-breaker": {
+        "circuit-break": {
           icon: "🚨",
           description: "Circuit breaker activated",
         },
@@ -89,7 +89,7 @@ const PERF_MODULE: DebugModuleDef = {
           icon: "🛑",
           description: "Emergency stop activated",
         },
-        "hook-execution": {
+        "hook-exec": {
           icon: "🪝",
           description: "Hook execution tracking",
         },

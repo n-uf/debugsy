@@ -134,12 +134,12 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     (moduleKey: string) => {
       const keys = getModulePointKeys(moduleKey);
       const ledState = getModuleLedState(moduleKey, isPointEnabled);
-      if (ledState === "all-on") {
-        keys.forEach((k) => debug.disable(k));
-        onDisplayMessage?.(`All ${moduleKey} points disabled`);
-      } else {
+      if (ledState === "all-off") {
         keys.forEach((k) => debug.enable(k));
         onDisplayMessage?.(`All ${moduleKey} points enabled`);
+      } else {
+        keys.forEach((k) => debug.disable(k));
+        onDisplayMessage?.(`All ${moduleKey} points disabled`);
       }
       bumpLedVersion();
     },

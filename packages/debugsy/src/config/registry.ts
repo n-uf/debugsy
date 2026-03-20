@@ -15,7 +15,7 @@
 import type {
   DebugModuleDef,
   DebugPointDef,
-  LogTypeConfig,
+  TagDef,
   ModuleLedState,
 } from "./types";
 
@@ -119,12 +119,12 @@ export function getPointLabel(pointKey: string): string {
   return getPointDef(pointKey)?.label ?? pointKey;
 }
 
-/** Get log type config for a specific point + logType */
-export function getLogTypeConfig(
+/** Get tag definition for a specific point + tag */
+export function getTagDef(
   pointKey: string,
-  logType: string,
-): LogTypeConfig | undefined {
-  return getPointDef(pointKey)?.logTypes?.[logType];
+  tag: string,
+): TagDef | undefined {
+  return getPointDef(pointKey)?.tags?.[tag];
 }
 
 /** Whether a point key is known to the registry */
@@ -166,7 +166,7 @@ export interface FlatPointConfig {
   label: string;
   category: string;
   look: boolean;
-  logTypes?: Record<string, LogTypeConfig>;
+  tags?: Record<string, TagDef>;
 }
 
 /**
@@ -183,7 +183,7 @@ export function buildFlatConfig(): Record<string, FlatPointConfig> {
         label: def.label,
         category: moduleKey,
         look: true,
-        logTypes: def.logTypes,
+        tags: def.tags,
       };
     }
   }

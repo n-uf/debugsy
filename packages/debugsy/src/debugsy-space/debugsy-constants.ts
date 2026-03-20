@@ -1,10 +1,7 @@
 // Debug configuration constants
-export const MAX_STORED_LOGS = 10000; // Maximum logs to keep in memory
+export const MAX_STORED_LOGS = 10000;
 
-// Import debug point utilities and types from dedicated module
-import type { DebugPoint, LogType } from "./debugsy-point";
-
-// Import deps tracking types from dedicated module
+import type { DebugPoint } from "./debugsy-point";
 import type { DepsTrackingConfig } from "./debugsy-deps-types";
 
 export {
@@ -12,15 +9,13 @@ export {
   getAllDebugPoints,
   getDebugPointEmoji,
   getDebugPointsByCategory,
-  getLogTypeConfig,
+  getTagDef,
   getLookDebugPoints,
   type DebugPoint,
   type DebugPointConfig,
-  type LogType,
-  type LogTypeConfig,
+  type TagDef,
 } from "./debugsy-point";
 
-// Re-export deps types
 export {
   type DepsConfig,
   type DepsFilter,
@@ -29,10 +24,8 @@ export {
   type DepsTrackingConfig,
 } from "./debugsy-deps-types";
 
-// Log severity levels
 export type LogLevel = "info" | "warn" | "error" | "critical" | "success";
 
-// Debug log entry interface
 export interface DebugLogEntry {
   timestamp: number;
   level: LogLevel;
@@ -40,10 +33,9 @@ export interface DebugLogEntry {
   message: string;
   data?: any;
   sessionId: string;
-  logType?: LogType; // Automatically inferred from all debug point configurations
+  tags?: string[];
 }
 
-// Debug state interface
 export interface DebugsySettings {
   enabled: Set<DebugPoint>;
   console: boolean;

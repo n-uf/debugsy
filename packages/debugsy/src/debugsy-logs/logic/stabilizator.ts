@@ -69,57 +69,51 @@ export interface StableDebugsyInterface {
 let globalStableInterface: StableDebugsyInterface | null = null;
 
 /**
- * Create a stable debugsy interface
+ * Create a stable debugsy interface.
+ *
+ * State-checking and control methods use live delegation (arrow wrappers)
+ * so that HMR-triggered re-initialization of `globalThis.debugsy` is
+ * picked up without needing to clear the stabilizator cache.
  */
 function createStableDebugsyInterface(): StableDebugsyInterface {
-  // Ensure unified system is initialized
   if (!globalThis.debugsy) {
     initializeDebugsySpace();
   }
 
-  const unified = globalThis.debugsy;
-
-  // Create stable interface that delegates to unified system
   const stable: StableDebugsyInterface = {
-    // Core logging - delegate to unified system
-    log: unified.log,
-    warn: unified.warn,
-    error: unified.error,
-    critical: unified.critical,
-    time: unified.time,
-    timeEnd: unified.timeEnd,
+    log: (...args) => globalThis.debugsy.log(...args),
+    warn: (...args) => globalThis.debugsy.warn(...args),
+    error: (...args) => globalThis.debugsy.error(...args),
+    critical: (...args) => globalThis.debugsy.critical(...args),
+    time: (...args) => globalThis.debugsy.time(...args),
+    timeEnd: (...args) => globalThis.debugsy.timeEnd(...args),
 
-    // State checking - delegate to unified system methods
-    isEnabled: unified.isEnabled,
-    showVisual: unified.showVisual,
+    isEnabled: (point) => globalThis.debugsy.isEnabled(point),
+    showVisual: (point) => globalThis.debugsy.showVisual(point),
 
-    // Control functions - delegate to unified system
-    enable: unified.enable,
-    disable: unified.disable,
-    toggle: unified.toggle,
-    enableAll: unified.enableAll,
-    disableAll: unified.disableAll,
+    enable: (point) => globalThis.debugsy.enable(point),
+    disable: (point) => globalThis.debugsy.disable(point),
+    toggle: (point) => globalThis.debugsy.toggle(point),
+    enableAll: () => globalThis.debugsy.enableAll(),
+    disableAll: () => globalThis.debugsy.disableAll(),
 
-    // Configuration - delegate to unified system
-    setConsoleEnabled: unified.setConsoleEnabled,
-    setVisualEnabled: unified.setVisualEnabled,
-    setPerformanceEnabled: unified.setPerformanceEnabled,
+    setConsoleEnabled: (v) => globalThis.debugsy.setConsoleEnabled(v),
+    setVisualEnabled: (v) => globalThis.debugsy.setVisualEnabled(v),
+    setPerformanceEnabled: (v) => globalThis.debugsy.setPerformanceEnabled(v),
 
-    // Logs management - delegate to unified system
-    getLogs: unified.getLogs,
-    clearLogs: unified.clearLogs,
+    getLogs: () => globalThis.debugsy.getLogs(),
+    clearLogs: () => globalThis.debugsy.clearLogs(),
 
-    // Simplified state access - delegate to unified system methods
-    getDebugState: unified.getDebugState,
-    getDepsSettings: unified.getDepsSettings,
+    getDebugState: () => globalThis.debugsy.getDebugState(),
+    getDepsSettings: () => globalThis.debugsy.getDepsSettings(),
 
-    // State property for compatibility with existing components
-    // Get snapshot of current state at creation time to avoid getter instability
-    state: {
-      enabled: Array.from(getGlobalDebugState().enabled),
-      console: getGlobalDebugState().console,
-      visual: getGlobalDebugState().visual,
-      performance: getGlobalDebugState().performance,
+    get state() {
+      return {
+        enabled: Array.from(getGlobalDebugState().enabled),
+        console: getGlobalDebugState().console,
+        visual: getGlobalDebugState().visual,
+        performance: getGlobalDebugState().performance,
+      };
     },
   };
 

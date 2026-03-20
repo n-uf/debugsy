@@ -15,6 +15,8 @@ export interface TagFilterProps {
   knownTags: string[];
   onToggleTag: (tag: string) => void;
   onClearAll: () => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 function getTagIcon(tag: string): string | null {
@@ -64,10 +66,16 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   knownTags,
   onToggleTag,
   onClearAll,
+  searchQuery = "",
+  onSearchChange,
 }) => {
   if (knownTags.length === 0) return null;
 
   const hasActiveFilter = activeTags.size > 0;
+  const lowerQuery = searchQuery.toLowerCase();
+  const visibleTags = searchQuery
+    ? knownTags.filter((tag) => tag.toLowerCase().includes(lowerQuery))
+    : knownTags;
 
   const buttons: IndicatorButtonGroupItem[] = [
     {
@@ -79,7 +87,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
       buttonSize: "xxs" as const,
       title: hasActiveFilter ? "Clear tag filter" : "Showing all tags",
     },
-    ...knownTags.map(
+    ...visibleTags.map(
       (tag): IndicatorButtonGroupItem => {
         const icon = getTagIcon(tag);
         return {
@@ -97,6 +105,27 @@ export const TagFilter: React.FC<TagFilterProps> = ({
 
   return (
     <TerminalWindowSettings title="Tags" noBorder={false}>
+      {onSearchChange && (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search tags…"
+          style={{
+            width: "100%",
+            padding: "3px 6px",
+            marginBottom: "4px",
+            fontSize: "10px",
+            fontFamily: "monospace",
+            color: "#d1d5db",
+            backgroundColor: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "3px",
+            outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      )}
       <IndicatorButtonGroup
         orientation="horizontal"
         wrap={true}

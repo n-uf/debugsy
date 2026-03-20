@@ -10,8 +10,8 @@
 // Point-level types
 // =============================================================================
 
-/** Metadata for a sub-type within a debug point */
-export interface LogTypeConfig {
+/** Metadata for a tag within a debug point (observability taxonomy) */
+export interface TagDef {
   icon: string;
   description?: string;
 }
@@ -21,7 +21,7 @@ export interface DebugPointDef {
   emoji: string;
   label: string;
   description: string;
-  logTypes?: Record<string, LogTypeConfig>;
+  tags?: Record<string, TagDef>;
 }
 
 // =============================================================================

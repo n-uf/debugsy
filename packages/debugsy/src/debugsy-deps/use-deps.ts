@@ -120,11 +120,10 @@ function notifyHighRenderRate(
         error: error instanceof Error ? error.message : "Unknown error",
         fallback: true,
       },
-      "render-warning"
+      ["render-warn"]
     );
   }
 
-  // Always log to unified debug system as backup
   logWarnToDebugSystem(
     `🚨 HIGH RENDER RATE: ${componentName} - ${renderRate.toFixed(1)} renders/sec (${renderCount} in ${timeElapsed}ms)`,
     {
@@ -135,7 +134,7 @@ function notifyHighRenderRate(
       threshold,
       notificationType: "render-rate-notification",
     },
-    "render-warning"
+    ["render-warn"]
   );
 }
 
@@ -193,11 +192,10 @@ function notifyHighMountRate(
         error: error instanceof Error ? error.message : "Unknown error",
         fallback: true,
       },
-      "mount-warning"
+      ["mount-warn"]
     );
   }
 
-  // Always log to unified debug system as backup
   logWarnToDebugSystem(
     `🚨 HIGH MOUNT RATE: ${componentName} - ${mountRate.toFixed(1)} mounts/sec (${mountCount} in ${timeElapsed}ms)`,
     {
@@ -208,7 +206,7 @@ function notifyHighMountRate(
       threshold,
       notificationType: "mount-rate-notification",
     },
-    "mount-warning"
+    ["mount-warn"]
   );
 }
 
@@ -479,7 +477,7 @@ export function useRenderTracker(
             type: "mount-cycle",
             severity: "warning",
           },
-          "mount-warning"
+          ["mount-warn"]
         );
 
         // 🚨 UI Notification System for high mount rates
@@ -550,7 +548,7 @@ export function useRenderTracker(
           type: "render-loop",
           severity: "warning",
         },
-        "render-warning"
+        ["render-warn"]
       );
 
       // 🚨 UI Notification System for high render rates
