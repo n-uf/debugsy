@@ -167,7 +167,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   });
 
   // 3b. Discover tags from actual log records (arrival order)
-  const knownTags = useDiscoveredTags(pointFilteredLogs);
+  const { tags: knownTags, refresh: refreshTags } = useDiscoveredTags(pointFilteredLogs);
 
   // 3c. Tag Filtering — apply after point filtering (AND/OR mode)
   const filteredLogs = useMemo(() => {
@@ -548,6 +548,7 @@ Enable debug points and interact with the surface to see logs here.`}
                   onSearchChange={setTagSearch}
                   mode={tagMode}
                   onModeChange={setTagMode}
+                  onRefresh={refreshTags}
                 />
 
                 <DebugsyStats
