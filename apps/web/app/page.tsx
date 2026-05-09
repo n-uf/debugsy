@@ -5,17 +5,18 @@ import { ThemeSwitcherClient } from "./_components/theme-switcher-client";
 import { CAPABILITIES, SEO_LOGS } from "./_data/feature-log";
 
 /**
- * `<DebugsyLook>` ships as `position: fixed; bottom: 0; width: 100vw`.
- * It auto-collapses to a compact controls bar (~120-160px) on narrow
- * viewports and expands to full extended mode (~400px) on lg+. We reserve
- * matching footprints so the chrome content above never collides with the
- * panel at either breakpoint.
+ * `<DebugsyLook>` ships as `position: fixed; bottom: 0; width: 100vw` and
+ * extends to ~400px tall when open. Desktop reserves that footprint so the
+ * chrome above never collides with the panel. The panel is hidden on
+ * mobile (`<DebugsyLookMounted />` returns null below `lg`), so no
+ * reservation is needed there and the page is allowed to grow + scroll
+ * naturally instead of being clipped to the viewport.
  */
 
 export default function HomePage(): React.ReactElement {
   return (
     <main
-      className="dbg-surface flex h-dvh w-screen flex-col overflow-hidden"
+      className="dbg-surface flex min-h-dvh w-screen flex-col lg:h-dvh lg:overflow-hidden"
       style={{ color: "rgb(var(--color-chrome-text))" }}
     >
       <h1 className="sr-only">
@@ -23,14 +24,16 @@ export default function HomePage(): React.ReactElement {
         circuit breakers
       </h1>
 
-      <div className="grid h-[calc(100dvh-160px)] min-h-0 flex-1 grid-cols-1 lg:h-[calc(100dvh-400px)] lg:grid-cols-[260px_1fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:h-[calc(100dvh-400px)] lg:grid-cols-[260px_1fr]">
         <LeftRail />
         <MainStage />
       </div>
 
-      {/* Reserved footprint for the always-visible <DebugsyLook>; the
-          panel itself is `position: fixed` and renders below. */}
-      <div aria-hidden="true" className="h-[160px] shrink-0 lg:h-[400px]" />
+      {/* Reserved footprint for the desktop-only `<DebugsyLook>` panel. */}
+      <div
+        aria-hidden="true"
+        className="hidden shrink-0 lg:block lg:h-[400px]"
+      />
 
       <DebugsyLookMounted />
 
@@ -152,7 +155,7 @@ function MainStage(): React.ReactElement {
   return (
     <section
       aria-label="debugsy"
-      className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12 xl:py-6"
+      className="flex min-h-0 flex-col gap-4 px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12 xl:py-6"
     >
       {/* ── Intro: spec block ────────────────────────────────────── */}
       <header className="flex flex-col gap-2.5 font-mono">

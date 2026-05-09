@@ -2,8 +2,10 @@
 
 import { DebugsyLook, getDebugsy } from "@workspace/debugsy";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../_lib/register-real-modules";
+
+const DESKTOP_VIEWPORT_QUERY = "(min-width: 1024px)";
 
 /**
  * Realistic surface IDs and a wss endpoint pattern that mirrors what
@@ -142,9 +144,37 @@ function useDebugsySimulator(): void {
   }, []);
 }
 
-export function DebugsyLookMounted(): React.ReactElement {
+/**
+ * Desktop-only mount: the live `<DebugsyLook>` panel is intentionally hidden
+ * on phones/tablets. The runtime cost (auto-open keystroke, seed-log
+ * simulator, render tracking) is also avoided there because the inner
+ * component never mounts. Reads `matchMedia` after hydration to keep SSR /
+ * first-paint deterministic.
+ */
+function useIsDesktopViewport(): boolean {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(DESKTOP_VIEWPORT_QUERY).matches,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
+    const onChange = (e: MediaQueryListEvent): void => setIsDesktop(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isDesktop;
+}
+
+function DebugsyLookInner(): React.ReactElement {
   useAutoOpenDebugsyPanel();
   useDebugsySimulator();
 
   return <DebugsyLook closeOnClickOutside={false} />;
+}
+
+export function DebugsyLookMounted(): React.ReactElement | null {
+  const isDesktop = useIsDesktopViewport();
+  if (!isDesktop) return null;
+  return <DebugsyLookInner />;
 }

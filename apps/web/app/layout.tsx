@@ -113,7 +113,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>): React.ReactElement {
   return (
-    <html lang="en" data-theme="ocean" className="h-full">
+    <html lang="en" data-theme="ocean" className="lg:h-full">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script
@@ -123,7 +123,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased h-full overflow-hidden">{children}</body>
+      <body className="antialiased lg:h-full lg:overflow-hidden">
+        {children}
+      </body>
     </html>
   );
 }

@@ -24,16 +24,27 @@
    The bottom debugsy stage uses "bg" tokens (dark slate). */
 html,
 body {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   background: rgb(var(--color-chrome-bg));
   color: rgb(var(--color-chrome-text));
   font-family: var(--font-sans);
-  overflow: hidden;
   font-feature-settings: "ss01", "ss02", "calt", "liga";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Single-screen no-scroll layout reserved for desktop only.
+   Mobile/tablet needs natural document scroll because the live
+   <DebugsyLook> panel is hidden there and the static chrome is laid out
+   as a flowing page. */
+@media (min-width: 1024px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 ::selection {
