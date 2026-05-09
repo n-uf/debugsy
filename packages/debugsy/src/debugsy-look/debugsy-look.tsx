@@ -63,6 +63,20 @@ import { useDebugsyShortcuts } from "./use-debugsy-shortcuts";
 
 export interface DebugsyLookProps {
   closeOnClickOutside?: boolean;
+  /**
+   * Initial visibility state for the panel.
+   * Default `false` (hidden until ⌘+D).
+   * Pass `true` to render the panel mounted-and-visible (e.g. for a homepage
+   * marketing demo where the panel is a permanent fixture).
+   */
+  initialVisible?: boolean;
+  /**
+   * Initial compact mode.
+   * Default `true` (control-tray only).
+   * Pass `false` together with `initialVisible` to start in extended mode
+   * (full body + sidebar + tray).
+   */
+  initialIsCompact?: boolean;
 }
 
 /**
@@ -71,6 +85,8 @@ export interface DebugsyLookProps {
  */
 const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
+  initialVisible = false,
+  initialIsCompact = true,
 }) => {
   // Enhanced tracking
   useRenderTracker("DebugsyLook", {
@@ -96,8 +112,8 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   const logsOnlyRef = useRef<HTMLDivElement>(null); // For Cmd+A selection (logs only, no banners)
 
   // State
-  const [isVisible, setIsVisible] = useState(false);
-  const [isCompact, setIsCompact] = useState(true);
+  const [isVisible, setIsVisible] = useState(initialVisible);
+  const [isCompact, setIsCompact] = useState(initialIsCompact);
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [depthSetting, setDepthSetting] = useState<DepthSetting>("all"); // Depth setting for copy operations
   const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
