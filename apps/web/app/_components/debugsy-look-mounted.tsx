@@ -153,7 +153,9 @@ function useDebugsySimulator(): void {
  */
 function useIsDesktopViewport(): boolean {
   const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(DESKTOP_VIEWPORT_QUERY).matches,
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia(DESKTOP_VIEWPORT_QUERY).matches,
   );
 
   useEffect(() => {

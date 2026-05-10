@@ -84,11 +84,11 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   const flashMiss = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
-    el.style.borderColor = "rgba(244, 114, 182, 0.6)";
-    el.style.backgroundColor = "rgba(244, 114, 182, 0.08)";
+    el.style.borderColor = "rgb(var(--color-error) / 0.6)";
+    el.style.backgroundColor = "rgb(var(--color-error) / 0.08)";
     setTimeout(() => {
-      el.style.borderColor = "rgba(255,255,255,0.1)";
-      el.style.backgroundColor = "rgba(255,255,255,0.06)";
+      el.style.borderColor = "rgb(var(--color-border-primary))";
+      el.style.backgroundColor = "rgb(var(--color-bg-secondary))";
     }, 600);
   }, []);
 
@@ -97,7 +97,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     for (const term of terms) {
       if (term.length < 2) continue;
       const matches = knownTags.filter(
-        (t) => t.toLowerCase().includes(term) && !activeTags.has(t)
+        (t) => t.toLowerCase().includes(term) && !activeTags.has(t),
       );
       if (matches.length === 0) anyMiss = true;
       for (const m of matches) {
@@ -137,19 +137,31 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     requestAnimationFrame(autoResize);
   };
 
+  // Theme-aware tag-button label color. Uses `--color-text-primary` (the
+  // DARK-PANEL text token, NOT `--color-chrome-*`) because the tag list
+  // renders inside debugsy's panel surface, which uses `--color-bg-*` /
+  // `--color-text-*`. That token is light on dark themes (ocean / midnight /
+  // studio / abyss) and dark on light themes (parchment / daylight).
   const btnStyle: React.CSSProperties = {
     fontFamily: "monospace",
     fontWeight: "bold",
     borderRadius: "2px",
     padding: "1px 3px",
     fontSize: "10px",
-    color: "#d1d5db",
+    color: "rgb(var(--color-text-primary))",
     width: "100%",
   };
 
   return (
     <div style={{ padding: "4px" }}>
-      <div style={{ display: "flex", gap: "2px", marginBottom: "2px", alignItems: "flex-start" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "2px",
+          marginBottom: "2px",
+          alignItems: "flex-start",
+        }}
+      >
         <button
           type="button"
           onClick={onClearAll}
@@ -161,13 +173,15 @@ export const TagFilter: React.FC<TagFilterProps> = ({
             fontSize: "10px",
             fontFamily: "monospace",
             fontWeight: "bold",
-            color: hasActiveFilter ? "#f87171" : "#93c5fd",
+            color: hasActiveFilter
+              ? "rgb(var(--color-error))"
+              : "rgb(var(--color-info))",
             backgroundColor: hasActiveFilter
-              ? "rgba(255,255,255,0.06)"
-              : "rgba(96, 165, 250, 0.2)",
+              ? "rgb(var(--color-bg-secondary))"
+              : "rgb(var(--color-info) / 0.18)",
             border: hasActiveFilter
-              ? "1px solid rgba(255,255,255,0.1)"
-              : "1px solid rgba(96, 165, 250, 0.35)",
+              ? "1px solid rgb(var(--color-border-primary))"
+              : "1px solid rgb(var(--color-info) / 0.45)",
             borderRadius: "2px",
             cursor: "pointer",
             lineHeight: "1.3",
@@ -190,9 +204,9 @@ export const TagFilter: React.FC<TagFilterProps> = ({
               padding: "2px 4px",
               fontSize: "10px",
               fontFamily: "monospace",
-              color: "#d1d5db",
-              backgroundColor: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgb(var(--color-text-primary))",
+              backgroundColor: "rgb(var(--color-bg-secondary))",
+              border: "1px solid rgb(var(--color-border-primary))",
               borderRadius: "2px",
               outline: "none",
               boxSizing: "border-box",
@@ -208,7 +222,11 @@ export const TagFilter: React.FC<TagFilterProps> = ({
           <button
             type="button"
             onClick={() => onModeChange(mode === "and" ? "or" : "and")}
-            title={mode === "and" ? "AND: all selected tags must match" : "OR: any selected tag matches"}
+            title={
+              mode === "and"
+                ? "AND: all selected tags must match"
+                : "OR: any selected tag matches"
+            }
             style={{
               flexShrink: 0,
               alignSelf: "flex-start",
@@ -216,9 +234,12 @@ export const TagFilter: React.FC<TagFilterProps> = ({
               fontSize: "10px",
               fontFamily: "monospace",
               fontWeight: "bold",
-              color: mode === "and" ? "#60a5fa" : "#f59e0b",
-              backgroundColor: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              color:
+                mode === "and"
+                  ? "rgb(var(--color-info))"
+                  : "rgb(var(--color-warning))",
+              backgroundColor: "rgb(var(--color-bg-secondary))",
+              border: "1px solid rgb(var(--color-border-primary))",
               borderRadius: "2px",
               cursor: "pointer",
               lineHeight: "1.3",
@@ -240,9 +261,9 @@ export const TagFilter: React.FC<TagFilterProps> = ({
               fontSize: "10px",
               fontFamily: "monospace",
               fontWeight: "bold",
-              color: "#f472b6",
-              backgroundColor: "rgba(244, 114, 182, 0.1)",
-              border: "1px solid rgba(244, 114, 182, 0.25)",
+              color: "rgb(var(--color-error))",
+              backgroundColor: "rgb(var(--color-error) / 0.12)",
+              border: "1px solid rgb(var(--color-error) / 0.35)",
               borderRadius: "2px",
               cursor: "pointer",
               lineHeight: "1.3",

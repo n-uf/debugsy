@@ -52,7 +52,7 @@ export const DependencyAdvancedPanel: React.FC<
   const handleDependenciesToggle = () => {
     console.log(
       "🔵 [AdvancedControls] Dependencies toggle, current enabled:",
-      dependencyState.enabled
+      dependencyState.enabled,
     );
     if (dependencyState.enabled) {
       dependencyState.disable();
@@ -81,7 +81,7 @@ export const DependencyAdvancedPanel: React.FC<
 
   const handleFilterChange = (filter: DepsFilter) => {
     console.log(
-      `🔧 [AdvancedControls] Setting dependency filter to: ${filter}`
+      `🔧 [AdvancedControls] Setting dependency filter to: ${filter}`,
     );
     if (filter !== "all") {
       dependencyState.enable(); // Auto-enable when setting a specific filter
@@ -91,12 +91,12 @@ export const DependencyAdvancedPanel: React.FC<
 
   const controlsStyle: React.CSSProperties = {
     padding: "12px",
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "rgb(var(--color-bg-secondary))",
     borderRadius: "6px",
-    border: "1px solid #333",
+    border: "1px solid rgb(var(--color-border-primary))",
     fontFamily: "monospace",
     fontSize: "11px",
-    color: "#e5e7eb",
+    color: "rgb(var(--color-text-primary))",
     display: "flex",
     flexDirection: "column",
     gap: "10px",
@@ -106,10 +106,10 @@ export const DependencyAdvancedPanel: React.FC<
 
   const buttonStyle: React.CSSProperties = {
     padding: "6px 10px",
-    backgroundColor: "#2d2d2d",
-    border: "1px solid #404040",
+    backgroundColor: "rgb(var(--color-bg-tertiary))",
+    border: "1px solid rgb(var(--color-border-primary))",
     borderRadius: "4px",
-    color: "#e5e7eb",
+    color: "rgb(var(--color-text-primary))",
     cursor: "pointer",
     fontSize: theme?.fontSize ?? "10px",
     fontFamily: theme?.style?.fontFamily ?? "monospace",
@@ -120,21 +120,21 @@ export const DependencyAdvancedPanel: React.FC<
 
   const activeButtonStyle: React.CSSProperties = {
     ...buttonStyle,
-    backgroundColor: "#3b82f6",
-    border: "1px solid #2563eb", // Use shorthand instead of mixing with borderColor
-    color: "white",
-    boxShadow: "0 0 0 1px rgba(59, 130, 246, 0.3)",
+    backgroundColor: "rgb(var(--color-accent))",
+    border: "1px solid rgb(var(--color-accent-hover))",
+    color: "rgb(var(--color-text-inverse))",
+    boxShadow: "0 0 0 1px rgb(var(--color-accent) / 0.3)",
   };
 
   const sectionStyle: React.CSSProperties = {
-    borderTop: "1px solid #333",
+    borderTop: "1px solid rgb(var(--color-border-primary))",
     paddingTop: "10px",
     marginTop: "6px",
   };
 
   const headerStyle: React.CSSProperties = {
     fontWeight: "bold",
-    color: "#fbbf24",
+    color: "rgb(var(--color-warning))",
     fontSize: "12px",
     display: "flex",
     alignItems: "center",
@@ -162,7 +162,11 @@ export const DependencyAdvancedPanel: React.FC<
 
           {/* Status Overview */}
           <div
-            style={{ fontSize: "10px", color: "#9ca3af", lineHeight: "1.4" }}
+            style={{
+              fontSize: "10px",
+              color: "rgb(var(--color-text-secondary))",
+              lineHeight: "1.4",
+            }}
           >
             <div>
               <strong>Status:</strong>{" "}
@@ -199,7 +203,7 @@ export const DependencyAdvancedPanel: React.FC<
                 style={{
                   marginBottom: "6px",
                   fontSize: "10px",
-                  color: "#9ca3af",
+                  color: "rgb(var(--color-text-secondary))",
                   fontWeight: "bold",
                 }}
               >
@@ -251,7 +255,7 @@ export const DependencyAdvancedPanel: React.FC<
                 style={{
                   marginBottom: "6px",
                   fontSize: "10px",
-                  color: "#9ca3af",
+                  color: "rgb(var(--color-text-secondary))",
                   fontWeight: "bold",
                 }}
               >
@@ -320,7 +324,7 @@ export const DependencyAdvancedPanel: React.FC<
                 style={{
                   marginBottom: "6px",
                   fontSize: "10px",
-                  color: "#9ca3af",
+                  color: "rgb(var(--color-text-secondary))",
                   fontWeight: "bold",
                 }}
               >
@@ -328,27 +332,36 @@ export const DependencyAdvancedPanel: React.FC<
               </div>
 
               <div
-                style={{ fontSize: "9px", color: "#6b7280", lineHeight: "1.4" }}
+                style={{
+                  fontSize: "9px",
+                  color: "rgb(var(--color-text-muted))",
+                  lineHeight: "1.4",
+                }}
               >
                 <div>
                   Total Logs:{" "}
-                  <span style={{ color: "#10b981" }}>
+                  <span style={{ color: "rgb(var(--color-success))" }}>
                     {dependencyState.logs.length}
                   </span>
                 </div>
                 {dependencyState.logs.length > 0 && (
                   <div>
                     Latest:{" "}
-                    <span style={{ color: "#8b5cf6" }}>
+                    <span style={{ color: "rgb(var(--color-accent))" }}>
                       {new Date(
                         dependencyState.logs[dependencyState.logs.length - 1]
-                          ?.timestamp || Date.now()
+                          ?.timestamp || Date.now(),
                       ).toLocaleTimeString()}
                     </span>
                   </div>
                 )}
                 {dependencyState.logs.length === 0 && (
-                  <div style={{ color: "#f59e0b", marginTop: "4px" }}>
+                  <div
+                    style={{
+                      color: "rgb(var(--color-warning))",
+                      marginTop: "4px",
+                    }}
+                  >
                     💡 Interact with components to see dependency tracking
                   </div>
                 )}
@@ -362,14 +375,18 @@ export const DependencyAdvancedPanel: React.FC<
               style={{
                 marginBottom: "6px",
                 fontSize: "10px",
-                color: "#9ca3af",
+                color: "rgb(var(--color-text-secondary))",
                 fontWeight: "bold",
               }}
             >
               📟 Console Commands:
             </div>
             <div
-              style={{ fontSize: "8px", color: "#6b7280", lineHeight: "1.3" }}
+              style={{
+                fontSize: "8px",
+                color: "rgb(var(--color-text-muted))",
+                lineHeight: "1.3",
+              }}
             >
               <div>surfaceDebug.deps.off()</div>
               <div>surfaceDebug.deps.{dependencyState.logLevel}()</div>

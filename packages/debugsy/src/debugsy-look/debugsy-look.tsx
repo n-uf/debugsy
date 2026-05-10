@@ -8,6 +8,7 @@ import {
   IndicatorButtonTheme,
   LogEntry,
   PauseState,
+  safeSuperjsonStringify,
   ScrollFollowingState,
   setProgressDisplay,
   TerminalWindow,
@@ -37,14 +38,19 @@ import {
   usePauseState,
   useResizable,
   useScrollFollowing,
-  safeSuperjsonStringify,
   VirtualizedList,
   Z_INDEX,
 } from "@workspace/harbuz";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { useRenderTracker } from "../debugsy-deps";
 import { getPointEmoji } from "../config";
+import { useRenderTracker } from "../debugsy-deps";
 import { useDebugsySubscription } from "../debugsy-logs/hooks/debugsy-notifications";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
 import type { DebugLogEntry, DebugPoint } from "../debugsy-space";
@@ -120,7 +126,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     (() => void) | null
   >(null);
   const [expandedEntries, setExpandedEntries] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [tagSearch, setTagSearch] = useState("");
@@ -130,7 +136,8 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     useState(closeOnClickOutside);
 
   // Display system (NEW: context-based isolated queue)
-  const { visible: displayQueue, memorized: memorizedItems } = useDisplayQueueFullScoped();
+  const { visible: displayQueue, memorized: memorizedItems } =
+    useDisplayQueueFullScoped();
   const { configureQueue } = useDisplayQueueContext();
   // REMOVED: useDisplay() uses global state - we use scoped queue only
   const { setDisplayContent, clearDisplayContent } = useLegacyDisplayCompat(); // Scoped legacy compat
@@ -183,19 +190,20 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   });
 
   // 3b. Discover tags from actual log records (arrival order)
-  const { tags: knownTags, refresh: refreshTags } = useDiscoveredTags(pointFilteredLogs);
+  const { tags: knownTags, refresh: refreshTags } =
+    useDiscoveredTags(pointFilteredLogs);
 
   // 3c. Tag Filtering — apply after point filtering (AND/OR mode)
   const filteredLogs = useMemo(() => {
     if (selectedTags.size === 0) return pointFilteredLogs;
     if (tagMode === "or") {
       return pointFilteredLogs.filter(
-        (log) => log.tags?.some((t: string) => selectedTags.has(t)) ?? false
+        (log) => log.tags?.some((t: string) => selectedTags.has(t)) ?? false,
       );
     }
     const required = [...selectedTags];
-    return pointFilteredLogs.filter(
-      (log) => required.every((t) => log.tags?.includes(t) ?? false)
+    return pointFilteredLogs.filter((log) =>
+      required.every((t) => log.tags?.includes(t) ?? false),
     );
   }, [pointFilteredLogs, selectedTags, tagMode]);
 
@@ -252,8 +260,33 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
         : filteredLogs;
 
   // Resizable panel
-  const getMaxHeight = () =>
-    typeof window !== "undefined" ? window.innerHeight : 800;
+  //
+  // `bodyHeight` (= `panelHeight`) is the height of the LOG VIEWPORT inside
+  // the shell — the shell adds its own header (with the resize handle) and a
+  // control panel below the body, both with intrinsic heights summing to
+  // ~`SHELL_CHROME_PX`. To keep the WHOLE panel within the visible window
+  // (so the resize handle remains reachable at the top), we cap
+  // `panelHeight` at `window.innerHeight - SHELL_CHROME_PX`.
+  //
+  // Tracking `window.innerHeight` via a `resize` listener (rather than
+  // calling it in render and capturing a stale snapshot) lets the cap follow
+  // browser-window resizes — the handle can always travel to the very top of
+  // the current viewport.
+  const SHELL_CHROME_PX = 80; // header (~30) + control panel (~50)
+  const [maxPanelHeight, setMaxPanelHeight] = useState<number>(() =>
+    typeof window !== "undefined"
+      ? Math.max(0, window.innerHeight - SHELL_CHROME_PX)
+      : 800,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const update = (): void =>
+      setMaxPanelHeight(Math.max(0, window.innerHeight - SHELL_CHROME_PX));
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   const {
     height: panelHeight,
     setHeight: setPanelHeight,
@@ -262,8 +295,40 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   } = useResizable({
     initialHeight: 400, // Default height when expanded
     minHeight: 0,
-    maxHeight: getMaxHeight(),
+    maxHeight: maxPanelHeight,
   });
+
+  // Publish the panel's *rendered* height as `--debugsy-panel-h` on
+  // `documentElement` so the host page can reserve the matching footprint:
+  //
+  //   .static-area { height: calc(100dvh - var(--debugsy-panel-h, 400px)); }
+  //
+  // We must observe the SHELL element, not `containerRef` (the wrapper). The
+  // shell is `position: absolute; bottom: 0` inside the wrapper, so it does
+  // not contribute to the wrapper's natural height — `containerRef`'s own
+  // `offsetHeight` is 0. TerminalLayout renders the shell `<div>` first and
+  // a sibling `<style>` second, both inside the wrapper, so
+  // `firstElementChild` reliably resolves to the shell. Using a
+  // `ResizeObserver` covers compact mode (`height: auto`), drag resizes, and
+  // any future programmatic height changes for free.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const wrapper = containerRef.current;
+    if (!wrapper) return;
+    const shell = wrapper.firstElementChild as HTMLElement | null;
+    if (!shell) return;
+    const root = document.documentElement;
+    const apply = (): void => {
+      root.style.setProperty("--debugsy-panel-h", `${shell.offsetHeight}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(shell);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--debugsy-panel-h");
+    };
+  }, [isVisible]);
 
   // 6. Keyboard Selection Hook - Cmd+A selects only logs (after isResizing is defined)
   useKeyboardSelection({
@@ -308,7 +373,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   useClickOutside(
     containerRef,
     onClose,
-    isVisible && !isResizing && closeOnClickOutsideState && !isCompact
+    isVisible && !isResizing && closeOnClickOutsideState && !isCompact,
   );
 
   // 9. Keyboard Shortcuts Hook - Always active (especially ⌘+D for global toggle)
@@ -390,7 +455,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
       }) => {
         // Find the original log entry for depth processing
         const originalLog = activeLogs.find(
-          (log) => log.point === entry.point && log.message === entry.message
+          (log) => log.point === entry.point && log.message === entry.message,
         );
 
         if (!originalLog?.data) {
@@ -401,12 +466,12 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
         // Apply depth setting and format with safeSuperjsonStringify
         const processedData = processObjectForDisplay(
           originalLog.data,
-          depthSetting
+          depthSetting,
         );
         const dataStr = ` | ${safeSuperjsonStringify(processedData)}`;
         return `[${entry.timestamp}] ${entry.point}: ${entry.message}${dataStr}`;
       },
-      [activeLogs, depthSetting]
+      [activeLogs, depthSetting],
     ),
   });
 
@@ -422,7 +487,13 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
         bottom: 0,
         left: 0,
         width: "100vw",
-        height: isCompact ? "auto" : `${panelHeight}px`,
+        // `height: auto` lets the wrapper hug the shell's actual rendered
+        // size (body + header + control panel). The previous explicit
+        // `${panelHeight}px` understated the real panel by ~`SHELL_CHROME_PX`,
+        // which made the published `--debugsy-panel-h` smaller than the
+        // visible panel and let the static page chrome peek through under
+        // the panel during resize.
+        height: "auto",
         zIndex: Z_INDEX.DEBUG_PANEL,
       }}
     >
@@ -456,7 +527,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                     }))}
                   renderItem={(
                     log: DebugLogEntry & { _uniqueId: string },
-                    index
+                    index,
                   ) => {
                     const entry = {
                       id: index,
@@ -578,9 +649,9 @@ Enable debug points and interact with the surface to see logs here.`}
                 <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
                 <TerminalWindowResizePresets
-                  presets={[200, 400, 600, getMaxHeight()]}
+                  presets={[200, 400, 600, maxPanelHeight]}
                   currentHeight={panelHeight}
-                  maxHeight={getMaxHeight()}
+                  maxHeight={maxPanelHeight}
                   onResize={setPanelHeight}
                 />
 
@@ -598,7 +669,7 @@ Enable debug points and interact with the surface to see logs here.`}
                         active: closeOnClickOutsideState,
                         onClick: () => {
                           setCloseOnClickOutsideState(
-                            !closeOnClickOutsideState
+                            !closeOnClickOutsideState,
                           );
                           setDisplayContent({
                             message: `Click outside: ${!closeOnClickOutsideState ? "ON" : "OFF"}`,
@@ -612,7 +683,7 @@ Enable debug points and interact with the surface to see logs here.`}
                       },
                     ]}
                     theme={{
-                      color: "#d1d5db",
+                      color: "rgb(var(--color-text-primary))",
                       style: {
                         fontFamily: "monospace",
                         fontWeight: "bold",
@@ -637,7 +708,11 @@ Enable debug points and interact with the surface to see logs here.`}
               <ModuleNav
                 theme={controlButtonTheme}
                 onDisplayMessage={(msg) =>
-                  setDisplayContent({ message: msg, type: "info", duration: 1500 })
+                  setDisplayContent({
+                    message: msg,
+                    type: "info",
+                    duration: 1500,
+                  })
                 }
                 onModuleSelect={setActiveModule}
               />
@@ -668,7 +743,7 @@ Enable debug points and interact with the surface to see logs here.`}
                             hour: "2-digit",
                             minute: "2-digit",
                             second: "2-digit",
-                          }
+                          },
                         ),
                         emoji: getPointEmoji(log.point),
                         message: log.message,
@@ -695,10 +770,24 @@ Enable debug points and interact with the surface to see logs here.`}
                   ? [
                       {
                         icon: (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path fill="#FF4154" d="M6.93 13.688a.343.343 0 0 1 .468.132l.063.106q.72 1.277 1.5 2.426a36 36 0 0 0 2.074 2.742a.346.346 0 0 1-.039.484l-.074.066c-2.543 2.223-4.191 2.665-4.953 1.333c-.746-1.305-.477-3.672.808-7.11a.34.34 0 0 1 .153-.18M17.75 16.3a.34.34 0 0 1 .395.27l.02.1q.942 4.93-1.325 4.93c-1.48 0-3.36-1.402-5.649-4.203a.33.33 0 0 1-.074-.222c0-.188.156-.34.344-.34h.121a33 33 0 0 0 2.809-.098q1.606-.128 3.359-.437m.871-6.977a.353.353 0 0 1 .445-.21l.102.034q4.895 1.665 3.719 3.664q-1.148 1.957-6.684 2.848a.36.36 0 0 1-.238-.047a.343.343 0 0 1-.125-.476l.062-.106a34 34 0 0 0 1.367-2.523q.717-1.484 1.352-3.184M7.797 8.34a.36.36 0 0 1 .238.047a.343.343 0 0 1 .125.476l-.062.106a34 34 0 0 0-1.367 2.523q-.717 1.483-1.352 3.184a.353.353 0 0 1-.445.21l-.102-.034q-4.895-1.666-3.719-3.664Q2.261 9.23 7.797 8.34m5.281-3.984c2.543-2.223 4.192-2.664 4.953-1.332q1.12 1.954-.808 7.109a.34.34 0 0 1-.153.18a.343.343 0 0 1-.468-.133l-.063-.106a35 35 0 0 0-1.5-2.426a36 36 0 0 0-2.074-2.742a.346.346 0 0 1 .039-.484ZM7.285 2.274q2.22 0 5.649 4.203a.35.35 0 0 1 .078.218a.35.35 0 0 1-.348.344l-.117-.004a35 35 0 0 0-2.809.102a36 36 0 0 0-3.363.437a.343.343 0 0 1-.394-.273l-.02-.098q-.944-4.929 1.324-4.93"/>
-                            <path fill="#002C4B" d="m10.156 8.086h3.688a.64.64 0 0 1 .55.316l1.848 3.22a.64.64 0 0 1 0 .628l-1.847 3.223a.64.64 0 0 1-.551.316h-3.688a.63.63 0 0 1-.547-.316L7.758 12.25a.64.64 0 0 1 0-.629L9.61 8.402a.63.63 0 0 1 .546-.316m3.23.793a.64.64 0 0 1 .552.316l1.39 2.426a.64.64 0 0 1 0 .629l-1.39 2.43a.64.64 0 0 1-.551.316h-2.774a.63.63 0 0 1-.546-.316l-1.395-2.43a.64.64 0 0 1 0-.629l1.395-2.426a.63.63 0 0 1 .546-.316Zm-.491.867h-1.79a.62.62 0 0 0-.546.316l-.899 1.56a.64.64 0 0 0 0 .628l.899 1.563a.63.63 0 0 0 .547.316h1.789a.63.63 0 0 0 .547-.316l.898-1.563a.64.64 0 0 0 0-.629l-.898-1.558a.62.62 0 0 0-.547-.317m-.477.828c.227 0 .438.121.547.317l.422.73a.63.63 0 0 1 0 .629l-.422.734a.63.63 0 0 1-.547.317h-.836a.63.63 0 0 1-.547-.317l-.422-.734a.63.63 0 0 1 0-.629l.422-.73a.63.63 0 0 1 .547-.317zm-.418.817a.55.55 0 0 0-.473.273a.55.55 0 0 0 0 .547a.54.54 0 0 0 .473.27a.54.54 0 0 0 .473-.27a.55.55 0 0 0 0-.547a.55.55 0 0 0-.473-.273"/>
-                            <path fill="#FF4154" d="M18.982 7.75c.39-1.894.476-3.344.222-4.398c-.148-.63-.422-1.137-.84-1.508c-.441-.39-1-.582-1.625-.582c-1.035 0-2.12.472-3.281 1.367a15 15 0 0 0-1.473 1.316a1 1 0 0 0-.136-.144c-1.446-1.285-2.66-2.082-3.7-2.39c-.617-.184-1.195-.2-1.722-.024c-.559.187-1.004.574-1.317 1.117c-.515.894-.652 2.074-.46 3.527q.119.885.402 1.934a1 1 0 0 0-.215.047C3.008 8.62 1.71 9.269.926 10.015c-.465.442-.77.938-.883 1.481c-.113.578 0 1.156.312 1.7c.516.894 1.465 1.597 2.817 2.155q.813.334 1.844.61a1 1 0 0 0-.07.226c-.391 1.891-.477 3.344-.223 4.395c.148.629.425 1.14.84 1.508c.44.39 1 .582 1.625.582c1.035 0 2.12-.473 3.28-1.364q.715-.556 1.489-1.336a1.2 1.2 0 0 0 .195.227c1.446 1.285 2.66 2.082 3.7 2.39c.617.184 1.195.2 1.722.024c.559-.187 1.004-.574 1.317-1.117c.515-.894.652-2.074.46-3.527a15 15 0 0 0-.425-2.012a1.2 1.2 0 0 0 .238-.047c1.828-.61 3.125-1.258 3.91-2.004c.465-.441.77-.937.883-1.48c.113-.578 0-1.157-.312-1.7c-.516-.894-1.465-1.597-2.817-2.156a15 15 0 0 0-1.906-.625a1 1 0 0 0 .059-.195"/>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              fill="#FF4154"
+                              d="M6.93 13.688a.343.343 0 0 1 .468.132l.063.106q.72 1.277 1.5 2.426a36 36 0 0 0 2.074 2.742a.346.346 0 0 1-.039.484l-.074.066c-2.543 2.223-4.191 2.665-4.953 1.333c-.746-1.305-.477-3.672.808-7.11a.34.34 0 0 1 .153-.18M17.75 16.3a.34.34 0 0 1 .395.27l.02.1q.942 4.93-1.325 4.93c-1.48 0-3.36-1.402-5.649-4.203a.33.33 0 0 1-.074-.222c0-.188.156-.34.344-.34h.121a33 33 0 0 0 2.809-.098q1.606-.128 3.359-.437m.871-6.977a.353.353 0 0 1 .445-.21l.102.034q4.895 1.665 3.719 3.664q-1.148 1.957-6.684 2.848a.36.36 0 0 1-.238-.047a.343.343 0 0 1-.125-.476l.062-.106a34 34 0 0 0 1.367-2.523q.717-1.484 1.352-3.184M7.797 8.34a.36.36 0 0 1 .238.047a.343.343 0 0 1 .125.476l-.062.106a34 34 0 0 0-1.367 2.523q-.717 1.483-1.352 3.184a.353.353 0 0 1-.445.21l-.102-.034q-4.895-1.666-3.719-3.664Q2.261 9.23 7.797 8.34m5.281-3.984c2.543-2.223 4.192-2.664 4.953-1.332q1.12 1.954-.808 7.109a.34.34 0 0 1-.153.18a.343.343 0 0 1-.468-.133l-.063-.106a35 35 0 0 0-1.5-2.426a36 36 0 0 0-2.074-2.742a.346.346 0 0 1 .039-.484ZM7.285 2.274q2.22 0 5.649 4.203a.35.35 0 0 1 .078.218a.35.35 0 0 1-.348.344l-.117-.004a35 35 0 0 0-2.809.102a36 36 0 0 0-3.363.437a.343.343 0 0 1-.394-.273l-.02-.098q-.944-4.929 1.324-4.93"
+                            />
+                            <path
+                              fill="#002C4B"
+                              d="m10.156 8.086h3.688a.64.64 0 0 1 .55.316l1.848 3.22a.64.64 0 0 1 0 .628l-1.847 3.223a.64.64 0 0 1-.551.316h-3.688a.63.63 0 0 1-.547-.316L7.758 12.25a.64.64 0 0 1 0-.629L9.61 8.402a.63.63 0 0 1 .546-.316m3.23.793a.64.64 0 0 1 .552.316l1.39 2.426a.64.64 0 0 1 0 .629l-1.39 2.43a.64.64 0 0 1-.551.316h-2.774a.63.63 0 0 1-.546-.316l-1.395-2.43a.64.64 0 0 1 0-.629l1.395-2.426a.63.63 0 0 1 .546-.316Zm-.491.867h-1.79a.62.62 0 0 0-.546.316l-.899 1.56a.64.64 0 0 0 0 .628l.899 1.563a.63.63 0 0 0 .547.316h1.789a.63.63 0 0 0 .547-.316l.898-1.563a.64.64 0 0 0 0-.629l-.898-1.558a.62.62 0 0 0-.547-.317m-.477.828c.227 0 .438.121.547.317l.422.73a.63.63 0 0 1 0 .629l-.422.734a.63.63 0 0 1-.547.317h-.836a.63.63 0 0 1-.547-.317l-.422-.734a.63.63 0 0 1 0-.629l.422-.73a.63.63 0 0 1 .547-.317zm-.418.817a.55.55 0 0 0-.473.273a.55.55 0 0 0 0 .547a.54.54 0 0 0 .473.27a.54.54 0 0 0 .473-.27a.55.55 0 0 0 0-.547a.55.55 0 0 0-.473-.273"
+                            />
+                            <path
+                              fill="#FF4154"
+                              d="M18.982 7.75c.39-1.894.476-3.344.222-4.398c-.148-.63-.422-1.137-.84-1.508c-.441-.39-1-.582-1.625-.582c-1.035 0-2.12.472-3.281 1.367a15 15 0 0 0-1.473 1.316a1 1 0 0 0-.136-.144c-1.446-1.285-2.66-2.082-3.7-2.39c-.617-.184-1.195-.2-1.722-.024c-.559.187-1.004.574-1.317 1.117c-.515.894-.652 2.074-.46 3.527q.119.885.402 1.934a1 1 0 0 0-.215.047C3.008 8.62 1.71 9.269.926 10.015c-.465.442-.77.938-.883 1.481c-.113.578 0 1.156.312 1.7c.516.894 1.465 1.597 2.817 2.155q.813.334 1.844.61a1 1 0 0 0-.07.226c-.391 1.891-.477 3.344-.223 4.395c.148.629.425 1.14.84 1.508c.44.39 1 .582 1.625.582c1.035 0 2.12-.473 3.28-1.364q.715-.556 1.489-1.336a1.2 1.2 0 0 0 .195.227c1.446 1.285 2.66 2.082 3.7 2.39c.617.184 1.195.2 1.722.024c.559-.187 1.004-.574 1.317-1.117c.515-.894.652-2.074.46-3.527a15 15 0 0 0-.425-2.012a1.2 1.2 0 0 0 .238-.047c1.828-.61 3.125-1.258 3.91-2.004c.465-.441.77-.937.883-1.48c.113-.578 0-1.157-.312-1.7c-.516-.894-1.465-1.597-2.817-2.156a15 15 0 0 0-1.906-.625a1 1 0 0 0 .059-.195"
+                            />
                           </svg>
                         ),
                         onClick: () => {
@@ -722,23 +811,63 @@ Enable debug points and interact with the surface to see logs here.`}
                   ? [
                       {
                         icon: (
-                          <svg width="14" height="14" viewBox="0 0 180 180" fill="none">
-                            <circle cx="90" cy="90" r="90" fill="black"/>
-                            <path d="M149.508 157.52L69.142 54H54v71.97h12.114V69.384l73.885 95.461A90.09 90.09 0 01149.508 157.52z" fill="url(#dbg-nGrad)"/>
-                            <rect x="115" y="54" width="12" height="72" fill="url(#dbg-nGrad2)"/>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 180 180"
+                            fill="none"
+                          >
+                            <circle cx="90" cy="90" r="90" fill="black" />
+                            <path
+                              d="M149.508 157.52L69.142 54H54v71.97h12.114V69.384l73.885 95.461A90.09 90.09 0 01149.508 157.52z"
+                              fill="url(#dbg-nGrad)"
+                            />
+                            <rect
+                              x="115"
+                              y="54"
+                              width="12"
+                              height="72"
+                              fill="url(#dbg-nGrad2)"
+                            />
                             <defs>
-                              <linearGradient id="dbg-nGrad" x1="109" y1="116.5" x2="144.5" y2="160.5" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="white"/><stop offset="1" stopColor="white" stopOpacity="0"/>
+                              <linearGradient
+                                id="dbg-nGrad"
+                                x1="109"
+                                y1="116.5"
+                                x2="144.5"
+                                y2="160.5"
+                                gradientUnits="userSpaceOnUse"
+                              >
+                                <stop stopColor="white" />
+                                <stop
+                                  offset="1"
+                                  stopColor="white"
+                                  stopOpacity="0"
+                                />
                               </linearGradient>
-                              <linearGradient id="dbg-nGrad2" x1="121" y1="54" x2="120.799" y2="106.875" gradientUnits="userSpaceOnUse">
-                                <stop stopColor="white"/><stop offset="1" stopColor="white" stopOpacity="0"/>
+                              <linearGradient
+                                id="dbg-nGrad2"
+                                x1="121"
+                                y1="54"
+                                x2="120.799"
+                                y2="106.875"
+                                gradientUnits="userSpaceOnUse"
+                              >
+                                <stop stopColor="white" />
+                                <stop
+                                  offset="1"
+                                  stopColor="white"
+                                  stopOpacity="0"
+                                />
                               </linearGradient>
                             </defs>
                           </svg>
                         ),
                         onClick: () => {
                           const fn = (globalThis as Record<string, unknown>)
-                            .__toggleNextDevIndicator as (() => void) | undefined;
+                            .__toggleNextDevIndicator as
+                            | (() => void)
+                            | undefined;
                           fn?.();
                         },
                         title: "Toggle Next.js Dev Indicator",

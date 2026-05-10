@@ -1,26 +1,48 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import { PAGE_SHORTCUTS, type PageShortcut } from "../_data/feature-log";
 
-const MAC_PLATFORM_REGEX = /Mac|iPhone|iPad|iPod/i;
+const MAC_PLATFORM_REGEX = /mac|iphone|ipad|ipod|darwin/i;
+
+interface NavigatorUAData {
+  readonly platform?: string;
+}
+
+/**
+ * Picks the first non-empty string from `candidates`. Critical: a plain `??`
+ * chain (`a ?? b ?? c`) treats `""` as a valid value, so an empty string from
+ * `navigator.userAgentData.platform` (returned by some Chromium contexts
+ * with reduced fingerprinting / certain embedded webviews) short-circuits
+ * the fallback and breaks Mac detection. This helper falls through on both
+ * nullish AND empty values.
+ */
+function firstNonEmpty(
+  ...candidates: ReadonlyArray<string | undefined>
+): string {
+  for (const c of candidates) {
+    if (typeof c === "string" && c.length > 0) return c;
+  }
+  return "";
+}
 
 /**
  * Detects whether the current device uses the macOS modifier convention
- * (⌘) versus the Windows/Linux one (Ctrl). Tries `userAgentData.platform`
- * first (modern, Chromium-only), falls back to the deprecated-but-still-
- * universal `navigator.platform`, and finally to the user-agent string.
- * Defaults to `true` (Mac) on the server so SSR and the first hydration
- * agree; the value is reconciled in `useEffect` after mount.
+ * (⌘) versus the Windows/Linux one (Ctrl). Tries the modern Chromium
+ * `userAgentData.platform`, then the legacy `navigator.platform`, then the
+ * full user-agent string. Empty strings are skipped — see `firstNonEmpty`.
  */
 function detectMacPlatform(): boolean {
   if (typeof navigator === "undefined") return true;
-  const ua = navigator as Navigator & {
-    userAgentData?: { platform?: string };
-  };
-  const candidate =
-    ua.userAgentData?.platform ?? navigator.platform ?? navigator.userAgent;
+  const uad = (navigator as Navigator & { userAgentData?: NavigatorUAData })
+    .userAgentData;
+  const candidate = firstNonEmpty(
+    uad?.platform,
+    navigator.platform,
+    navigator.userAgent,
+  );
+  if (candidate.length === 0) return true;
   return MAC_PLATFORM_REGEX.test(candidate);
 }
 
@@ -44,10 +66,30 @@ function triggerShortcut(s: PageShortcut): void {
   document.dispatchEvent(event);
 }
 
-export function PageShortcuts(): React.ReactElement {
-  const [isMac] = useState(() => detectMacPlatform());
+// =============================================================================
+// `useSyncExternalStore` binding for platform detection.
+//
+// Platform never changes within a session, so `subscribe` is a no-op
+// (returns an empty unsubscribe). `getServerSnapshot` returns `true` so the
+// server-rendered HTML matches the first client render and avoids a
+// hydration mismatch on the modifier glyph; the snapshot is then re-read on
+// the client to swap to the real platform value with no layout shift.
+//
+// This avoids the setState-in-effect pattern (`react-hooks/set-state-in-
+// effect`) which the lint rule blocks at zero warnings.
+// =============================================================================
 
-  const modifierGlyph = isMac ? "⌘" : "ctrl";
+const subscribePlatform = (): (() => void) => () => {};
+const getServerPlatformSnapshot = (): boolean => true;
+
+export function PageShortcuts(): React.ReactElement {
+  const isMac = useSyncExternalStore(
+    subscribePlatform,
+    detectMacPlatform,
+    getServerPlatformSnapshot,
+  );
+
+  const modifierGlyph = isMac ? "cmd" : "ctrl";
   const modifierWord = isMac ? "command" : "control";
 
   return (

@@ -5,9 +5,12 @@ import { ThemeSwitcherClient } from "./_components/theme-switcher-client";
 import { CAPABILITIES, SEO_LOGS } from "./_data/feature-log";
 
 /**
- * `<DebugsyLook>` ships as `position: fixed; bottom: 0; width: 100vw` and
- * extends to ~400px tall when open. Desktop reserves that footprint so the
- * chrome above never collides with the panel. The panel is hidden on
+ * `<DebugsyLook>` ships as `position: fixed; bottom: 0; width: 100vw` and is
+ * resizable. It publishes its live rendered height to `documentElement` as
+ * `--debugsy-panel-h`, so the desktop chrome above can reserve exactly the
+ * matching footprint and the two always sum to `100dvh` — no overlap, no
+ * overflow. The fallback (`400px`) matches the panel's initial expanded
+ * height for the first paint before the var is set. The panel is hidden on
  * mobile (`<DebugsyLookMounted />` returns null below `lg`), so no
  * reservation is needed there and the page is allowed to grow + scroll
  * naturally instead of being clipped to the viewport.
@@ -24,15 +27,17 @@ export default function HomePage(): React.ReactElement {
         circuit breakers
       </h1>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:h-[calc(100dvh-400px)] lg:grid-cols-[260px_1fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:h-[calc(100dvh-var(--debugsy-panel-h,400px))] lg:grid-cols-[260px_1fr]">
         <LeftRail />
         <MainStage />
       </div>
 
-      {/* Reserved footprint for the desktop-only `<DebugsyLook>` panel. */}
+      {/* Reserved footprint for the desktop-only `<DebugsyLook>` panel —
+          height kept in sync with the panel's actual rendered height via the
+          `--debugsy-panel-h` CSS var the panel publishes on mount. */}
       <div
         aria-hidden="true"
-        className="hidden shrink-0 lg:block lg:h-[400px]"
+        className="hidden shrink-0 lg:block lg:h-(--debugsy-panel-h,400px)"
       />
 
       <DebugsyLookMounted />
@@ -79,7 +84,12 @@ function LeftRail(): React.ReactElement {
         borderColor: "rgb(var(--color-chrome-border))",
       }}
     >
-      {/* wordmark */}
+      {/* Wordmark cluster — debugsy + meta lines + horizontal switcher
+          share a tight gap so they read as one identity block. The
+          switcher is the second drop-in of the same component used by
+          `<ThemeDock>`; both share the persisted theme via `useTheme`
+          — click either, both update. The outer `<aside>` keeps `gap-6`
+          for everything else (nav, shortcuts). */}
       <div className="flex flex-col gap-1.5">
         <span
           className="font-mono text-[20px] font-semibold leading-none tracking-tight"
@@ -87,6 +97,11 @@ function LeftRail(): React.ReactElement {
         >
           debugsy
         </span>
+
+        {/* tiny horizontal palette strip — sits directly under the
+            wordmark, before the meta lines, as a visual underline. */}
+        <ThemeSwitcherClient orientation="horizontal" size="sm" />
+
         <span
           className="font-mono text-[10px] tracking-wide"
           style={{ color: "rgb(var(--color-chrome-text-muted))" }}
@@ -140,9 +155,6 @@ function LeftRail(): React.ReactElement {
 
       {/* shortcuts */}
       <PageShortcuts />
-
-      {/* theme */}
-      <ThemeSwitcherClient />
     </aside>
   );
 }

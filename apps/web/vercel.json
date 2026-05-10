@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=debugsy-app",
+  "installCommand": "cd ../.. && pnpm install --filter=debugsy-app...",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
+}

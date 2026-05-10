@@ -52,26 +52,30 @@ export const DebugsyStats: React.FC<DebugsyStatsProps> = ({
 }) => {
   return (
     <TerminalWindowStats title="Info">
-      <TerminalWindowStatItem label="Total" value={totalLogs} color="#10b981" />
+      <TerminalWindowStatItem
+        label="Total"
+        value={totalLogs}
+        color="rgb(var(--color-success))"
+      />
       <TerminalWindowStatItem
         label="Filtered"
         value={filteredLogs}
-        color="#3b82f6"
+        color="rgb(var(--color-info))"
       />
       <TerminalWindowStatItem
         label="Active"
         value={activeLogs}
-        color="#f59e0b"
+        color="rgb(var(--color-warning))"
       />
       <TerminalWindowStatItem
         label="Points"
         value={activePoints}
-        color="#60a5fa"
+        color="rgb(var(--color-accent))"
       />
       <TerminalWindowStatItem
         label="Height"
         value={`${panelHeight}px`}
-        color="#fbbf24"
+        color="rgb(var(--color-warning))"
       />
     </TerminalWindowStats>
   );
