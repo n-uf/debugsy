@@ -4,7 +4,7 @@
  */
 
 // Import safe serialization function from Harbuz (central location)
-import { safeSuperjsonStringify } from "@workspace/harbuz";
+import { safeSuperjsonStringify } from "@n-uf/harbuz";
 
 export type DepthSetting = "all" | "10" | "5" | "3" | "1" | "str";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTheme, type ThemeName } from "@workspace/harbuz";
+import { useTheme, type ThemeName } from "@n-uf/harbuz";
 import type React from "react";
 
 // =============================================================================

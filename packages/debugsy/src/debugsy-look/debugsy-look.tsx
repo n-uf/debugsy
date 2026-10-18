@@ -40,7 +40,7 @@ import {
   useScrollFollowing,
   VirtualizedList,
   Z_INDEX,
-} from "@workspace/harbuz";
+} from "@n-uf/harbuz";
 import React, {
   useCallback,
   useEffect,
@@ -932,7 +932,7 @@ DebugsyLookInternal.displayName = "DebugsyLookInternal";
 /**
  * DebugsyLook - Harbuz-based implementation with isolated display queue
  *
- * Full implementation using @workspace/harbuz UI components.
+ * Full implementation using @n-uf/harbuz UI components.
  * Modern TerminalLayout structure with comprehensive debugging features.
  *
  * Wrapped with DisplayQueueProvider to ensure display messages are isolated

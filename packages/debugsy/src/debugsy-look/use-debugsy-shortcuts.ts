@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardShortcut, useKeyboardShortcuts } from "@workspace/harbuz";
+import { type KeyboardShortcut, useKeyboardShortcuts } from "@n-uf/harbuz";
 import { useMemo } from "react";
 
 export interface UseDebugsyShortcutsConfig {
