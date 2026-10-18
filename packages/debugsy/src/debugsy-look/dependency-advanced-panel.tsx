@@ -1,6 +1,6 @@
 "use client";
 
-import { IndicatorButtonTheme } from "@workspace/harbuz";
+import { IndicatorButtonTheme } from "@n-uf/harbuz";
 import React, { useState } from "react";
 import type { DepsFilter } from "../debugsy-space/debugsy-constants";
 import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";

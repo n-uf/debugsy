@@ -1,6 +1,6 @@
 "use client";
 
-import { IndicatorButton } from "@workspace/harbuz";
+import { IndicatorButton } from "@n-uf/harbuz";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import type { DebugLogEntry } from "../debugsy-space";

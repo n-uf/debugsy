@@ -1,6 +1,6 @@
 "use client";
 
-import { TerminalWindowStatItem, TerminalWindowStats } from "@workspace/harbuz";
+import { TerminalWindowStatItem, TerminalWindowStats } from "@n-uf/harbuz";
 import React from "react";
 
 export interface DebugsyStatsProps {
