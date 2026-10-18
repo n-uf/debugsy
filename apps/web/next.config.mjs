@@ -11,8 +11,8 @@ if (links.enabled) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Widened only when LOCAL_LIB_REPOS links a library from another repo.
-  ...(links.enabled && { outputFileTracingRoot: links.root }),
+  // Monorepo root; widened to a common ancestor when LOCAL_LIB_REPOS links another repo.
+  outputFileTracingRoot: links.root,
   transpilePackages: [
     "@n-uf/pdf-doodl",
     "@n-uf/pdf-doodl-react",
@@ -20,7 +20,7 @@ const nextConfig = {
     "@workspace/harbuz",
   ],
   turbopack: {
-    ...(links.enabled && { root: links.root }),
+    root: links.root,
     // Local library links (empty unless LOCAL_LIB_REPOS is set)
     resolveAlias: { ...links.aliases },
   },
