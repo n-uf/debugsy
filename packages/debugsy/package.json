@@ -7,7 +7,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@n-uf/harbuz": "workspace:*",
+    "@n-uf/harbuz": "^0.1.0",
     "@uidotdev/usehooks": "^2.4.1",
     "@workspace/shadcn": "workspace:*",
     "react-window": "^2.2.7",
