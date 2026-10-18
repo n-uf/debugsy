@@ -1,10 +1,18 @@
-import { nextMonorepoPaths } from "../../scripts/next-monorepo-paths.mjs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { localLibLinks } from "../../scripts/local-lib-links.mjs";
 
-const { outputFileTracingRoot, turbopackRoot } = nextMonorepoPaths(import.meta.url);
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+// Opt-in: LOCAL_LIB_REPOS=/path/to/repo pnpm dev  (see scripts/local-lib-links.mjs)
+const links = localLibLinks(appDir, path.resolve(appDir, "../.."));
+if (links.enabled) {
+  console.log(`[local-lib-links] live source for: ${links.packages.join(", ")}`);
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot,
+  // Widened only when LOCAL_LIB_REPOS links a library from another repo.
+  ...(links.enabled && { outputFileTracingRoot: links.root }),
   transpilePackages: [
     "@n-uf/pdf-doodl",
     "@n-uf/pdf-doodl-react",
@@ -12,7 +20,9 @@ const nextConfig = {
     "@workspace/harbuz",
   ],
   turbopack: {
-    root: turbopackRoot,
+    ...(links.enabled && { root: links.root }),
+    // Local library links (empty unless LOCAL_LIB_REPOS is set)
+    resolveAlias: { ...links.aliases },
   },
 };
 
