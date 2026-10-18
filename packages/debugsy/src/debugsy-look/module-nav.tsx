@@ -5,7 +5,7 @@ import {
   IndicatorButtonGroup,
   type IndicatorButtonGroupItem,
   type IndicatorButtonTheme,
-} from "@workspace/harbuz";
+} from "@n-uf/harbuz";
 import React, { useCallback, useMemo, useReducer, useRef, useState } from "react";
 
 const LONG_PRESS_MS = 400;

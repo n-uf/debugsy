@@ -1,4 +1,4 @@
-import { safeSuperjsonStringify } from "@workspace/harbuz";
+import { safeSuperjsonStringify } from "@n-uf/harbuz";
 
 // Performance constants for sanitization
 export const SANITIZATION_CONFIG = {

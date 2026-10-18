@@ -7,7 +7,7 @@
    AND the `@utility` declarations that turn `text-chrome`, `bg-hover`,
    `text-text-secondary`, … into real CSS rules. Single import = full
    visual contract for every harbuz / debugsy component. */
-@import "@workspace/harbuz/styles";
+@import "@n-uf/harbuz/styles";
 
 @custom-variant dark (&:is(.dark *));
 
