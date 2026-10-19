@@ -18,7 +18,7 @@ const nextConfig = {
     "@n-uf/pdf-doodl-react",
     "@workspace/debugsy",
     "@n-uf/harbuz",
-    "@n-uf/stem",
+    "@n-uf/angiospermae",
   ],
   turbopack: {
     root: links.root,
