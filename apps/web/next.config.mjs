@@ -14,8 +14,8 @@ const nextConfig = {
   // Monorepo root; widened to a common ancestor when LOCAL_LIB_REPOS links another repo.
   outputFileTracingRoot: links.root,
   transpilePackages: [
-    "@n-uf/pdf-doodl",
-    "@n-uf/pdf-doodl-react",
+    "@n-uf/doodl",
+    "@n-uf/doodl-react",
     "@workspace/debugsy",
     "@n-uf/harbuz",
     "@n-uf/angiospermae",
