@@ -3,5 +3,6 @@
   "buildCommand": "cd ../.. && pnpm turbo build --filter=debugsy-app",
   "installCommand": "cd ../.. && pnpm install --filter=debugsy-app...",
   "outputDirectory": ".next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "ignoreCommand": "npx -y turbo-ignore@2.11.7 debugsy-app --turbo-version=2.8.19 --fallback=HEAD^1"
 }
