@@ -2,7 +2,7 @@
  * register-real-modules — side-effect import that mirrors what
  * `pdfized.com` does on boot:
  *
- *   import "@workspace/surface/src/debug/register";
+ *   import "@workspace/surface/devtools";
  *   import "@workspace/pdf-surface/src/debug/register";
  *
  * We can't depend on those packages directly (they bring konva, pdfjs,
