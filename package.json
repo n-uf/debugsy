@@ -9,12 +9,10 @@
     "dev": "pnpm --filter web dev",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "changeset publish"
+    "release:next-version": "pnpm --filter @n-uf/debugsy release:next-version",
+    "version:bump": "pnpm --filter @n-uf/debugsy version:bump"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.30.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.39.2",
