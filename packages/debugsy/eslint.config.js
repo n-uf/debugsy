@@ -4,6 +4,13 @@ import { config } from "@workspace/eslint-config/react-internal";
 export default [
   ...config,
   {
+    // Release scripts run in Node
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { process: "readonly", console: "readonly" } },
+    // Kept identical to hypr-tiling's calendar-version-bump.mjs
+    rules: { "turbo/no-undeclared-env-vars": "off", "no-useless-escape": "off" },
+  },
+  {
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
