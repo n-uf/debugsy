@@ -174,6 +174,8 @@ Put your dev server's port in `url`, and replace `msedge` with `chrome` to debug
 
 A breakpoint shows one moment. "This renders more than I expect" needs something that records over time.
 
+The guide on how to [debug a React app](/blog/how-to-debug-react-app) shows where breakpoints fit alongside reading the error, React DevTools, logging and production builds.
+
 ## Watch network requests and app state
 
 Chrome's Network panel is for checking that resources download or upload as expected, and for inspecting one request's headers, content and size.
@@ -182,7 +184,7 @@ Reactotron is a different shape: a desktop app (macOS, Linux and Windows builds 
 
 ## Log what happened
 
-Chrome's Console panel shows messages and runs JavaScript. Reactotron has `Reactotron.log`. debugsy has named debug points, next.
+Chrome's Console panel shows messages and runs JavaScript. Reactotron has `Reactotron.log`. To pick a logger for the browser, our [React logging library](/blog/react-logging-library) comparison covers `debug`, `loglevel`, `pino`, `consola` and debugsy. debugsy has named debug points, next.
 
 ## Where debugsy fits, and what it doesn't do
 
