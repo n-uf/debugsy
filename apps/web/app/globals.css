@@ -39,13 +39,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Single-screen no-scroll layout reserved for desktop only.
-   Mobile/tablet needs natural document scroll because the live
-   <DebugsyLook> panel is hidden there and the static chrome is laid out
-   as a flowing page. */
+/* Single-screen no-scroll layout, for the home page on desktop only
+   (its <main> carries .dbg-lock). Mobile/tablet needs natural document
+   scroll because the live <DebugsyLook> panel is hidden there, and the
+   blog and use-case pages always scroll. */
 @media (min-width: 1024px) {
-  html,
-  body {
+  html:has(.dbg-lock),
+  html:has(.dbg-lock) body {
     height: 100%;
     overflow: hidden;
   }
