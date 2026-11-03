@@ -106,13 +106,13 @@ export const CAPABILITIES: readonly Capability[] = [
     num: "04",
     title: "Render count warnings",
     summary:
-      "With Deps on, useRenderTracker warns when a component reaches its render or mount threshold and calls your callback. It doesn't stop renders.",
+      "With Deps on (and trackRenders: true in 26.11), useRenderTracker warns when a component reaches its render threshold and calls your callback. It doesn't stop renders.",
   },
   {
     num: "05",
     title: "Debug points by module",
     summary:
-      "registerModule declares named debug points, like auth.session, each with a label and an emoji, so the log reads by area.",
+      "registerModule groups named debug points, like session and refresh under Auth, each with a label, an emoji and a description, so the log reads by area.",
   },
   {
     num: "06",
