@@ -136,7 +136,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="ocean"
-      className={`${inter.variable} ${jetbrains.variable} lg:h-full`}
+      className={`${inter.variable} ${jetbrains.variable}`}
     >
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -147,7 +147,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased lg:h-full lg:overflow-hidden">
+      <body className="antialiased">
         {children}
       </body>
     </html>

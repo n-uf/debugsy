@@ -19,7 +19,7 @@ import { CAPABILITIES, SEO_LOGS } from "./_data/feature-log";
 export default function HomePage(): React.ReactElement {
   return (
     <main
-      className="dbg-surface flex min-h-dvh w-screen flex-col lg:h-dvh lg:overflow-hidden"
+      className="dbg-surface dbg-lock flex min-h-dvh w-screen flex-col lg:h-dvh lg:overflow-hidden"
       style={{ color: "rgb(var(--color-chrome-text))" }}
     >
       <h1 className="sr-only">
