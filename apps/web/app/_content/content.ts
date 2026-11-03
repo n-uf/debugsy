@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
-import { type Heading, normalizeSitePath, renderMarkdown } from "./markdown";
+import { type Heading, normalizeSitePath, RESERVED_IDS, renderMarkdown } from "./markdown";
 
 export type Section = "blog" | "use-cases";
 
@@ -135,8 +135,27 @@ function readSection(section: Section, problems: string[]): Raw[] {
 
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
+/** A real calendar day written YYYY-MM-DD (2026-02-31 fails: it doesn't round-trip). */
+const isDay = (s: string): boolean =>
+  DATE.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`)) && new Date(`${s}T00:00:00Z`).toISOString().slice(0, 10) === s;
+
+/**
+ * Main keywords that pages outside the content folders own (the SEO plan's sheet); a content page
+ * can't take them.
+ */
+const RESERVED_KEYWORDS: Readonly<Record<string, string>> = { "react debug panel": "the home page" };
+
 function build(): readonly Entry[] {
   const problems: string[] = [];
+  // Today in UTC, which is never earlier than the Pacific date a page's `published` is written in.
+  const today = new Date().toISOString().slice(0, 10);
+  if (fs.existsSync(CONTENT_DIR)) {
+    for (const name of fs.readdirSync(CONTENT_DIR)) {
+      if (!name.startsWith(".") && !(name in SECTIONS)) {
+        problems.push(`content/${name}: not a section (only ${Object.keys(SECTIONS).join(" and ")})`);
+      }
+    }
+  }
   const raws = [...readSection("use-cases", problems), ...readSection("blog", problems)];
 
   const pagePaths = new Set<string>(STATIC_PATHS);
@@ -171,14 +190,17 @@ function build(): readonly Entry[] {
     if (!SECTIONS[r.section].kinds.includes(kind)) {
       p(`kind "${kind}" isn't one of ${SECTIONS[r.section].kinds.join(", ")}`);
     }
-    if (!DATE.test(published) || Number.isNaN(Date.parse(published))) p(`published "${published}" isn't YYYY-MM-DD`);
-    if (!DATE.test(updated) || Number.isNaN(Date.parse(updated))) p(`updated "${updated}" isn't YYYY-MM-DD`);
-    if (DATE.test(published) && DATE.test(updated) && updated < published) {
+    if (!isDay(published)) p(`published "${published}" isn't a real YYYY-MM-DD day`);
+    if (!isDay(updated)) p(`updated "${updated}" isn't a real YYYY-MM-DD day`);
+    if (isDay(published) && isDay(updated) && updated < published) {
       p(`updated (${updated}) is before published (${published})`);
+    }
+    for (const [name, d] of [["published", published], ["updated", updated]] as const) {
+      if (isDay(d) && d > today) p(`${name} ${d} is in the future (dates are the real days)`);
     }
     if (author !== "n-uf") p(`author is "${author}" (the byline is n-uf)`);
 
-    const owner = keywordOwner.get(mainKeyword.toLowerCase());
+    const owner = keywordOwner.get(mainKeyword.toLowerCase()) ?? RESERVED_KEYWORDS[mainKeyword.toLowerCase()];
     if (mainKeyword && owner) p(`mainKeyword "${mainKeyword}" is already ${owner}'s: one main keyword per page`);
     keywordOwner.set(mainKeyword.toLowerCase(), r.file);
 
@@ -201,8 +223,8 @@ function build(): readonly Entry[] {
       for (const s of d.sources) {
         const o = (s ?? {}) as Record<string, unknown>;
         const src = { title: str(o.title), url: str(o.url), checked: str(o.checked) };
-        if (!src.title || !/^https:\/\//.test(src.url) || !DATE.test(src.checked)) {
-          p(`sources: "${src.title || src.url}" needs a title, an https url and checked: YYYY-MM-DD`);
+        if (!src.title || !/^https:\/\//.test(src.url) || !isDay(src.checked) || src.checked > today) {
+          p(`sources: "${src.title || src.url}" needs a title, an https url and checked: a real YYYY-MM-DD day, not in the future`);
         } else sources.push(src);
       }
     }
@@ -214,9 +236,13 @@ function build(): readonly Entry[] {
     const self = `${SECTIONS[r.section].path}/${r.slug}`;
     if (related.includes(self)) p("related: lists the page itself");
 
-    if (/^#\s/m.test(r.body.replace(/```[\s\S]*?```/g, ""))) p("the body has an h1 (#); the page's h1 comes from front matter");
-
     const rendered = renderMarkdown(r.body);
+    if (rendered.h1Count > 0) {
+      p(`the body has ${rendered.h1Count} h1 (#, ===== or <h1>); the page's only h1 comes from front matter`);
+    }
+    for (const l of rendered.relativeLinks) p(`link "${l}" is relative; write site links as /path`);
+    const ids = new Set<string>([...rendered.ids, ...RESERVED_IDS]);
+    for (const h of rendered.hashLinks) if (!ids.has(h)) p(`link to #${h}, which no heading on the page has`);
     const perTarget = new Map<string, number>();
     for (const l of rendered.internalLinks) {
       if (!pagePaths.has(l)) p(`link to ${l}, which isn't a page on this site`);
@@ -256,12 +282,28 @@ function build(): readonly Entry[] {
   return entries;
 }
 
-let cache: readonly Entry[] | undefined;
+let cache: { readonly sig: string; readonly entries: readonly Entry[] } | undefined;
+
+const newestFirst = (a: Entry, b: Entry): number => (a.published < b.published ? 1 : a.published > b.published ? -1 : 0);
+
+/** The content files' names and change times: a new or edited page changes it. */
+function signature(): string {
+  const parts: string[] = [];
+  for (const s of Object.keys(SECTIONS)) {
+    const dir = path.join(CONTENT_DIR, s);
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir)) parts.push(`${s}/${name}:${fs.statSync(path.join(dir, name)).mtimeMs}`);
+  }
+  if (fs.existsSync(CONTENT_DIR)) parts.push(...fs.readdirSync(CONTENT_DIR));
+  return parts.sort().join("|");
+}
 
 /** Every content page, newest first. Throws (failing the build) when any page breaks a rule. */
 export function allEntries(): readonly Entry[] {
-  cache ??= [...build()].sort((a, b) => (a.published < b.published ? 1 : a.published > b.published ? -1 : 0));
-  return cache;
+  // Read once, and again only when a file changed (so a dev server shows edits without a restart).
+  const sig = signature();
+  if (cache?.sig !== sig) cache = { sig, entries: [...build()].sort(newestFirst) };
+  return cache.entries;
 }
 
 export function entriesOf(section: Section): readonly Entry[] {

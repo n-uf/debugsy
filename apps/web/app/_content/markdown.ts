@@ -1,4 +1,5 @@
 import { Marked, Renderer, type Tokens } from "marked";
+import { SITE_URL } from "../site";
 
 export interface Heading {
   readonly id: string;
@@ -13,6 +14,14 @@ export interface Rendered {
   readonly headings: readonly Heading[];
   /** Site-internal link targets, normalised (no trailing slash, no #hash), one entry per link. */
   readonly internalLinks: readonly string[];
+  /** `#id` links within the page, to check against `ids`. */
+  readonly hashLinks: readonly string[];
+  /** Links that are neither site paths, `#` anchors nor absolute URLs (`blog/x`, `../x`): always a mistake. */
+  readonly relativeLinks: readonly string[];
+  /** Every id the body gives a heading. */
+  readonly ids: readonly string[];
+  /** h1 elements in the body (markdown `#`, a Setext heading or raw HTML): there must be none. */
+  readonly h1Count: number;
   /** Images' alt texts, to check their length. */
   readonly imageAlts: readonly string[];
   /** Words of running text (code blocks excluded), for the reading time. */
@@ -29,11 +38,17 @@ const escapeHtml = (s: string): string =>
 const stripTags = (s: string): string =>
   s
     .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+
+/** Ids the page layout uses for its own sections after the body (entry-page.tsx). */
+export const RESERVED_IDS = ["questions", "sources"] as const;
+
+/** The live host; a link written as a full URL on it is treated as a site path. */
+const OWN_ORIGIN = SITE_URL;
 
 export const slugify = (s: string): string =>
   stripTags(s)
@@ -52,13 +67,19 @@ export function normalizeSitePath(href: string): string {
 export function renderMarkdown(source: string, firstNum = 1): Rendered {
   const headings: Heading[] = [];
   const internalLinks: string[] = [];
+  const hashLinks: string[] = [];
+  const relativeLinks: string[] = [];
   const imageAlts: string[] = [];
-  const usedIds = new Set<string>();
+  const usedIds = new Set<string>(RESERVED_IDS);
+  const bodyIds: string[] = [];
+  let h1Count = 0;
 
-  const uniqueId = (base: string): string => {
-    let id = base || "section";
+  const uniqueId = (raw: string): string => {
+    const base = raw || "section";
+    let id = base;
     for (let i = 2; usedIds.has(id); i += 1) id = `${base}-${i}`;
     usedIds.add(id);
+    bodyIds.push(id);
     return id;
   };
 
@@ -68,6 +89,7 @@ export function renderMarkdown(source: string, firstNum = 1): Rendered {
       heading({ tokens, depth }: Tokens.Heading): string {
         const inner = this.parser.parseInline(tokens);
         const id = uniqueId(slugify(inner));
+        if (depth === 1) h1Count += 1;
         if (depth === 2) {
           const num = String(firstNum + headings.length).padStart(2, "0");
           headings.push({ id, text: stripTags(inner), num });
@@ -75,16 +97,25 @@ export function renderMarkdown(source: string, firstNum = 1): Rendered {
         }
         return `<h${depth} id="${id}">${inner}</h${depth}>\n`;
       },
-      link({ href, title, tokens }: Tokens.Link): string {
+      link({ href: rawHref, title, tokens }: Tokens.Link): string {
         const inner = this.parser.parseInline(tokens);
         const t = title ? ` title="${escapeHtml(title)}"` : "";
+        // A full URL on the live host is a site path written the long way.
+        const href =
+          rawHref === OWN_ORIGIN || rawHref.startsWith(`${OWN_ORIGIN}/`)
+            ? rawHref.slice(OWN_ORIGIN.length) || "/"
+            : rawHref;
         if (href.startsWith("/") && !href.startsWith("//")) {
           const path = normalizeSitePath(href);
           internalLinks.push(path);
           const hash = href.includes("#") ? `#${href.split("#")[1]}` : "";
           return `<a href="${escapeHtml(path + hash)}"${t}>${inner}</a>`;
         }
-        if (href.startsWith("#")) return `<a href="${escapeHtml(href)}"${t}>${inner}</a>`;
+        if (href.startsWith("#")) {
+          hashLinks.push(href.slice(1));
+          return `<a href="${escapeHtml(href)}"${t}>${inner}</a>`;
+        }
+        if (!/^[a-z][a-z0-9+.-]*:/i.test(href)) relativeLinks.push(href);
         return `<a href="${escapeHtml(href)}"${t} rel="noopener">${inner}</a>`;
       },
       code({ text, lang }: Tokens.Code): string {
@@ -111,7 +142,19 @@ export function renderMarkdown(source: string, firstNum = 1): Rendered {
   });
 
   const html = marked.parse(source, { async: false });
+  // Raw HTML passes through marked, so count <h1> in the output too (a markdown h1 is counted above).
+  const rawH1 = (html.match(/<h1[\s>]/gi) ?? []).length;
   const prose = source.replace(/```[\s\S]*?```/g, " ");
   const words = prose.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length;
-  return { html, headings, internalLinks, imageAlts, words };
+  return {
+    html,
+    headings,
+    internalLinks,
+    hashLinks,
+    relativeLinks,
+    ids: bodyIds,
+    h1Count: Math.max(h1Count, rawH1),
+    imageAlts,
+    words,
+  };
 }
