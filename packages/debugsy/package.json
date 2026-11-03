@@ -51,6 +51,7 @@
     ".": {
       "types": "./index.ts",
       "default": "./index.ts"
-    }
+    },
+    "./styles": "./src/styles.css"
   }
 }

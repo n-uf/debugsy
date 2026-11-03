@@ -1,0 +1,4 @@
+/* Tailwind v4: scan debugsy's source files so consuming apps generate CSS for
+   the classes debugsy's components use. Import it after "tailwindcss":
+     @import "@n-uf/debugsy/styles"; */
+@source "./**/*.{ts,tsx}";
