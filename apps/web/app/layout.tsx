@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import type React from "react";
 import "./globals.css";
+import { SITE_URL } from "./site";
 
-const SITE_URL = "https://debugsy.dev";
 const TITLE = "debugsy — real-time React debugging panel";
+// Google shows about 155 characters of a description
 const DESCRIPTION =
-  "debugsy is a drop-in React debugging toolkit: real-time structured logs, dependency tracking, render circuit breakers, and a virtualized terminal panel. Zero impact in production.";
+  "Drop-in React debugging toolkit: real-time structured logs, dependency tracking, render circuit breakers and a terminal panel. Zero cost in production.";
 
 export const viewport: Viewport = {
   themeColor: "#07090c",

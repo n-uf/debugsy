@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "./site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,7 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
       },
     ],
-    sitemap: "https://debugsy.dev/sitemap.xml",
-    host: "https://debugsy.dev",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
