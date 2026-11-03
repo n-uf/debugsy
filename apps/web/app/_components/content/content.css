@@ -164,8 +164,23 @@
 .ct-prose ol {
   margin: 0 0 14px;
 }
+.ct-prose ul,
+.ct-takeaways ul {
+  list-style: disc;
+  padding-left: 22px;
+}
+.ct-prose ol,
+.ct-sources {
+  list-style: decimal;
+}
+.ct-prose ol {
+  padding-left: 24px;
+}
 .ct-prose li {
   margin: 4px 0;
+}
+.ct-prose li::marker {
+  color: var(--ct-muted);
 }
 .ct-prose h2,
 .ct-section-head {
@@ -468,6 +483,10 @@
   }
   .ct h1 {
     font-size: 26px;
+  }
+  /* Wide tables scroll inside their box instead of squeezing every column. */
+  .ct-prose table {
+    min-width: 600px;
   }
   .ct-cards,
   .ct-cta {
