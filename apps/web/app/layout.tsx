@@ -93,9 +93,13 @@ const STRUCTURED_DATA = {
     priceCurrency: "USD",
   },
   softwareVersion: "2.0",
+  // n-uf, who makes debugsy: the same node id on every n-uf site, so search engines see one maker
   author: {
     "@type": "Organization",
-    name: "debugsy",
+    "@id": "https://n-uf.com/#org",
+    name: "n-uf",
+    url: "https://n-uf.com",
+    sameAs: ["https://github.com/n-uf"],
   },
   featureList: [
     "Real-time structured debug logging",
