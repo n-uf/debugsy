@@ -47,12 +47,25 @@ so edits hot-reload in the app:
 LOCAL_LIB_REPOS=/opt/projects/n-uf/debugsy pnpm --dir apps/web dev
 ```
 
-## Release
+## Versions and release
 
-Add a changeset (`pnpm changeset`) to a PR. Merging to `main` versions and
-publishes `@n-uf/debugsy` (`.github/workflows/release.yml`). Vercel deploys
-the site from `main` through its GitHub connection (root `apps/web`).
+Calendar versions, `YY.M.R`, the same scheme as `@n-uf/hypr-tiling`:
+
+- `YY` the year, `M` the calendar month of the release (no leading zero),
+  `R` a counter within that month that starts at 0.
+- `pnpm release:next-version` prints the next version; `pnpm version:bump`
+  writes it to `packages/debugsy/package.json`. Prefer them over a hand-typed
+  version: `M` is always the release month, never "the last month + 1".
+- A release PR bumps the version and adds an entry to
+  `packages/debugsy/CHANGELOG.md`. Merging it to `main` publishes that version
+  to GitHub Packages and tags it `v<version>` (`.github/workflows/release.yml`);
+  merges without a bump publish nothing.
+- Never reuse a version number that was published and then removed; record it
+  in `BURNED_VERSIONS` in `packages/debugsy/scripts/calendar-version-bump.mjs`.
+
+Vercel deploys the site from `main` through its GitHub connection (root
+`apps/web`).
 
 ## Licence
 
-PolyForm Perimeter 1.0.1, see `LICENSE`.
+PolyForm Perimeter 1.0.1, the same licence as hypr-tiling; see `LICENSE`.

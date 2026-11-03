@@ -5,7 +5,9 @@ site (`apps/web`, debugsy.n-uf.com). See README.md.
   need from there; never add `./src/*` exports.
 - Inside the library, import siblings by relative path, never by the package
   name.
-- Releases: a changeset in the PR; merging to `main` publishes and deploys.
+- Versions are calendar versions `YY.M.R`, as in hypr-tiling: a release PR
+  runs `pnpm version:bump` and adds a CHANGELOG entry; merging to `main`
+  publishes that version. Never hand-type a version or reuse a burned one.
 - This repo is public. Deploys only through the Vercel Git connection to this
   repo (root `apps/web`); never `vercel deploy`. The Vercel Hobby cap (about
   100 deploys a day) is shared with all other projects: batch changes.
