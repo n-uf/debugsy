@@ -81,7 +81,7 @@ Start here. It needs no change to your code. [React's DevTools page](https://rea
 
 Two settings matter (labels as they appear in the DevTools source on GitHub, checked 2026-11-03):
 
-- In General settings, "Highlight updates when components render". It's the quickest way to see React re-renders at all: type, click or scroll, and watch which components light up.
+- In General settings, "Highlight updates when components render". It's the quickest way to see React re-renders at all: type, click or scroll, and watch which components light up. For a number instead of a flash, see how to check the [React render count](/use-cases/react-render-count) of a component.
 - In Profiler settings, "Record why each component rendered while profiling". Tick it before you record.
 
 Open the Profiler, start recording, do the slow thing once (type one character) and stop. Select the component in a recorded commit. Its details have a "Why did this render?" section with one or more of these lines:

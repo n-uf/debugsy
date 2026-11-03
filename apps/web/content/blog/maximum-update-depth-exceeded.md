@@ -158,7 +158,7 @@ function useLogChangedDeps(name, deps) {
 
 Call it as `useLogChangedDeps("Results", { filters, onChange })` inside the suspect component.
 
-A key that shows up on every render is your loop. Either it's created fresh each time, or the effect itself keeps rewriting it.
+A key that shows up on every render is your loop. Either it's created fresh each time, or the effect itself keeps rewriting it. To run this check on an effect's own dependency array, see how to [check which useEffect dependency changed](/use-cases/useeffect-which-dependency-changed).
 
 ## Causes of the loop and how to fix each
 
