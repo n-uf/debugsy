@@ -48,7 +48,7 @@ const stripTags = (s: string): string =>
 export const RESERVED_IDS = ["questions", "sources"] as const;
 
 /** The live host; a link written as a full URL on it is treated as a site path. */
-const OWN_ORIGIN = SITE_URL;
+const OWN_HOST = new URL(SITE_URL).hostname;
 
 export const slugify = (s: string): string =>
   stripTags(s)
@@ -100,11 +100,17 @@ export function renderMarkdown(source: string, firstNum = 1): Rendered {
       link({ href: rawHref, title, tokens }: Tokens.Link): string {
         const inner = this.parser.parseInline(tokens);
         const t = title ? ` title="${escapeHtml(title)}"` : "";
-        // A full URL on the live host is a site path written the long way.
-        const href =
-          rawHref === OWN_ORIGIN || rawHref.startsWith(`${OWN_ORIGIN}/`)
-            ? rawHref.slice(OWN_ORIGIN.length) || "/"
-            : rawHref;
+        // A full URL on the live host (http or https, www or not, with # or ?) is a site path
+        // written the long way: check it like one.
+        let href = rawHref;
+        if (/^https?:\/\//i.test(rawHref)) {
+          try {
+            const u = new URL(rawHref);
+            if (u.hostname.replace(/^www\./, "") === OWN_HOST) href = `${u.pathname}${u.hash}`;
+          } catch {
+            // not a URL: left as written
+          }
+        }
         if (href.startsWith("/") && !href.startsWith("//")) {
           const path = normalizeSitePath(href);
           internalLinks.push(path);
