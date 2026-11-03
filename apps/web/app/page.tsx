@@ -47,11 +47,7 @@ const STRUCTURED_DATA = {
       license: LICENSE_URL,
       codeRepository: REPO_URL,
       image: absoluteUrl("/opengraph-image"),
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-      },
+      // No `offers`: no price is published for debugsy, so the data doesn't state one (not even 0).
       author: { "@id": ORG_ID },
       publisher: { "@id": ORG_ID },
       featureList: [
