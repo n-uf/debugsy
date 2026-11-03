@@ -90,11 +90,20 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if npm view "@n-uf/debugsy@$version" version >/dev/null 2>&1; then
+          if out=$(npm view "@n-uf/debugsy@$version" version 2>&1); then
             echo "new=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::@n-uf/debugsy@$version is already published; nothing to release."
-          else
+            echo "::notice::@n-uf/debugsy@$version is already published."
+          elif echo "$out" | grep -qE 'E404|No match found|is not in this registry'; then
             echo "new=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Could not check the registry: $out"
+            exit 1
+          fi
+          # Tagged separately, so a re-run after a failed tag step still tags.
+          if [ -n "$(git ls-remote --tags origin "refs/tags/v$version")" ]; then
+            echo "tagged=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish to GitHub Packages
@@ -104,15 +113,16 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag
-        if: steps.version.outputs.new == 'true'
+        if: steps.version.outputs.tagged == 'false'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           git tag "v$VERSION"
           git push origin "v$VERSION"
 
+      # Once per version: when this run creates its tag
       - name: Notify pdf-n-uf (lib-released)
-        if: steps.version.outputs.new == 'true'
+        if: steps.version.outputs.tagged == 'false'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
