@@ -227,7 +227,7 @@ Or keep the object outside and memoize it, so it changes only when its inputs do
 const filters = useMemo(() => ({ query, limit: 20 }), [query]);
 ```
 
-The `useMemo` page says moving the value inside the effect is even better than memoizing it. Both pages also say to rely on `useMemo` and `useCallback` only as performance optimizations: if the code breaks without them, find the underlying problem first.
+The `useMemo` page says moving the value inside the effect is even better than memoizing it. Both pages also say to rely on `useMemo` and `useCallback` only as performance optimizations: if the code breaks without them, find the underlying problem first. The article on the [useEffect dependency array](/blog/useeffect-dependency-array) covers how React compares dependencies and the other ways to remove one.
 
 ### State copied from props or other state through an effect
 

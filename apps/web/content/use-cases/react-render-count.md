@@ -249,7 +249,7 @@ Some details from the code:
 How many is too many depends on the interaction. Five renders of the component that holds the input, for five characters, is expected. Five renders of a row that doesn't show the query is worth a look.
 
 - Run the same interaction each time, from a fresh load. Write the number down, change one thing, run it again, as in the table above.
-- Don't chase every number. The Render and Commit page says rendering everything nested inside an updated component isn't optimal for performance when that component is high in the tree, and also tells you not to optimize prematurely.
+- Don't chase every number. The Render and Commit page says rendering everything nested inside an updated component isn't optimal for performance when that component is high in the tree, and also tells you not to optimize prematurely. To tell an expected render from a surplus one, check the rules for [what makes React render again](/blog/when-does-react-re-render).
 - A count that keeps climbing while nobody touches the page is a loop.
 
 A count tells you where to look, not why. To see which prop, state or context did it, read how to [find what causes a re-render in React](/use-cases/why-did-this-component-render).
