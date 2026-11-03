@@ -1,0 +1,129 @@
+name: Release
+
+# One merge releases: every push to main versions the pending changesets,
+# publishes @n-uf/debugsy to GitHub Packages when its version is new, tags it
+# and notifies finfactory/pdf-n-uf. There is no "version packages" PR.
+#
+# Two jobs: `verify` is read-only; `publish` has write access and only runs
+# after `verify` passed. The registry token (NODE_AUTH_TOKEN) is exposed to the
+# install and publish steps only.
+#
+# Re-run: `publish` always checks out `main` (not the pushed SHA), so a re-run
+# after the version commit was pushed finds no pending changesets and publishes
+# whatever is still unpublished. It can also be started by hand.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, check types
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: "@n-uf"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lint, check types
+        run: pnpm turbo lint check-types
+
+  publish:
+    name: Version and publish
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      HAS_DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: "@n-uf"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Version packages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          pnpm changeset version
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore(release): version packages"
+            git push origin HEAD:main
+          else
+            echo "::notice::No pending changesets; nothing to version."
+          fi
+
+      - name: Publish to GitHub Packages
+        run: pnpm changeset publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push tags
+        run: git push origin --tags
+
+      - name: Collect released packages
+        id: released
+        run: |
+          packages=$(git tag --points-at HEAD | jq -R -s -c \
+            'split("\n") | map(select(length > 0)) | map({name: .[:rindex("@")], version: .[rindex("@")+1:]})')
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+          echo "Released: $packages"
+
+      - name: Notify pdf-n-uf (lib-released)
+        env:
+          PACKAGES: ${{ steps.released.outputs.packages }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          if [ "$PACKAGES" = "[]" ]; then
+            echo "::notice::No packages were published; nothing to dispatch."
+            exit 0
+          fi
+          if [ "$HAS_DISPATCH_TOKEN" != "true" ]; then
+            echo "::notice::DISPATCH_TOKEN secret is not set; skipping the lib-released dispatch."
+            exit 0
+          fi
+          body=$(jq -n -c --argjson packages "$PACKAGES" --arg sha "$(git rev-parse HEAD)" \
+            '{event_type: "lib-released", client_payload: {source: "n-uf/debugsy", sha: $sha, packages: $packages}}')
+          echo "$body" | gh api repos/finfactory/pdf-n-uf/dispatches --method POST --input -

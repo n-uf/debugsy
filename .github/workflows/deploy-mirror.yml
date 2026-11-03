@@ -1,0 +1,56 @@
+# One-way sync of main to the Vercel deploy mirror.
+#
+# Vercel's Hobby plan cannot deploy private repos owned by a GitHub org, so the
+# Vercel project debugsy (debugsy.n-uf.com) deploys from the personal mirror
+# dmetelin/debugsy through Vercel's GitHub connection. This repo stays
+# canonical; the mirror is a pure copy. Never commit to the mirror.
+#
+# main is mirrored once per merge, after the Release workflow finished, so the
+# deploy sees the version commit Release pushes (pushes made with the built-in
+# token do not start other workflows, hence the workflow_run trigger). If a
+# Release run is cancelled by hand after it pushed, start this workflow by hand.
+#
+# Secret DEPLOY_MIRROR_TOKEN: fine-grained PAT owned by dmetelin with repository
+# access to dmetelin/debugsy, permissions Contents: read/write and
+# Workflows: read/write (mirrored history includes .github/workflows).
+name: Deploy mirror
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mirror
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    if: >-
+      github.repository == 'n-uf/debugsy' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Push main to the deploy mirror
+        env:
+          MIRROR_TOKEN: ${{ secrets.DEPLOY_MIRROR_TOKEN }}
+        run: |
+          if [ -z "$MIRROR_TOKEN" ]; then
+            echo "::error::DEPLOY_MIRROR_TOKEN secret is not set"
+            exit 1
+          fi
+          git push --force \
+            "https://x-access-token:${MIRROR_TOKEN}@github.com/dmetelin/debugsy.git" \
+            "refs/remotes/origin/main:refs/heads/main"
+          echo "Mirrored main @ $(git rev-parse --short=8 origin/main) to dmetelin/debugsy" >> "$GITHUB_STEP_SUMMARY"
