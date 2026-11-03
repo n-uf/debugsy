@@ -16,7 +16,7 @@ const nextConfig = {
   transpilePackages: [
     "@n-uf/doodl",
     "@n-uf/doodl-react",
-    "@workspace/debugsy",
+    "@n-uf/debugsy",
     "@n-uf/harbuz",
     "@n-uf/angiospermae",
   ],

@@ -1,6 +1,6 @@
 "use client";
 
-import { DebugsyLook, getDebugsy } from "@workspace/debugsy";
+import { DebugsyLook, getDebugsy } from "@n-uf/debugsy";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import "../_lib/register-real-modules";

@@ -8,15 +8,15 @@
  * We can't depend on those packages directly (they bring konva, pdfjs,
  * yjs, supabase, etc.), so we inline byte-for-byte copies of their
  * `DebugModuleDef` objects. The `system` and `perf` modules are already
- * auto-registered by `@workspace/debugsy` on first import.
+ * auto-registered by `@n-uf/debugsy` on first import.
  *
  * Source of truth (kept in lock-step with the real package):
  *   packages/surface/src/debug/debug-module.ts
  *   packages/pdf-surface/src/debug/debug-module.ts
  */
 
-import type { DebugModuleDef } from "@workspace/debugsy";
-import { registerModule } from "@workspace/debugsy";
+import type { DebugModuleDef } from "@n-uf/debugsy";
+import { registerModule } from "@n-uf/debugsy";
 
 const SURFACE_DEBUG_MODULE: DebugModuleDef = {
   label: "Surface",

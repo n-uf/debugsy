@@ -213,14 +213,14 @@ function MainStage(): React.ReactElement {
         <CapabilityBlock num="01" label="Install + mount">
           <Tok kind="comment">// shell</Tok>
           {"\n"}
-          <Tok kind="sh">$</Tok> pnpm add @workspace/debugsy
+          <Tok kind="sh">$</Tok> pnpm add @n-uf/debugsy
           {"\n"}
           <Tok kind="comment">
             // app root — ↓ panel below = this same component
           </Tok>
           {"\n"}
           <Tok kind="kw">import</Tok> {"{ DebugsyLook }"}{" "}
-          <Tok kind="kw">from</Tok> <Tok kind="str">"@workspace/debugsy"</Tok>
+          <Tok kind="kw">from</Tok> <Tok kind="str">"@n-uf/debugsy"</Tok>
           {"\n"}
           <Tok kind="punc">{"<"}</Tok>
           <Tok kind="tag">DebugsyLook</Tok> <Tok kind="punc">/</Tok>
@@ -328,7 +328,7 @@ function MainStage(): React.ReactElement {
           <Tok kind="str">"production"</Tok>) {"{"}
           {"\n  "}
           <Tok kind="kw">await</Tok> <Tok kind="fn">import</Tok>(
-          <Tok kind="str">"@workspace/debugsy/dev"</Tok>){"\n"}
+          <Tok kind="str">"@n-uf/debugsy"</Tok>){"\n"}
           {"}"}
         </CapabilityBlock>
       </ol>
