@@ -86,39 +86,39 @@ export interface Capability {
 export const CAPABILITIES: readonly Capability[] = [
   {
     num: "01",
-    title: "Unified Log Surface",
+    title: "One log inside your app",
     summary:
-      "Single chronological stream for renders, effects, state, and network. No tab juggling between DevTools, Profiler, and Console.",
+      "Your debug messages, changed values and render-count warnings in one ordered, virtualised log, in the page you're debugging.",
   },
   {
     num: "02",
-    title: "Re-render Cause Tracing",
+    title: "Which value changed",
     summary:
-      "Pinpoints the exact prop, context, or state change that triggered each commit — down to the offending key.",
+      "useWhyDidYouUpdate compares the values you pass with the previous render and logs each key that changed, with its old and new value.",
   },
   {
     num: "03",
-    title: "Reference Instability Detection",
+    title: "Values re-created every render",
     summary:
-      "Flags inline objects, arrays, and callbacks re-created on every render before they cascade into child re-renders.",
+      "A function or object made anew on every render shows up as a \"function changed\" or \"object changed\" line, flagged FREQUENT when it keeps changing.",
   },
   {
     num: "04",
-    title: "Effect Dependency Diff",
+    title: "Render count warnings",
     summary:
-      "Before/after view of every useEffect, useMemo, and useCallback dep mutation, with shallow-equality reasoning.",
+      "useRenderTracker warns when a component passes its render or mount threshold and calls your callback. It doesn't stop renders.",
   },
   {
     num: "05",
-    title: "Render Budget Breakers",
+    title: "Debug points by module",
     summary:
-      "Auto-interrupts runaway render loops in development; configurable thresholds per module.",
+      "registerModule declares named debug points, like auth.session, each with a label and an emoji, so the log reads by area.",
   },
   {
     num: "06",
-    title: "Zero Production Cost",
+    title: "No telemetry",
     summary:
-      "Tree-shaken when NODE_ENV=production. No runtime, no bundle weight, no hooks left behind.",
+      "No network requests and nothing sent anywhere; settings stay in localStorage. Load it in development only to keep it out of production builds.",
   },
 ];
 
