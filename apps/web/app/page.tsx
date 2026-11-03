@@ -279,8 +279,10 @@ function MainStage(): React.ReactElement {
             no telemetry, no network requests. It doesn't remove itself: load
             it only in development to keep it out of production builds.
           </SpecRow>
+          {/* On desktop the rail links the sections, and the one-screen layout has no room
+              for another row above the code blocks; phones and tablets get the links here. */}
           {liveSections().length > 0 ? (
-            <SpecRow label="read">
+            <SpecRow label="read" className="lg:hidden">
               {liveSections().map((s, i) => (
                 <span key={s.path}>
                   {i > 0 ? " · " : null}
@@ -500,18 +502,24 @@ function CapabilityBlock({
 interface SpecRowProps {
   readonly label: string;
   readonly children: React.ReactNode;
+  /** Extra classes for both cells, e.g. "lg:hidden" for a row only small screens need. */
+  readonly className?: string;
 }
 
-function SpecRow({ label, children }: SpecRowProps): React.ReactElement {
+function SpecRow({
+  label,
+  children,
+  className = "",
+}: SpecRowProps): React.ReactElement {
   return (
     <>
       <dt
-        className="text-right text-[10px] uppercase tracking-[0.2em]"
+        className={`text-right text-[10px] uppercase tracking-[0.2em] ${className}`}
         style={{ color: "rgb(var(--color-chrome-text-muted))" }}
       >
         {label}
       </dt>
-      <dd className="m-0">{children}</dd>
+      <dd className={`m-0 ${className}`}>{children}</dd>
     </>
   );
 }
