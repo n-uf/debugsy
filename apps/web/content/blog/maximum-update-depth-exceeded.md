@@ -5,7 +5,7 @@ h1: "Fix the \"Maximum update depth exceeded\" error in React"
 mainKeyword: "maximum update depth exceeded react"
 kind: how-to
 published: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-05
 author: n-uf
 takeaways:
   - "React counts nested state updates. In its v19.3.1 source the limit is 50: past it, React throws (Minified React error #185 in production) or, for useEffect in development, logs a console error and lets the loop run on."
@@ -339,6 +339,7 @@ import { useRenderTracker, useWhyDidYouUpdate } from "@n-uf/debugsy";
 function Results({ filters, onChange }) {
   useWhyDidYouUpdate("Results", { filters, onChange });
   useRenderTracker("Results", {
+    trackRenders: true, // needed with the options form in 26.11
     renderThreshold: 20,
     onExcessiveRenders: (info) => {
       console.warn("Results render alert", info.renderCount, info.timeElapsed);
