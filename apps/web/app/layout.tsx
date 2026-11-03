@@ -1,7 +1,22 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import type React from "react";
 import "./globals.css";
 import { SITE_URL } from "./site";
+
+// Self-hosted at build time (no request to Google Fonts from the page).
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 const TITLE = "debugsy — real-time React debugging panel";
 // Google shows about 155 characters of a description
@@ -118,7 +133,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>): React.ReactElement {
   return (
-    <html lang="en" data-theme="ocean" className="lg:h-full">
+    <html
+      lang="en"
+      data-theme="ocean"
+      className={`${inter.variable} ${jetbrains.variable} lg:h-full`}
+    >
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script
