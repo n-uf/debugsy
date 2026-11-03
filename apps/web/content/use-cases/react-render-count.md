@@ -270,6 +270,8 @@ Two other tools look at the whole tree without a hook in each component:
 - React Render Tracker. Its README describes a tool for finding performance issues related to unintended re-renders, showing the component tree over time with each component's number of updates (re-renders). It supports React 16.9 and later: fully functional on a development build, missing some data on profiling and production builds. It calls itself a complement to React DevTools, not a replacement.
 - React Scan. Its README says it detects performance issues with no code changes and puts a toolbar on the page. Its `log` option, off by default, logs renders to the console. You start it with `npx -y react-scan@latest init` or a script tag. The README also says you can still use React Scan, but recommends React Doctor.
 
+Both tools, and the rest of the toolbox from breakpoints to network panels, are sorted by job in [this overview of debugging tools](/blog/react-debugging-tools).
+
 They make more sense when you don't know yet which component to count, or don't want to edit components. A ref counter or debugsy makes more sense once you know which components matter and want the number in your own code or log.
 
 debugsy is independent. It isn't affiliated with Meta, the React team or the authors of React Render Tracker and React Scan.

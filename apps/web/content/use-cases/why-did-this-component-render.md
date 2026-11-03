@@ -257,7 +257,7 @@ const ShippingForm = memo(function ShippingForm({ onSubmit }: Props) {
 | React | Not stated on react.dev's DevTools page | Latest version tested with React 19 only; React 18 uses its v8 readme, 16 and 17 v7 | Whatever your app runs | 19 |
 | In production | Nothing in your code | README says never | Stays until deleted | Not removed for you: guard it |
 
-The why-did-you-render cells come from its README, checked 2026-11-03.
+The why-did-you-render cells come from its README, checked 2026-11-03. Its setup in Next.js and Vite, and two more tools, React Scan and React Render Tracker, are in [why-did-you-render alternatives](/blog/why-did-you-render-alternative).
 
 Use DevTools first when you don't know what's causing a React component to re-render. It needs no code change and covers the whole tree. why-did-you-render makes more sense when you want every `memo` or pure component watched without a hook call in each one (its README describes `trackAllPureComponents` for that), or when you're on React Native, which its README says it supports and debugsy doesn't. A hand-written hook is enough for a one-off. debugsy fits when the cause comes and goes, you want it in the same ordered log as your own debug messages, and you don't mind a hook call in each component you care about.
 
