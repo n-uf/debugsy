@@ -1,11 +1,11 @@
 {
   "name": "@n-uf/debugsy",
-  "version": "0.2.0",
+  "version": "26.11.0",
   "description": "In-process React debugging panel: structured logs, render and dependency tracking, module LEDs, and a virtualised log view.",
   "license": "LicenseRef-PolyForm-Perimeter-1.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/n-uf/debugsy.git",
+    "url": "git+https://github.com/n-uf/debugsy.git",
     "directory": "packages/debugsy"
   },
   "homepage": "https://debugsy.n-uf.com",
@@ -18,11 +18,14 @@
     "index.ts",
     "src",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "release:next-version": "node ./scripts/calendar-version-bump.mjs --dry-run",
+    "version:bump": "node ./scripts/calendar-version-bump.mjs --apply"
   },
   "dependencies": {
     "@n-uf/harbuz": "^0.6.0",
