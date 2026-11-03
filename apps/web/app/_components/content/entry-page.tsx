@@ -30,7 +30,7 @@ export function entryMetadata(e: Entry): Metadata {
 }
 
 function relatedCard(p: string): { label: string; title: string } {
-  if (p === "/") return { label: "home", title: "debugsy, the React debug panel" };
+  if (p === "/") return { label: "home", title: "What debugsy is and how to set it up" };
   const section = Object.values(SECTIONS).find((s) => s.path === p);
   if (section) return { label: section.label, title: section.h1 };
   const e = findByPath(p);
@@ -110,7 +110,7 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
             </pre>
           </div>
           <Link className="ct-cta-link" href="/">
-            the React debug panel
+            install debugsy
           </Link>
         </aside>
 

@@ -15,6 +15,6 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   return shareCard({
     label: SECTIONS["use-cases"].label,
     title: e?.h1 ?? SECTIONS["use-cases"].h1,
-    foot: `debugsy.n-uf.com${SECTIONS["use-cases"].path}`,
+    foot: `debugsy.n-uf.com${e?.path ?? SECTIONS["use-cases"].path}`,
   });
 }
