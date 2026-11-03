@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/logo-light.svg">
+    <img alt="debugsy by n-uf" src="docs/logo-light.svg" height="60">
+  </picture>
+</p>
+
 # debugsy
 
 In-process React debugging panel: structured logs, render and dependency
