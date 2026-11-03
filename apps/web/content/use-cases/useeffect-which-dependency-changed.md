@@ -242,6 +242,8 @@ The parent can pass `setRows` itself, which the `useState` page says has a stabl
 
 The `useEffect` page keeps `useMemo` and `useCallback` (for functions) as a last resort, for when the other fixes don't help. The `useMemo` page adds that React may throw away a cached value, which would re-fire the effect, and that it's better to move the object inside the effect. For a callback the effect only calls and shouldn't react to, `useEffectEvent` lets the effect read the latest function without depending on it. Its page says to use it only for logic that is genuinely an event fired from Effects, not to avoid listing dependencies.
 
+How React compares the array, and what the lint rule checks, is covered in [how the dependency array works](/blog/useeffect-dependency-array).
+
 The page on [why a component re-rendered](/use-cases/why-did-this-component-render) shows the same fixes from the prop side. If the effect sets state straight away, an unstable dependency turns into the loop described in the article on [maximum update depth exceeded](/blog/maximum-update-depth-exceeded).
 
 ## Does useEffect deep-compare its dependencies?

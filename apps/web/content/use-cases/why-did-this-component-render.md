@@ -187,7 +187,7 @@ The hook sees only the components where you call it and only the values you pass
 
 ## What the usual culprits look like, and the fix for each
 
-Most of them come back to one fact: a new object or function is never equal to the old one under `Object.is`, even with the same contents.
+Most of them come back to one fact: a new object or function is never equal to the old one under `Object.is`, even with the same contents. The rules behind each case, including what `memo` and context change, are in [when does React re-render a component](/blog/when-does-react-re-render).
 
 ### A function created in render
 
