@@ -9,11 +9,12 @@ export function GET(): Response {
   const lines: string[] = [
     "# debugsy",
     "",
-    "> debugsy is an in-process React debugging panel by n-uf: a React component you mount inside your own app. It shows one ordered log of your structured debug messages, the values that changed between renders and render-count warnings.",
+    "> debugsy is an in-process React debugging panel by n-uf: a React component you mount inside your own app. It shows one ordered log of your structured debug messages, the changed values you track between renders and render-count warnings.",
     "",
     `- Package: \`@n-uf/debugsy\` ${LIB_VERSION} on GitHub Packages (\`.npmrc\`: \`@n-uf:registry=https://npm.pkg.github.com\`, then \`pnpm add @n-uf/debugsy\`; GitHub Packages asks for a token with read:packages).`,
     "- Needs React 19 and react-dom 19 (peer dependencies, plus react18-json-view). It ships TypeScript source; Next.js apps add it to transpilePackages.",
     "- Main API: `<DebugsyLook />` (the panel), `useDebugsy()` / `dsy` / `window.debugsy` (logging), `registerModule()` (debug points), `useWhyDidYouUpdate()` (which values changed between renders), `useRenderTracker()` (render and mount count warnings).",
+    '- `useWhyDidYouUpdate()` and `useRenderTracker()` log nothing until the dependencies debug point is on: the panel\'s Deps toggle, or `window.debugsy.enable("dependencies")` in the console.',
     "- It warns; it doesn't stop render loops. It makes no network requests. It doesn't remove itself from production builds: guard the import.",
     `- Licence: ${LICENSE_NAME}. Source: ${REPO_URL}`,
     "",

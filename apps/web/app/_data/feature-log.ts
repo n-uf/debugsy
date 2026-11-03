@@ -94,19 +94,19 @@ export const CAPABILITIES: readonly Capability[] = [
     num: "02",
     title: "Which value changed",
     summary:
-      "useWhyDidYouUpdate compares the values you pass with the previous render and logs each key that changed, with its old and new value.",
+      "With Deps switched on, useWhyDidYouUpdate compares the values you pass with the previous render and logs each key that changed, with its old and new value.",
   },
   {
     num: "03",
     title: "Values re-created every render",
     summary:
-      "A function or object made anew on every render shows up as a \"function changed\" or \"object changed\" line, flagged FREQUENT when it keeps changing.",
+      "A function or object made anew on every render shows up as a \"function changed\" or \"object changed\" line with a running count, flagged FREQUENT once it keeps changing after start-up.",
   },
   {
     num: "04",
     title: "Render count warnings",
     summary:
-      "useRenderTracker warns when a component passes its render or mount threshold and calls your callback. It doesn't stop renders.",
+      "With Deps on, useRenderTracker warns when a component reaches its render or mount threshold and calls your callback. It doesn't stop renders.",
   },
   {
     num: "05",
