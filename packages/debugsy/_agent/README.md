@@ -23,14 +23,14 @@
 ### Installation
 
 ```bash
-pnpm add @workspace/debugsy
+pnpm add @n-uf/debugsy
 ```
 
 ### Basic Setup
 
 ```typescript
 // App.tsx
-import { DebugsyLook } from '@workspace/debugsy';
+import { DebugsyLook } from '@n-uf/debugsy';
 
 function App() {
   return (
@@ -45,7 +45,7 @@ function App() {
 ### Component Usage
 
 ```typescript
-import { useDebugsy, useWhyDidYouUpdate } from '@workspace/debugsy';
+import { useDebugsy, useWhyDidYouUpdate } from '@n-uf/debugsy';
 
 const MyComponent = ({ data, onSave }) => {
   const { log } = useDebugsy('surface-interaction');
@@ -112,7 +112,7 @@ debugsy.toggle("surface-interaction");
 
 ```javascript
 // Use hooks in components
-import { useWhyDidYouUpdate, useRenderTracker } from '@workspace/debugsy';
+import { useWhyDidYouUpdate, useRenderTracker } from '@n-uf/debugsy';
 
 useWhyDidYouUpdate('Component', props);
 useRenderTracker('Component', props);

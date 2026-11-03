@@ -1,7 +1,25 @@
 {
-  "name": "@workspace/debugsy",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@n-uf/debugsy",
+  "version": "0.1.0",
+  "description": "In-process React debugging panel: structured logs, render and dependency tracking, module LEDs, and a virtualised log view.",
+  "license": "LicenseRef-PolyForm-Perimeter-1.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/n-uf/debugsy.git",
+    "directory": "packages/debugsy"
+  },
+  "homepage": "https://debugsy.n-uf.com",
+  "type": "module",
+  "sideEffects": true,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit"
@@ -9,7 +27,6 @@
   "dependencies": {
     "@n-uf/harbuz": "^0.6.0",
     "@uidotdev/usehooks": "^2.4.1",
-    "@workspace/shadcn": "workspace:*",
     "react-window": "^2.2.7",
     "react-window-infinite-loader": "^2.0.1",
     "superjson": "^2.2.6"
@@ -34,22 +51,6 @@
     ".": {
       "types": "./index.ts",
       "default": "./index.ts"
-    },
-    "./src/*": {
-      "types": "./src/*.ts",
-      "default": "./src/*.ts"
-    },
-    "./src/components/*": {
-      "types": "./src/components/*.tsx",
-      "default": "./src/components/*.tsx"
-    },
-    "./src/hooks/*": {
-      "types": "./src/hooks/*.ts",
-      "default": "./src/hooks/*.ts"
-    },
-    "./src/utils/*": {
-      "types": "./src/utils/*.ts",
-      "default": "./src/utils/*.ts"
     }
   }
 }

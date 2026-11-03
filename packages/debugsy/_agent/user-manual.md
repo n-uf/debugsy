@@ -43,17 +43,17 @@ Debugsy is a comprehensive React debugging toolkit that provides:
 ### **Installation**
 
 ```bash
-npm install @workspace/debugsy
+npm install @n-uf/debugsy
 # or
-pnpm add @workspace/debugsy
+pnpm add @n-uf/debugsy
 ```
 
 ### **Basic Setup**
 
 ```typescript
 // App.tsx
-import { DebugsyLook } from '@workspace/debugsy';
-import { useDebugsy } from '@workspace/debugsy';
+import { DebugsyLook } from '@n-uf/debugsy';
+import { useDebugsy } from '@n-uf/debugsy';
 
 function App() {
   return (
@@ -85,7 +85,7 @@ NEXT_PUBLIC_SURFACE_DEBUG = all;
 ### **1. Add Debug Logging to Components**
 
 ```typescript
-import { useDebugsy } from '@workspace/debugsy';
+import { useDebugsy } from '@n-uf/debugsy';
 
 const MyComponent = ({ user, onSave }) => {
   const { log, isEnabled } = useDebugsy('surface-interaction');
@@ -112,7 +112,7 @@ const MyComponent = ({ user, onSave }) => {
 ### **2. Track Dependency Changes**
 
 ```typescript
-import { useWhyDidYouUpdate, useRenderTracker } from '@workspace/debugsy';
+import { useWhyDidYouUpdate, useRenderTracker } from '@n-uf/debugsy';
 
 const ProblematicComponent = ({ data, callback, config }) => {
   // Track what props are causing re-renders
@@ -151,7 +151,7 @@ debugsy.captureHealthSnapshot(); // Get health report
 Main control interface for debug features.
 
 ```typescript
-import { DebugControlPanel } from '@workspace/debugsy';
+import { DebugControlPanel } from '@n-uf/debugsy';
 
 <DebugControlPanel
   onToggleExternalPanel={() => setShowPanel(!showPanel)}
@@ -173,7 +173,7 @@ import { DebugControlPanel } from '@workspace/debugsy';
 Full-featured debug panel with logs, filtering, and analysis.
 
 ```typescript
-import { DebugExternalPanel } from '@workspace/debugsy';
+import { DebugExternalPanel } from '@n-uf/debugsy';
 
 <DebugExternalPanel
   onClose={() => setShowPanel(false)}
@@ -196,7 +196,7 @@ import { DebugExternalPanel } from '@workspace/debugsy';
 Standalone log list component for custom implementations.
 
 ```typescript
-import { DebugLogsList } from '@workspace/debugsy';
+import { DebugLogsList } from '@n-uf/debugsy';
 
 const CustomDebugView = () => {
   const { logs } = useDebugState();
@@ -742,7 +742,7 @@ const HotComponent = (props) => {
 Monitor render patterns to detect excessive re-renders.
 
 ```typescript
-import { useRenderTracker } from "@workspace/debugsy";
+import { useRenderTracker } from "@n-uf/debugsy";
 
 // Add to component
 useRenderTracker("MyComponent", props, {
@@ -770,7 +770,7 @@ __DEBUGSY_EMERGENCY_STOP.status(); // Check current status
 Wrap potentially problematic hooks with automatic failure handling.
 
 ```typescript
-import { useSafeHook } from '@workspace/debugsy';
+import { useSafeHook } from '@n-uf/debugsy';
 
 const MyComponent = () => {
   // Wrap a hook that might cause issues
@@ -809,7 +809,7 @@ interface DebugLogEntry {
 Register custom formatters for specific log types:
 
 ```typescript
-import { registerFormatter } from '@workspace/debugsy';
+import { registerFormatter } from '@n-uf/debugsy';
 
 // Register a custom formatter for API calls
 registerFormatter('api-call', {
@@ -849,7 +849,7 @@ registerFormatter('api-call', {
 ### **Export & Sharing**
 
 ```typescript
-import { copyLogsToClipboard } from "@workspace/debugsy";
+import { copyLogsToClipboard } from "@n-uf/debugsy";
 
 // Copy logs to clipboard for sharing
 const exportLogs = async (logs) => {
@@ -870,7 +870,7 @@ const exportLogs = async (logs) => {
 
 ```typescript
 // Use hooks in components
-import { useWhyDidYouUpdate, useRenderTracker } from '@workspace/debugsy';
+import { useWhyDidYouUpdate, useRenderTracker } from '@n-uf/debugsy';
 
 // Track dependency changes
 useWhyDidYouUpdate('ComponentName', props);
@@ -936,7 +936,7 @@ debugsy.status.show();
 ### **Health Monitoring**
 
 ```typescript
-import { useHealthSnapshot, captureHealthSnapshot } from '@workspace/debugsy';
+import { useHealthSnapshot, captureHealthSnapshot } from '@n-uf/debugsy';
 
 const HealthMonitor = () => {
   const healthData = useHealthSnapshot();
@@ -959,7 +959,7 @@ const HealthMonitor = () => {
 ### **Data Sanitization**
 
 ```typescript
-import { sanitizeLogData, SANITIZATION_PRESETS } from "@workspace/debugsy";
+import { sanitizeLogData, SANITIZATION_PRESETS } from "@n-uf/debugsy";
 
 // Sanitize sensitive data before logging
 const sanitizedData = sanitizeLogData(userData, SANITIZATION_PRESETS.STRICT);
@@ -1089,7 +1089,7 @@ const PerformantComponent = (props) => {
 
 ```typescript
 // Ensure debugsy is imported in your app root
-import "@workspace/debugsy"; // This initializes the global system
+import "@n-uf/debugsy"; // This initializes the global system
 ```
 
 **Error**: `Module not found: debug-deps`
@@ -1098,7 +1098,7 @@ import "@workspace/debugsy"; // This initializes the global system
 
 ```typescript
 // ✅ Correct
-import { useWhyDidYouUpdate } from "@workspace/debugsy";
+import { useWhyDidYouUpdate } from "@n-uf/debugsy";
 
 // ❌ Incorrect
 import { useWhyDidYouUpdate } from "@your-org/debugsy/debug-deps";

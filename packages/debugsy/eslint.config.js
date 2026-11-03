@@ -15,6 +15,7 @@ export default [
       "react-hooks/refs": "off",
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/set-state-in-effect": "off",
       "prefer-const": "off",
       "no-prototype-builtins": "off",
       "react-hooks/rules-of-hooks": "off",

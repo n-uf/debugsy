@@ -1,6 +1,6 @@
 "use client";
 
-import { useRenderTracker, useWhyDidYouUpdate } from "@workspace/debugsy";
+import { useRenderTracker, useWhyDidYouUpdate } from "../debugsy-deps";
 import React from "react";
 import {
   clearDebugDisplayContent,

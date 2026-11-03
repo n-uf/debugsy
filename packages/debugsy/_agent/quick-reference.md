@@ -68,7 +68,7 @@ useRenderTracker("MyComponent", props, {
 
 ```typescript
 // App.tsx
-import { DebugsyLook } from '@workspace/debugsy';
+import { DebugsyLook } from '@n-uf/debugsy';
 
 function App() {
   return (
@@ -83,7 +83,7 @@ function App() {
 ### **Component with Debug Logging**
 
 ```typescript
-import { useDebugsy, useWhyDidYouUpdate } from '@workspace/debugsy';
+import { useDebugsy, useWhyDidYouUpdate } from '@n-uf/debugsy';
 
 const MyComponent = ({ data, onSave, config }) => {
   const { log } = useDebugsy('surface-interaction');
@@ -204,7 +204,7 @@ import {
   useDebugsy,
   useWhyDidYouUpdate,
   useRenderTracker,
-} from "@workspace/debugsy";
+} from "@n-uf/debugsy";
 
 // Components
 import {
@@ -212,14 +212,14 @@ import {
   DebugsyLookV1,
   DebugsyLookV2,
   DebugLogsList,
-} from "@workspace/debugsy";
+} from "@n-uf/debugsy";
 
 // Utilities
 import {
   registerFormatter,
   sanitizeLogData,
   captureHealthSnapshot,
-} from "@workspace/debugsy";
+} from "@n-uf/debugsy";
 
 // Types
 import type {
@@ -227,7 +227,7 @@ import type {
   LogLevel,
   DebugPoint,
   FormatterConfig,
-} from "@workspace/debugsy";
+} from "@n-uf/debugsy";
 ```
 
 ---
@@ -245,8 +245,8 @@ import type {
 | No dependency logs                  | `debugsy.test.dependency()`                               |
 | Too much noise                      | `debugsy.disableAll()` then enable specific points        |
 | Performance issues                  | `__DEBUGSY_EMERGENCY_STOP.activate()`                     |
-| Module not found                    | Check import path: `@workspace/debugsy`                   |
-| Global undefined                    | Import `@workspace/debugsy` in app root                   |
+| Module not found                    | Check import path: `@n-uf/debugsy`                   |
+| Global undefined                    | Import `@n-uf/debugsy` in app root                   |
 
 ---
 

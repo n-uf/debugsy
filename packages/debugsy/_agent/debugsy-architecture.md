@@ -527,7 +527,7 @@ debugsy.getUIVersion(); // Get current version
 
 ```typescript
 // App.tsx
-import { DebugControlPanel } from '@workspace/debugsy';
+import { DebugControlPanel } from '@n-uf/debugsy';
 
 function App() {
   return (
@@ -546,7 +546,7 @@ function App() {
 ### Component Integration
 
 ```typescript
-import { useDebugsy, useWhyDidYouUpdate } from '@workspace/debugsy';
+import { useDebugsy, useWhyDidYouUpdate } from '@n-uf/debugsy';
 
 const MyComponent = ({ data, onSave, config }) => {
   // Debug logging
@@ -567,7 +567,7 @@ const MyComponent = ({ data, onSave, config }) => {
 ### Render Monitoring
 
 ```typescript
-import { useRenderTracker, useWhyDidYouUpdate } from '@workspace/debugsy';
+import { useRenderTracker, useWhyDidYouUpdate } from '@n-uf/debugsy';
 
 const MonitoredComponent = (props) => {
   // Track render patterns
@@ -725,7 +725,7 @@ debugsy.status.show(); // Check current state
 ```
 
 **Verify:**
-- Import `@workspace/debugsy` in app root
+- Import `@n-uf/debugsy` in app root
 - Run in development mode
 - Check console for dependency logs
 - Use `useWhyDidYouUpdate` in components

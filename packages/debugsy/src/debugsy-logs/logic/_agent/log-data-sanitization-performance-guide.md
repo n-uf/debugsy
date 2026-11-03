@@ -116,7 +116,7 @@ const PERFORMANCE_BUDGET = {
 ### **Real-Time Performance Statistics**
 
 ```typescript
-import { getSanitizationPerformanceStats } from "@workspace/debugsy";
+import { getSanitizationPerformanceStats } from "@n-uf/debugsy";
 
 // Get comprehensive performance data
 const stats = getSanitizationPerformanceStats();
@@ -154,7 +154,7 @@ setInterval(() => {
 ### **Performance Testing & Benchmarking**
 
 ```typescript
-import { resetSanitizationPerformanceStats } from "@workspace/debugsy";
+import { resetSanitizationPerformanceStats } from "@n-uf/debugsy";
 
 // Reset stats for clean testing
 resetSanitizationPerformanceStats();

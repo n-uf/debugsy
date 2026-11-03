@@ -46,7 +46,7 @@ debug-deps/
 ### Basic Usage
 
 ```typescript
-import { useWhyDidYouUpdate, useRenderTracker } from "@workspace/debugsy";
+import { useWhyDidYouUpdate, useRenderTracker } from "@n-uf/debugsy";
 
 // Track dependency changes
 function MyComponent(props) {
@@ -64,7 +64,7 @@ function HighFreqComponent(props) {
 ### Advanced Configuration
 
 ```typescript
-import { getDependencyState, shouldLogDependency } from "@workspace/debugsy";
+import { getDependencyState, shouldLogDependency } from "@n-uf/debugsy";
 
 // Check current dependency tracking state
 const state = getDependencyState();

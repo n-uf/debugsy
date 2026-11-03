@@ -88,21 +88,13 @@ import {
   useDebug,
   useWhyDidYouUpdate,
   DebugControlPanel,
-} from "@workspace/debugsy";
+} from "@n-uf/debugsy";
 ```
 
-### Module-Specific Imports
+### One entry point
 
-```typescript
-// Shared core
-import { initializeUnifiedDebugSystem } from "@workspace/debugsy/src/shared";
-
-// Dependency tracking
-import { useCircuitBreakerTracker } from "@workspace/debugsy/src/debug-deps";
-
-// Logging
-import { useDebug } from "@workspace/debugsy/src/debug-logs";
-```
+The package exposes only its root: everything public is re-exported from
+`@n-uf/debugsy`. The folders under `src/` are internal.
 
 ### Global Usage
 
