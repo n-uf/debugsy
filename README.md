@@ -50,8 +50,8 @@ LOCAL_LIB_REPOS=/opt/projects/n-uf/debugsy pnpm --dir apps/web dev
 ## Release
 
 Add a changeset (`pnpm changeset`) to a PR. Merging to `main` versions and
-publishes `@n-uf/debugsy` (`.github/workflows/release.yml`), then mirrors
-`main` to `dmetelin/debugsy`, which Vercel deploys (`deploy-mirror.yml`).
+publishes `@n-uf/debugsy` (`.github/workflows/release.yml`). Vercel deploys
+the site from `main` through its GitHub connection (root `apps/web`).
 
 ## Licence
 
