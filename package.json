@@ -1,0 +1,28 @@
+{
+  "name": "debugsy",
+  "version": "0.0.0",
+  "private": true,
+  "description": "debugsy: in-process React debugging panel (library and showcase site)",
+  "license": "LicenseRef-PolyForm-Perimeter-1.0.1",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "pnpm --filter web dev",
+    "lint": "turbo lint",
+    "check-types": "turbo check-types",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.30.0",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.39.2",
+    "turbo": "^2.8.19",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=22"
+  }
+}

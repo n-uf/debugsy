@@ -1,0 +1,14 @@
+node_modules
+dist
+storybook-static
+.turbo
+*.tsbuildinfo
+coverage
+.DS_Store
+.env
+.env.*
+.envrc.local
+.claude/worktrees/
+.next
+next-env.d.ts
+.vercel
