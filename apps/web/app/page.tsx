@@ -253,32 +253,31 @@ function MainStage(): React.ReactElement {
         <CapabilityBlock num="02" label="Logs config">
           <Tok kind="fn">registerModule</Tok>(<Tok kind="str">"auth"</Tok>,
           {" {"}
-          {"\n  label:       "}
+          {"\n  label: "}
           <Tok kind="str">"Auth"</Tok>
-          {","}
-          {"\n  emoji:       "}
+          {", emoji: "}
           <Tok kind="str">"🔐"</Tok>
           {","}
           {"\n  description: "}
-          <Tok kind="str">"session · login · refresh"</Tok>
+          <Tok kind="str">"session · refresh"</Tok>
           {","}
-          {"\n  "}
-          <Tok kind="comment">{"// each key → debug point: auth.<key>"}</Tok>
-          {"\n  points: {"}
+          {"\n  points: { "}
+          <Tok kind="comment">{"// each key is a debug point"}</Tok>
           {"\n    session: { emoji: "}
           <Tok kind="str">"🔑"</Tok>
           {", label: "}
           <Tok kind="str">"Session"</Tok>
+          {","}
+          {"\n               description: "}
+          <Tok kind="str">"token state"</Tok>
           {" },"}
-          {"\n    login:   { emoji: "}
-          <Tok kind="str">"→"</Tok>
-          {",  label: "}
-          <Tok kind="str">"Login"</Tok>
-          {"   },"}
           {"\n    refresh: { emoji: "}
           <Tok kind="str">"↻"</Tok>
-          {",  label: "}
+          {", label: "}
           <Tok kind="str">"Refresh"</Tok>
+          {","}
+          {"\n               description: "}
+          <Tok kind="str">"token renewal"</Tok>
           {" },"}
           {"\n  },"}
           {"\n})"}
@@ -286,7 +285,7 @@ function MainStage(): React.ReactElement {
 
         <CapabilityBlock num="03" label="Logging">
           <Tok kind="comment">
-            // (point, message, data?, tags?){"\n"}
+            // (point, message, data?, …) by point key{"\n"}
             // .log .warn .error .critical, .time / .timeEnd
           </Tok>
           {"\n"}
@@ -294,22 +293,22 @@ function MainStage(): React.ReactElement {
           {"\n"}
           <Tok kind="kw">const</Tok> debug = <Tok kind="fn">useDebugsy</Tok>()
           {"\n"}
-          debug.<Tok kind="fn">log</Tok>(<Tok kind="str">"rt.conn"</Tok>,{" "}
-          <Tok kind="str">"synced"</Tok>, {"{ roomId }"}){"\n"}
+          debug.<Tok kind="fn">log</Tok>(<Tok kind="str">"session"</Tok>,{" "}
+          <Tok kind="str">"synced"</Tok>, {"{ userId }"}){"\n"}
           <Tok kind="comment">// const · eager, anywhere</Tok>
           {"\n"}
           <Tok kind="fn">dsy</Tok>.<Tok kind="fn">warn</Tok>(
-          <Tok kind="str">"auth.session"</Tok>, <Tok kind="str">"expired"</Tok>,{" "}
+          <Tok kind="str">"session"</Tok>, <Tok kind="str">"expired"</Tok>,{" "}
           {"{ ttl }"}){"\n"}
           <Tok kind="comment">// fn · lazy, anywhere</Tok>
           {"\n"}
           <Tok kind="fn">getDebugsy</Tok>().<Tok kind="fn">error</Tok>(
-          <Tok kind="str">"api.fetch"</Tok>, <Tok kind="str">"5xx"</Tok>, err)
+          <Tok kind="str">"refresh"</Tok>, <Tok kind="str">"5xx"</Tok>, err)
           {"\n"}
           <Tok kind="comment">// global · browser console</Tok>
           {"\n"}
           window.<Tok kind="fn">debugsy</Tok>.<Tok kind="fn">critical</Tok>(
-          <Tok kind="str">"auth.refresh"</Tok>, <Tok kind="str">"failed"</Tok>)
+          <Tok kind="str">"refresh"</Tok>, <Tok kind="str">"failed"</Tok>)
         </CapabilityBlock>
 
         <CapabilityBlock num="04" label="Which value changed">
@@ -324,18 +323,18 @@ function MainStage(): React.ReactElement {
 
         <CapabilityBlock num="05" label="Render count warnings">
           <Tok kind="comment">
-            // counts renders and mounts; at a threshold it logs{"\n"}
-            // a warning and calls you back; it won't stop renders.
+            // counts renders; at the threshold it logs a{"\n"}
+            // warning and calls you back; it won't stop renders.
           </Tok>
           {"\n"}
           <Tok kind="fn">useRenderTracker</Tok>(<Tok kind="str">"Modal"</Tok>,{" "}
           {"{"}
+          {"\n  "}trackRenders: true,{"    "}
+          <Tok kind="comment">{"// needed in 26.11"}</Tok>
           {"\n  "}renderThreshold: 10,{"   "}
           <Tok kind="comment">{"// default"}</Tok>
-          {"\n  "}mountThreshold:{"  "}3,{"    "}
-          <Tok kind="comment">{"// default"}</Tok>
           {"\n  "}onExcessiveRenders: (info) =&gt; debug.
-          <Tok kind="fn">warn</Tok>(<Tok kind="str">"render.rate"</Tok>,{" "}
+          <Tok kind="fn">warn</Tok>(<Tok kind="str">"performance"</Tok>,{" "}
           <Tok kind="str">"hot"</Tok>, info),
           {"\n"}
           {"})"}
