@@ -9,6 +9,9 @@
    visual contract for every harbuz / debugsy component. */
 @import "@n-uf/harbuz/styles";
 
+/* debugsy's own Tailwind sources (the classes its components use). */
+@import "@n-uf/debugsy/styles";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
