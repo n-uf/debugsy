@@ -47,7 +47,7 @@ export const SECTIONS: Readonly<Record<Section, SectionInfo>> = {
     title: "React debugging use cases",
     h1: "What you can debug with debugsy",
     description:
-      "Use cases for debugsy, the in-app React debug panel: each page takes one debugging job, like finding why a component re-rendered, step by step.",
+      "Use cases for debugsy, an in-app React debugging panel: each page takes one job, like finding why a component re-rendered, step by step.",
     label: "use case",
     kinds: ["use-case"],
   },

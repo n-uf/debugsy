@@ -101,7 +101,10 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
 
         <aside className="ct-cta" aria-label="install debugsy">
           <div>
-            <p>debugsy shows these changes in a panel inside your own app.</p>
+            <p>
+              debugsy runs inside your own app and logs the values you pass to its hooks. It
+              installs from GitHub Packages, which asks for a token with read:packages.
+            </p>
             <pre>
               <code>pnpm add @n-uf/debugsy</code>
             </pre>

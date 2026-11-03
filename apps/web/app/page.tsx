@@ -265,7 +265,7 @@ function MainStage(): React.ReactElement {
           </SpecRow>
           <SpecRow label="traces">
             which value changed since the last render, key by key, for the
-            values you hand to <code>useWhyDidYouUpdate</code>.
+            values you hand to <code>useWhyDidYouUpdate</code> (Deps on).
           </SpecRow>
           <SpecRow label="reads as">
             one ordered log: your debug points, changed values and render-count
@@ -353,8 +353,8 @@ function MainStage(): React.ReactElement {
 
         <CapabilityBlock num="03" label="Logging">
           <Tok kind="comment">
-            // (point, message, data?, tags?) · .log .warn .error .critical ·
-            .time / .timeEnd
+            // (point, message, data?, tags?){"\n"}
+            // .log .warn .error .critical, .time / .timeEnd
           </Tok>
           {"\n"}
           <Tok kind="comment">// hook · stable, in components</Tok>
@@ -376,13 +376,13 @@ function MainStage(): React.ReactElement {
           <Tok kind="comment">// global · browser console</Tok>
           {"\n"}
           window.<Tok kind="fn">debugsy</Tok>.<Tok kind="fn">critical</Tok>(
-          <Tok kind="str">"render.loop"</Tok>, <Tok kind="str">"runaway"</Tok>)
+          <Tok kind="str">"auth.refresh"</Tok>, <Tok kind="str">"failed"</Tok>)
         </CapabilityBlock>
 
-        <CapabilityBlock num="04" label="Re-render cause tracing">
+        <CapabilityBlock num="04" label="Which value changed">
           <Tok kind="comment">
-            // compares each value with the last render{"\n"}
-            // and logs the keys that changed (Deps on).
+            // compares each value you pass with the last{"\n"}
+            // render and logs the keys that changed (Deps on).
           </Tok>
           {"\n"}
           <Tok kind="fn">useWhyDidYouUpdate</Tok>(<Tok kind="str">"Form"</Tok>,{" "}
@@ -392,7 +392,7 @@ function MainStage(): React.ReactElement {
         <CapabilityBlock num="05" label="Render count warnings">
           <Tok kind="comment">
             // counts renders and mounts; at a threshold it logs{"\n"}
-            // a warning and calls you back. It doesn't stop renders.
+            // a warning and calls you back; it won't stop renders.
           </Tok>
           {"\n"}
           <Tok kind="fn">useRenderTracker</Tok>(<Tok kind="str">"Modal"</Tok>,{" "}
@@ -408,7 +408,7 @@ function MainStage(): React.ReactElement {
           {"})"}
         </CapabilityBlock>
 
-        <CapabilityBlock num="06" label="Kept out of production">
+        <CapabilityBlock num="06" label="Keep it out of production">
           <Tok kind="comment">
             // no telemetry, no network requests. It doesn't remove{"\n"}
             // itself from builds, so load it in development only.
