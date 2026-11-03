@@ -1,8 +1,69 @@
+import Link from "next/link";
 import type React from "react";
+import { liveSections } from "./_content/content";
+import { jsonLdHtml } from "./_content/jsonld";
 import { DebugsyLookMounted } from "./_components/debugsy-look-mounted";
 import { PageShortcuts } from "./_components/page-shortcuts";
 import { ThemeSwitcherClient } from "./_components/theme-switcher-client";
 import { CAPABILITIES, SEO_LOGS } from "./_data/feature-log";
+import { HOME_DESCRIPTION, HOME_H1 } from "./home-meta";
+import {
+  absoluteUrl,
+  APP_ID,
+  CHANGELOG_URL,
+  LIB_VERSION,
+  LICENSE_NAME,
+  LICENSE_URL,
+  ORG_ID,
+  ORG_NODE,
+  REPO_URL,
+  SITE_NAME,
+  SITE_URL,
+  WEBSITE_ID,
+} from "./site";
+
+// The home page's graph: the n-uf node itself, the website and the library as a SoftwareApplication.
+const STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    ORG_NODE,
+    {
+      "@type": "WebSite",
+      "@id": WEBSITE_ID,
+      url: SITE_URL,
+      name: SITE_NAME,
+      inLanguage: "en",
+      publisher: { "@id": ORG_ID },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": APP_ID,
+      name: SITE_NAME,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Browser",
+      url: SITE_URL,
+      description: HOME_DESCRIPTION,
+      softwareVersion: LIB_VERSION,
+      license: LICENSE_URL,
+      codeRepository: REPO_URL,
+      image: absoluteUrl("/opengraph-image"),
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      author: { "@id": ORG_ID },
+      publisher: { "@id": ORG_ID },
+      featureList: [
+        "Structured debug logging by named debug points",
+        "Which values changed between renders (useWhyDidYouUpdate)",
+        "Render and mount count warnings (useRenderTracker)",
+        "One ordered, virtualised log inside the page",
+        "No telemetry and no network requests",
+      ],
+    },
+  ],
+};
 
 /**
  * `<DebugsyLook>` ships as `position: fixed; bottom: 0; width: 100vw` and is
@@ -22,10 +83,10 @@ export default function HomePage(): React.ReactElement {
       className="dbg-surface dbg-lock flex min-h-dvh w-screen flex-col lg:h-dvh lg:overflow-hidden"
       style={{ color: "rgb(var(--color-chrome-text))" }}
     >
-      <h1 className="sr-only">
-        debugsy — real-time React debugging panel with dependency tracking and
-        circuit breakers
-      </h1>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(STRUCTURED_DATA) }}
+      />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:h-[calc(100dvh-var(--debugsy-panel-h,400px))] lg:grid-cols-[260px_1fr]">
         <LeftRail />
@@ -106,7 +167,7 @@ function LeftRail(): React.ReactElement {
           className="font-mono text-[10px] tracking-wide"
           style={{ color: "rgb(var(--color-chrome-text-muted))" }}
         >
-          v2 · mit · 0 deps · 12 kb
+          {LIB_VERSION} · {LICENSE_NAME.toLowerCase()}
         </span>
         <span
           className="font-mono text-[10px] tracking-wide"
@@ -116,38 +177,42 @@ function LeftRail(): React.ReactElement {
           <a
             className="hover:underline"
             style={{ color: "rgb(var(--color-chrome-text))" }}
-            href="https://pdfized.com"
-            rel="noopener noreferrer"
-            target="_blank"
+            href="https://n-uf.com"
+            rel="noopener"
           >
-            PDFized.com
+            n-uf
           </a>
         </span>
       </div>
 
-      {/* nav */}
+      {/* nav: the content sections that have pages, then the project's own pages on GitHub */}
       <nav
         aria-label="primary"
         className="flex flex-col gap-0.5 font-mono text-[11px]"
       >
-        <a
-          className="hover:underline"
-          style={{ color: "rgb(var(--color-chrome-text))" }}
-          href="#docs"
-        >
-          docs
-        </a>
+        {liveSections().map((s) => (
+          <Link
+            key={s.path}
+            className="hover:underline"
+            style={{ color: "rgb(var(--color-chrome-text))" }}
+            href={s.path}
+          >
+            {s.section === "blog" ? "blog" : "use cases"}
+          </Link>
+        ))}
         <a
           className="hover:underline"
           style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-          href="#source"
+          href={REPO_URL}
+          rel="noopener"
         >
           source
         </a>
         <a
           className="hover:underline"
           style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-          href="#changelog"
+          href={CHANGELOG_URL}
+          rel="noopener"
         >
           changelog
         </a>
@@ -171,16 +236,24 @@ function MainStage(): React.ReactElement {
     >
       {/* ── Intro: spec block ────────────────────────────────────── */}
       <header className="flex flex-col gap-2.5 font-mono">
-        <h2
-          className="m-0 text-[15px] font-semibold leading-tight tracking-tight lg:text-[16px]"
-          style={{ color: "rgb(var(--color-chrome-text))" }}
-        >
-          debugsy{" "}
-          <span style={{ color: "rgb(var(--color-chrome-text-muted))" }}>
-            v2 —
-          </span>{" "}
-          in-process React inspector
-        </h2>
+        {/* The h1 holds only the title; the name and version sit beside it. */}
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span
+            className="text-[15px] font-semibold leading-tight tracking-tight lg:text-[16px]"
+            style={{ color: "rgb(var(--color-chrome-text))" }}
+          >
+            debugsy{" "}
+            <span style={{ color: "rgb(var(--color-chrome-text-muted))" }}>
+              {LIB_VERSION} —
+            </span>
+          </span>
+          <h1
+            className="m-0 text-[15px] font-semibold leading-tight tracking-tight lg:text-[16px]"
+            style={{ color: "rgb(var(--color-chrome-text))" }}
+          >
+            {HOME_H1}
+          </h1>
+        </div>
 
         <dl
           className="m-0 grid max-w-4xl grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-[12px] leading-snug"
@@ -191,27 +264,44 @@ function MainStage(): React.ReactElement {
             not a separate app.
           </SpecRow>
           <SpecRow label="traces">
-            re-render cause — identity churn, dep mutation, prop churn, context
-            cascade — down to the offending key.
+            which value changed since the last render, key by key, for the
+            values you hand to <code>useWhyDidYouUpdate</code>.
           </SpecRow>
           <SpecRow label="reads as">
-            one ordered log: renders, effects, state, fetch. No DevTools /
-            Profiler / Console juggling.
+            one ordered log: your debug points, changed values and render-count
+            warnings, in the page you're debugging.
           </SpecRow>
-          <SpecRow label="cost">
-            ~12 kB gzip · 0 runtime deps · sub-ms init.
+          <SpecRow label="needs">
+            React 19 · GitHub Packages (<code>@n-uf</code> scope) ·{" "}
+            {LICENSE_NAME}
           </SpecRow>
           <SpecRow label="in prod">
-            safe to keep mounted — no telemetry, no network, no global hooks.
-            Tree-shake with <code>NODE_ENV=production</code> for zero cost.
+            no telemetry, no network requests. It doesn't remove itself: load
+            it only in development to keep it out of production builds.
           </SpecRow>
+          {liveSections().length > 0 ? (
+            <SpecRow label="read">
+              {liveSections().map((s, i) => (
+                <span key={s.path}>
+                  {i > 0 ? " · " : null}
+                  <Link className="underline underline-offset-2" href={s.path}>
+                    {s.section === "blog"
+                      ? "articles on React debugging"
+                      : "debugging use cases"}
+                  </Link>
+                </span>
+              ))}
+            </SpecRow>
+          ) : null}
         </dl>
       </header>
 
       {/* ── Capabilities — masonry-packed, sized to content, no wasted rows ── */}
       <ol className="m-0 min-h-0 flex-1 list-none gap-0 overflow-hidden p-0 [column-fill:balance] columns-1 gap-x-3 sm:columns-2 xl:columns-3">
         <CapabilityBlock num="01" label="Install + mount">
-          <Tok kind="comment">// shell</Tok>
+          <Tok kind="comment">// .npmrc (GitHub Packages)</Tok>
+          {"\n"}
+          @n-uf:registry=https://npm.pkg.github.com
           {"\n"}
           <Tok kind="sh">$</Tok> pnpm add @n-uf/debugsy
           {"\n"}
@@ -291,22 +381,22 @@ function MainStage(): React.ReactElement {
 
         <CapabilityBlock num="04" label="Re-render cause tracing">
           <Tok kind="comment">
-            // shallow-equality diff over the watched bag,{"\n"}
-            // emitted as a debug log entry on every commit.
+            // compares each value with the last render{"\n"}
+            // and logs the keys that changed (Deps on).
           </Tok>
           {"\n"}
           <Tok kind="fn">useWhyDidYouUpdate</Tok>(<Tok kind="str">"Form"</Tok>,{" "}
           {"{ values, errors, onSubmit }"})
         </CapabilityBlock>
 
-        <CapabilityBlock num="05" label="Reference instability detection">
+        <CapabilityBlock num="05" label="Render count warnings">
           <Tok kind="comment">
-            // counts renders, tracks identity-stability of deps,{"\n"}
-            // alerts when renderThreshold or mountThreshold is hit.
+            // counts renders and mounts; at a threshold it logs{"\n"}
+            // a warning and calls you back. It doesn't stop renders.
           </Tok>
           {"\n"}
-          <Tok kind="fn">useRenderTracker</Tok>(<Tok kind="str">"Modal"</Tok>,
-          [open, items, onClose], {"{"}
+          <Tok kind="fn">useRenderTracker</Tok>(<Tok kind="str">"Modal"</Tok>,{" "}
+          {"{"}
           {"\n  "}renderThreshold: 10,{"   "}
           <Tok kind="comment">{"// default"}</Tok>
           {"\n  "}mountThreshold:{"  "}3,{"    "}
@@ -318,10 +408,10 @@ function MainStage(): React.ReactElement {
           {"})"}
         </CapabilityBlock>
 
-        <CapabilityBlock num="06" label="Zero production cost">
+        <CapabilityBlock num="06" label="Kept out of production">
           <Tok kind="comment">
-            // tree-shaken when NODE_ENV=production. no runtime,{"\n"}
-            // no global hooks, no telemetry, no network.
+            // no telemetry, no network requests. It doesn't remove{"\n"}
+            // itself from builds, so load it in development only.
           </Tok>
           {"\n"}
           <Tok kind="kw">if</Tok> (process.env.NODE_ENV !=={" "}
