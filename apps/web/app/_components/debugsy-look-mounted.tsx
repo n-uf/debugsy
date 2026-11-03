@@ -96,7 +96,6 @@ function useAutoOpenDebugsyPanel(): void {
 
   useEffect(() => {
     if (opened.current) return;
-    opened.current = true;
 
     const dispatchToggle = (): void => {
       document.dispatchEvent(
@@ -109,12 +108,19 @@ function useAutoOpenDebugsyPanel(): void {
       );
     };
 
+    // Mark it opened only when the toggles actually fire: React's Strict Mode (on in `next dev`)
+    // runs this effect, cleans it up (cancelling the frame) and runs it again, and a flag set up
+    // front made the second run skip, so the panel never opened in development.
+    let r2 = 0;
     const r1 = requestAnimationFrame(() => {
+      opened.current = true;
       dispatchToggle();
-      const r2 = requestAnimationFrame(() => dispatchToggle());
-      void r2;
+      r2 = requestAnimationFrame(() => dispatchToggle());
     });
-    return () => cancelAnimationFrame(r1);
+    return () => {
+      cancelAnimationFrame(r1);
+      cancelAnimationFrame(r2);
+    };
   }, []);
 }
 
