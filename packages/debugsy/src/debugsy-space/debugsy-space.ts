@@ -29,6 +29,8 @@ const IS_DEVELOPMENT = (() => {
 
 /** Unknown point keys already warned about: each warns once */
 const warnedUnknownPoints = new Set<string>();
+/** Unknown point keys with a check queued, so a burst of calls queues one */
+const queuedUnknownPoints = new Set<string>();
 
 /**
  * Development only: a log call to a point no module registered is dropped,
@@ -37,9 +39,11 @@ const warnedUnknownPoints = new Set<string>();
  * right after the call doesn't warn.
  */
 function warnUnknownPointOnce(point: DebugPoint): void {
-  if (warnedUnknownPoints.has(point)) return;
+  if (warnedUnknownPoints.has(point) || queuedUnknownPoints.has(point)) return;
+  queuedUnknownPoints.add(point);
   queueMicrotask(() => {
-    if (isKnownPoint(point) || warnedUnknownPoints.has(point)) return;
+    queuedUnknownPoints.delete(point);
+    if (isKnownPoint(point)) return;
     warnedUnknownPoints.add(point);
     console.warn(
       `[debugsy] No module registers the debug point "${point}", so log calls to it are dropped. ` +
