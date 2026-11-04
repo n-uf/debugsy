@@ -95,7 +95,7 @@ export function PageShortcuts(): React.ReactElement {
   return (
     <ul
       aria-label="keyboard shortcuts"
-      className="m-0 flex flex-col gap-0.5 p-0"
+      className="m-0 flex list-none flex-row flex-wrap items-center gap-x-5 gap-y-1 p-0"
     >
       {PAGE_SHORTCUTS.map((s) => (
         <li key={s.key} className="m-0 p-0">
@@ -103,7 +103,7 @@ export function PageShortcuts(): React.ReactElement {
             type="button"
             onClick={() => triggerShortcut(s)}
             aria-label={`${s.meta ? `${modifierWord} ` : ""}${s.key} — ${s.label}`}
-            className="group grid w-full cursor-pointer grid-cols-[56px_1fr] items-center gap-3 rounded-sm py-1 pr-2 text-left font-mono text-[12px] focus:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-chrome-text)/0.4)]"
+            className="group inline-flex cursor-pointer items-center gap-2 rounded-sm py-0.5 pr-1 text-left font-mono text-[12px] focus:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-chrome-text)/0.4)]"
           >
             <span
               className="inline-flex items-baseline justify-center gap-1 rounded border px-1.5 py-0.5 font-mono font-semibold uppercase tracking-wide transition-colors group-hover:bg-chrome-button-hover group-active:bg-[rgb(var(--color-chrome-button-pressed))] group-active:text-[rgb(var(--color-chrome-button-pressed-text))]"
