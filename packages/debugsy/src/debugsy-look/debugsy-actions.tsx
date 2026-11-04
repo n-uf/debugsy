@@ -20,6 +20,7 @@ import {
   type ScrollFollowingState,
 } from "../ui";
 import React, { useCallback, useState } from "react";
+import { getDebugsy } from "../debugsy-space";
 
 export interface DebugsyActionsProps<T> {
   /** Active logs to display/copy */
@@ -70,8 +71,9 @@ export const DebugsyActions = <T,>({
 
   // Health Snapshot Handler
   const handleHealthSnapshot = useCallback(() => {
-    const globalDebug = (globalThis as any).surfaceDebug;
-    if (globalDebug?.captureHealthSnapshot) {
+    // The debug space (globalThis.debugsy); there is no surfaceDebug global
+    const globalDebug = getDebugsy();
+    if (typeof globalDebug?.captureHealthSnapshot === "function") {
       globalDebug.captureHealthSnapshot();
       // Capture snapshot when taking health snapshot (stops following)
       scrollFollowing.setIsFollowing(false);
@@ -83,7 +85,7 @@ export const DebugsyActions = <T,>({
       });
     } else {
       setDisplayContent({
-        message: "Health snapshot captured (surfaceDebug not available)",
+        message: "Health snapshot unavailable (debug space not initialised)",
         type: "info",
         duration: 2000,
       });
