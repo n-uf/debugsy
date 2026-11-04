@@ -102,6 +102,8 @@ Count the entries and you have the React DevTools render count for that componen
 
 The Profiler covers only the session you record, and you read the number by eye, so a test can't check it. Tick "Record why each component rendered while profiling" in the Profiler settings first, and the same session also says [why a component rendered](/use-cases/why-did-this-component-render).
 
+For the rest of the tab (the commits, the Flamegraph and Ranked views, the settings), see this walkthrough of the [React DevTools Profiler](/blog/how-to-use-react-devtools).
+
 ## A useRef counter you paste in
 
 This hook counts committed renders. It increments in an effect with no dependency array, which [react.dev's useEffect page](https://react.dev/reference/react/useEffect) says re-runs after every commit. The count lives in an effect rather than the body because the `useRef` page says not to read or write `ref.current` during rendering, except to initialize it.

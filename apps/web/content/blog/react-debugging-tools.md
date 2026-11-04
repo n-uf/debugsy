@@ -129,6 +129,8 @@ This is React Developer Tools' job. react.dev says to use it to inspect componen
 
 For Safari and other browsers, react.dev has you install the `react-devtools` package, run `react-devtools` in a terminal and add `<script src="http://localhost:8097"></script>` at the start of your page's `<head>`. The package's README says to remove that line before you deploy to production. In React Native, react.dev points to React Native DevTools, the built-in debugger that integrates React Developer Tools.
 
+For a walk through the Components tab, the Profiler and the settings worth turning on, see the guide on [how to use React DevTools](/blog/how-to-use-react-devtools).
+
 ## See which components render, and why
 
 React Developer Tools can show this without touching your code. Its General settings have "Highlight updates when components render", and its Profiler settings have "Record why each component rendered while profiling". Tick the second, record a session, select a component, and the "Why did this render?" section lists what changed, such as "The parent component rendered." (labels checked in the DevTools source on GitHub). You only get that for the sessions you record.
@@ -233,7 +235,7 @@ Next.js has its own debugging guide (v16.4.5 on the page we read, last updated A
 
 For VS Code, the guide gives a `.vscode/launch.json` with configurations named "Next.js: debug server-side" (it runs `npm run dev -- --inspect`), "Next.js: debug client-side" and "Next.js: debug full stack". For client code in Chrome, open the Sources tab; when you search, your files have paths starting with `webpack://_N_E/./`. For server code, start the dev server with `--inspect`, open `chrome://inspect` and pick your app under Remote Target. On a server error, the error overlay shows a Node.js icon; clicking it copies a DevTools URL you can open to inspect the server.
 
-For React-specific inspection, the guide points to the React Developer Tools extension. The render tools above work in a Next.js app too: React Scan's README has App Router and Pages Router examples, and debugsy renders from a Client Component.
+For React-specific inspection, the guide points to the React Developer Tools extension. The render tools above work in a Next.js app too: React Scan's README has App Router and Pages Router examples, and debugsy renders from a Client Component. Our walkthrough on how to [debug a Next.js app](/blog/debug-next-js-app) covers the server, browser and VS Code routes from that guide, and where logs show up.
 
 ## React DevTools alternatives
 
