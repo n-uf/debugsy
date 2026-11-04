@@ -9,6 +9,7 @@
     "dev": "pnpm --filter web dev",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
+    "test": "turbo test",
     "release:next-version": "pnpm --filter @n-uf/debugsy release:next-version",
     "version:bump": "pnpm --filter @n-uf/debugsy version:bump"
   },
