@@ -40,7 +40,7 @@ import {
   useScrollFollowing,
   VirtualizedList,
   Z_INDEX,
-} from "@n-uf/harbuz";
+} from "../ui";
 import React, {
   useCallback,
   useEffect,
@@ -930,10 +930,10 @@ Enable debug points and interact with the surface to see logs here.`}
 DebugsyLookInternal.displayName = "DebugsyLookInternal";
 
 /**
- * DebugsyLook - Harbuz-based implementation with isolated display queue
+ * DebugsyLook - the panel, with an isolated display queue
  *
- * Full implementation using @n-uf/harbuz UI components.
- * Modern TerminalLayout structure with comprehensive debugging features.
+ * Built from debugsy's own UI kit (`../ui`, ported from harbuz 0.6.0).
+ * TerminalLayout structure with comprehensive debugging features.
  *
  * Wrapped with DisplayQueueProvider to ensure display messages are isolated
  * from other components (e.g., Showcase).

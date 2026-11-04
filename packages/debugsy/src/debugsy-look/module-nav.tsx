@@ -5,7 +5,7 @@ import {
   IndicatorButtonGroup,
   type IndicatorButtonGroupItem,
   type IndicatorButtonTheme,
-} from "@n-uf/harbuz";
+} from "../ui";
 import React, { useCallback, useMemo, useReducer, useRef, useState } from "react";
 
 const LONG_PRESS_MS = 400;

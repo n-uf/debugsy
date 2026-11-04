@@ -1,4 +1,4 @@
-import { safeSuperjsonStringify } from "@n-uf/harbuz";
+import { safeSuperjsonStringify } from "../ui/utils/safe-stringify";
 import superjson from "superjson";
 import { notifySubscribers } from "../debugsy-logs/hooks/debugsy-notifications";
 import { registerSuperjsonCustomSerializers } from "../shared/superjson-config";
