@@ -43,9 +43,6 @@ sources:
   - title: "productionBrowserSourceMaps (nextjs.org)"
     url: "https://nextjs.org/docs/app/api-reference/config/next-config-js/productionBrowserSourceMaps"
     checked: 2026-11-03
-  - title: "transpilePackages (nextjs.org)"
-    url: "https://nextjs.org/docs/app/api-reference/config/next-config-js/transpilePackages"
-    checked: 2026-11-03
   - title: "reactStrictMode (nextjs.org)"
     url: "https://nextjs.org/docs/app/api-reference/config/next-config-js/reactStrictMode"
     checked: 2026-11-03
@@ -263,28 +260,7 @@ Decoding minified React errors and reporting what users hit are covered in [debu
 
 A breakpoint shows one moment. For "which value changed on which render", a log that stays in the page helps, and debugsy is one of several tools that keep one ([how they compare](/blog/react-debugging-tools)). It's an in-process [React debug panel](/) by n-uf: a React component, so it works only where React runs in the browser. It doesn't see Server Components, route handlers or Server Functions, it doesn't replace `--inspect`, and it doesn't stop a render or a loop. It only logs.
 
-It installs from GitHub Packages, not npmjs: add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc` and run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19 and `react18-json-view`.
-
-The package ships TypeScript source, and so does its dependency `@n-uf/harbuz`. Next.js doesn't compile code inside `node_modules` by default, and its `transpilePackages` page says listing a package that ships raw TypeScript opts it in:
-
-```js
-// next.config.js
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  transpilePackages: ['@n-uf/debugsy', '@n-uf/harbuz'],
-}
-
-module.exports = nextConfig
-```
-
-The panel's styles are Tailwind CSS v4 classes, and no compiled CSS ships with it. So the app needs Tailwind v4, and its global stylesheet imports both packages' styles after Tailwind:
-
-```css
-/* app/globals.css */
-@import "tailwindcss";
-@import "@n-uf/harbuz/styles";
-@import "@n-uf/debugsy/styles";
-```
+It isn't on npmjs yet: a public release there is in preparation. It needs React 19.
 
 The panel needs the browser, so render it from a Client Component of your own; Next.js's docs suggest wrapping third-party components that rely on client-only features this way. The root layout stays a Server Component:
 
