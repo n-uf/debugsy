@@ -12,6 +12,7 @@
 import type React from "react";
 import { BASE_CSS } from "./base";
 import { CONTROLS_CSS } from "./controls";
+import { DEPS_CSS } from "./deps";
 import { LOG_CSS } from "./log";
 import { PRIMITIVES_CSS } from "./primitives";
 import { THEMES_CSS } from "./themes";
@@ -25,6 +26,7 @@ export const DEBUGSY_CSS_FRAGMENTS = {
   primitives: PRIMITIVES_CSS,
   window: WINDOW_CSS,
   controls: CONTROLS_CSS,
+  deps: DEPS_CSS,
   log: LOG_CSS,
   tray: TRAY_CSS,
 } as const;
