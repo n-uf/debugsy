@@ -24,6 +24,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
+    "test": "vitest run",
     "release:next-version": "node ./scripts/calendar-version-bump.mjs --dry-run",
     "version:bump": "node ./scripts/calendar-version-bump.mjs --apply"
   },
@@ -45,10 +46,12 @@
     "@types/react-dom": "^19.2.3",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "happy-dom": "^20.14.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react18-json-view": "^0.2.9",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12"
   },
   "exports": {
     ".": {

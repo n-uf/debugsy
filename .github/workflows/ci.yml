@@ -41,5 +41,5 @@ jobs:
           # Manage Actions access).
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lint, check types, build
-        run: pnpm turbo run lint check-types build
+      - name: Lint, check types, build, test
+        run: pnpm turbo run lint check-types build test
