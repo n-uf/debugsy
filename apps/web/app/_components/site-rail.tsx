@@ -29,24 +29,24 @@ const PROJECT_NAV: readonly NavItem[] = [
 export function SiteRail(): React.ReactElement {
   return (
     <>
-      <div className="sr-ident">
-        <Link className="sr-wordmark" href="/">
+      <div className="rail-ident">
+        <Link className="rail-wordmark" href="/">
           debugsy
         </Link>
         <ThemeSwitcherClient orientation="horizontal" size="sm" />
-        <span className="sr-meta">in-process React debug panel</span>
-        <span className="sr-meta">
+        <span className="rail-meta">in-process React debug panel</span>
+        <span className="rail-meta">
           {LIB_VERSION} · {LICENSE_NAME.toLowerCase()}
         </span>
-        <span className="sr-meta">
+        <span className="rail-meta">
           by{" "}
-          <a href="https://n-uf.com" target="_blank" rel="noopener noreferrer">
+          <a href="https://n-uf.com" target="_blank" rel="noopener">
             n-uf
           </a>
         </span>
       </div>
-      <SiteNav items={primaryNav()} className="sr-nav" label="primary" />
-      <SiteNav items={PROJECT_NAV} className="sr-nav" label="project" />
+      <SiteNav items={primaryNav()} className="rail-nav" label="primary" />
+      <SiteNav items={PROJECT_NAV} className="rail-nav" label="project" />
     </>
   );
 }
