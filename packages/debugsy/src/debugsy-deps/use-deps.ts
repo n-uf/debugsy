@@ -230,6 +230,7 @@ export interface RenderRateInfo {
 
 // Interface for mount rate information
 export interface MountRateInfo {
+  /** Remounts of this component name since the last warning */
   mountCount: number;
   timeElapsed: number;
   mountRate: number;
@@ -242,7 +243,15 @@ export interface MountRateInfo {
 export interface RenderTrackerOptions {
   /** Threshold for render count warnings (default: 10) */
   renderThreshold?: number;
-  /** Threshold for mount count warnings (default: 3) */
+  /**
+   * Remounts of components with this name before a warning (default: 3).
+   * A remount is a new instance mounting after one with the same name
+   * unmounted, as when its `key` changes or its parent re-creates it. The
+   * count is shared by every component that passes the same name. Instances
+   * on screen together (rows of a list) and Strict Mode's extra mount don't
+   * count. Rows of a virtualised list that scroll out and back in do: pass
+   * `trackMounts: false` there.
+   */
   mountThreshold?: number;
   /** Enable render tracking (default: true) */
   trackRenders?: boolean;
@@ -258,6 +267,37 @@ export interface RenderTrackerOptions {
 export interface ComponentLifecycleInfo {
   render: RenderRateInfo;
   mount: MountRateInfo;
+}
+
+/**
+ * Remount counts per component name. A remount creates a new component
+ * instance, so a count kept in a ref would start again at 0 every time.
+ */
+interface MountCounter {
+  /** Remounts since the name first mounted or since the last warning */
+  count: number;
+  /** When the current count started (ms) */
+  startTime: number;
+  /** Warnings raised for this name */
+  alertsTriggered: number;
+  /** Unmounts that no later mount of the same name has taken up yet */
+  pendingUnmounts: number;
+}
+
+const mountCounters = new Map<string, MountCounter>();
+
+function getMountCounter(componentName: string): MountCounter {
+  let counter = mountCounters.get(componentName);
+  if (!counter) {
+    counter = {
+      count: 0,
+      startTime: Date.now(),
+      alertsTriggered: 0,
+      pendingUnmounts: 0,
+    };
+    mountCounters.set(componentName, counter);
+  }
+  return counter;
 }
 
 /**
@@ -361,6 +401,8 @@ export function useWhyDidYouUpdate(
 /**
  * Enhanced render and mount tracking hook with UI notifications and callback support
  * Tracks both render frequency and mount/unmount lifecycle events
+ * Renders are counted per instance; remounts per component name, so a
+ * component that keeps remounting reaches mountThreshold.
  * ENHANCED: Added mount tracking and separate configuration options
  * FIXED: Rules of Hooks violation - all hooks now called unconditionally
  */
@@ -403,10 +445,9 @@ export function useRenderTracker(
   const renderStartTime = useRef<number>(Date.now());
   const renderAlertsTriggered = useRef(0);
 
-  const mountCount = useRef(0);
-  const mountStartTime = useRef<number>(Date.now());
-  const mountAlertsTriggered = useRef(0);
-  const isMounted = useRef(false);
+  // Whether this instance's mount effect has run before. Remount counts live
+  // in mountCounters, per component name.
+  const instanceMounted = useRef(false);
 
   const renderInfo = useRef<RenderRateInfo>({
     renderCount: 0,
@@ -427,7 +468,7 @@ export function useRenderTracker(
     alertsTriggered: 0,
   });
 
-  // Track mounts/unmounts
+  // Track remounts of this component name
   useEffect(() => {
     // Early exit for zero overhead when disabled
     const depsState = getDepsSettings();
@@ -435,79 +476,84 @@ export function useRenderTracker(
       return;
     }
 
-    // Mount detected
-    if (!isMounted.current) {
-      isMounted.current = true;
-      mountCount.current += 1;
+    const counter = getMountCounter(componentName);
 
-      const timeElapsed = Date.now() - mountStartTime.current;
-      const mountRate = mountCount.current / (timeElapsed / 1000);
+    if (instanceMounted.current) {
+      // Strict Mode (or <Activity>) ran this instance's cleanup and mount
+      // again. Same instance, so not a remount: take back the unmount its
+      // cleanup just recorded.
+      counter.pendingUnmounts = Math.max(0, counter.pendingUnmounts - 1);
+    } else {
+      instanceMounted.current = true;
 
-      // Update mount info
-      mountInfo.current = {
-        mountCount: mountCount.current,
-        timeElapsed,
-        mountRate,
-        threshold:
+      // A new instance that takes the place of one that unmounted: a remount.
+      // New instances with no unmount before them (rows of a list) don't count.
+      if (counter.pendingUnmounts > 0) {
+        counter.pendingUnmounts -= 1;
+        counter.count += 1;
+
+        const threshold =
           options.mountThreshold ??
-          DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold,
-        isExcessive:
-          mountCount.current >=
-          (options.mountThreshold ??
-            DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold),
-        alertsTriggered: mountAlertsTriggered.current,
-      };
+          DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold;
+        const timeElapsed = Date.now() - counter.startTime;
+        const mountRate = counter.count / (Math.max(timeElapsed, 1) / 1000);
 
-      // Check for excessive mounts
-      if (
-        mountCount.current >=
-        (options.mountThreshold ??
-          DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold)
-      ) {
-        mountAlertsTriggered.current += 1;
-        mountInfo.current.alertsTriggered = mountAlertsTriggered.current;
-
-        // Log to unified debug system instead of console
-        logWarnToDebugSystem(
-          `🔄 [${componentName}] Excessive mount rate detected: ${mountRate.toFixed(
-            2
-          )} mounts/sec (${mountCount.current} in ${timeElapsed}ms)`,
-          {
-            component: componentName,
-            mountCount: mountCount.current,
-            timeElapsed,
-            mountRate,
-            threshold: options.mountThreshold,
-            type: "mount-cycle",
-            severity: "warning",
-          },
-          ["mount-warn"]
-        );
-
-        // 🚨 UI Notification System for high mount rates
-        notifyHighMountRate(
-          componentName,
-          mountCount.current,
+        // Update mount info
+        mountInfo.current = {
+          mountCount: counter.count,
           timeElapsed,
           mountRate,
-          options.mountThreshold ??
-            DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold
-        );
+          threshold,
+          isExcessive: counter.count >= threshold,
+          alertsTriggered: counter.alertsTriggered,
+        };
 
-        // 🔔 Callback support for external handling
-        if (options.onExcessiveMounts) {
-          options.onExcessiveMounts(mountInfo.current);
+        // Check for excessive remounts
+        if (counter.count >= threshold) {
+          counter.alertsTriggered += 1;
+          mountInfo.current.alertsTriggered = counter.alertsTriggered;
+
+          // Log to unified debug system instead of console
+          logWarnToDebugSystem(
+            `🔄 [${componentName}] Excessive mount rate detected: ${mountRate.toFixed(
+              2
+            )} mounts/sec (${counter.count} remounts in ${timeElapsed}ms)`,
+            {
+              component: componentName,
+              mountCount: counter.count,
+              timeElapsed,
+              mountRate,
+              threshold,
+              type: "mount-cycle",
+              severity: "warning",
+            },
+            ["mount-warn"]
+          );
+
+          // 🚨 UI Notification System for high mount rates
+          notifyHighMountRate(
+            componentName,
+            counter.count,
+            timeElapsed,
+            mountRate,
+            threshold
+          );
+
+          // 🔔 Callback support for external handling
+          if (options.onExcessiveMounts) {
+            options.onExcessiveMounts(mountInfo.current);
+          }
+
+          // Reset counter to prevent spam
+          counter.count = 0;
+          counter.startTime = Date.now();
         }
-
-        // Reset counter to prevent spam
-        mountCount.current = 0;
-        mountStartTime.current = Date.now();
       }
     }
 
-    // Cleanup: track unmount
+    // Cleanup: record the unmount for the next mount of this name to take up
     return () => {
-      isMounted.current = false;
+      counter.pendingUnmounts += 1;
     };
   }, []); // Empty dependency array to track mount/unmount only
 
