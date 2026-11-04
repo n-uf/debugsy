@@ -5,6 +5,13 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 
 ## Unreleased
 
+- Install is `npm i @n-uf/debugsy` and mounting `<DebugsyLook />` from a
+  client component. The package now ships built JavaScript (ESM and
+  CommonJS) with type definitions and a `"use client"` directive, so Next.js
+  needs no `transpilePackages` entry. `react18-json-view` is a dependency
+  now, not a peer you install yourself.
+- Works in Vite apps: reading `NEXT_PUBLIC_SURFACE_DEBUG` no longer assumes
+  a `process` object in the browser.
 - The panel styles itself: no Tailwind, no stylesheet import, no
   `transpilePackages` entry for styles. Its CSS is a scoped `dbg-` stylesheet
   that `<DebugsyLook />` renders as a React 19 hoisted style, so it looks the
