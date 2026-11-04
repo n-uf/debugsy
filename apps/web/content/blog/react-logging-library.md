@@ -305,7 +305,7 @@ Log from event handlers and effects, not from the render body. React's StrictMod
 
 A few habits that hold up:
 
-- **Log the value that changed, in an effect.** An effect that depends on `[total]` logs when `total` changes, not on every render, as in the `CartTotal` example.
+- **Log the value that changed, in an effect.** An effect that depends on `[total]` logs when `total` changes, not on every render, as in the `CartTotal` example. To log the previous and next value along with the action that changed it, see how to [debug state changes in React](/use-cases/react-debug-state-changes).
 - **Keep secrets out.** An address or a token in a log line sits in the console, and in debugsy's in-memory log, for anyone with the page open.
 - **Count renders with a counter, not a log line.** [React render count](/use-cases/react-render-count) covers counting. To find the value that made a component render, see how to [find what causes a re-render in React](/use-cases/why-did-this-component-render).
 
