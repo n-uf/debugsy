@@ -3,35 +3,24 @@
  * on. kavun's method: the CSS is a string the panel renders itself, so the
  * app needs no Tailwind, no CSS import and no build config.
  *
- * - `@layer base` holds the resets, selected with `:where()` (no
- *   specificity) and only inside `.dbg-root`. In a Tailwind app they repeat
- *   preflight's values and change nothing; without Tailwind they give the
- *   panel the defaults it was built on.
- * - `@layer components` holds `.dbg-root` itself: the theme tokens and the
- *   type. An app can override a token with its own `.dbg-root { --dbg-led:
- *   … }`, which sits outside the layers and so wins.
- * - Every part's own rules are unlayered `dbg-` classes, so an app's global
- *   `button` or `h3` rules can't restyle them.
+ * No cascade layers: a library that names `@layer base` or `components`
+ * would set the host page's layer order (React puts this sheet first in
+ * `<head>`). Instead every rule is unlayered and scoped by `.dbg-root`:
+ * - `.dbg-root` holds the theme tokens and the type. The app's own
+ *   stylesheets load after this one, so an app can override a token with
+ *   `.dbg-root { --dbg-led: … }`.
+ * - The resets select `.dbg-root :where(…)` (one class of specificity), so
+ *   an app's global `button`, `h3` or `*` rules can't restyle the panel's
+ *   insides, while every part's own `dbg-` class, later in this sheet, still
+ *   overrides the reset.
  *
  * Tokens are kavun's `dark` theme ("the panel at night") as RGB triplets,
  * used as `rgb(var(--dbg-led) / .3)`, plus the log-level colours kavun has
- * no use for.
+ * no use for. `--dbg-line` and `--dbg-hover` carry their own alpha: use them
+ * as `rgb(var(--dbg-line))` only.
  */
 
 export const BASE_CSS = `
-@layer base{
-:where(.dbg-root,.dbg-root *,.dbg-root ::before,.dbg-root ::after){box-sizing:border-box;margin:0;padding:0;border:0 solid}
-:where(.dbg-root) :where(button,input,select,textarea,optgroup){font:inherit;font-feature-settings:inherit;
-  font-variation-settings:inherit;letter-spacing:inherit;color:inherit;background-color:transparent;border-radius:0}
-:where(.dbg-root) :where(button,[role="button"]){cursor:pointer}
-:where(.dbg-root) :where(button:disabled){cursor:default}
-:where(.dbg-root) :where(ol,ul,menu){list-style:none}
-:where(.dbg-root) :where(svg,img){display:block;vertical-align:middle}
-:where(.dbg-root) :where(pre,code,kbd,samp){font-family:var(--dbg-mono);font-size:1em}
-:where(.dbg-root) :where(b,strong){font-weight:bolder}
-:where(.dbg-root) ::placeholder{color:rgb(var(--dbg-dim) / .75);opacity:1}
-}
-@layer components{
 .dbg-root{
   --dbg-bg:24 26 30;--dbg-canvas:14 16 19;--dbg-raised:32 35 41;--dbg-line:255 255 255 / .09;
   --dbg-text:226 230 236;--dbg-dim:150 157 170;--dbg-engrave:0 -1px 0 rgb(0 0 0 / .7);--dbg-hover:255 255 255 / .06;
@@ -40,9 +29,23 @@ export const BASE_CSS = `
   --dbg-font:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--dbg-mono:var(--dbg-font);
   --dbg-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --dbg-fs-chrome:10.5px;--dbg-fs-small:11px;--dbg-fs-body:12px;
-  color:rgb(var(--dbg-text));font-family:var(--dbg-sans);font-size:var(--dbg-fs-body);line-height:1.4;
-  text-align:left;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  box-sizing:border-box;margin:0;padding:0;
+  color:rgb(var(--dbg-text));font-family:var(--dbg-sans);font-size:var(--dbg-fs-body);font-weight:400;font-style:normal;
+  line-height:1.4;letter-spacing:normal;text-align:left;text-transform:none;text-shadow:none;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .dbg-root.dbg-contents{display:contents}
-}
+.dbg-root :where(*,::before,::after){box-sizing:border-box;margin:0;padding:0;border:0 solid}
+.dbg-root :where(button,input,select,textarea,optgroup){-webkit-appearance:none;appearance:none;font:inherit;
+  font-feature-settings:inherit;font-variation-settings:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;
+  text-transform:inherit;color:inherit;background:transparent;border-radius:0;box-shadow:none;outline-offset:0;
+  width:auto;height:auto;min-width:0;min-height:0}
+.dbg-root :where(button,[role="button"]){cursor:pointer}
+.dbg-root :where(button:disabled){cursor:default}
+.dbg-root :where(ol,ul,menu){list-style:none}
+.dbg-root :where(svg,img){display:block;vertical-align:middle}
+.dbg-root :where(pre,code,kbd,samp){font-family:var(--dbg-mono);font-size:1em;background:transparent}
+.dbg-root :where(b,strong){font-weight:bolder}
+.dbg-root :where(a){color:inherit;text-decoration:inherit}
+.dbg-root ::placeholder{color:rgb(var(--dbg-dim) / .75);opacity:1}
 @media (prefers-reduced-motion:reduce){.dbg-root *,.dbg-root ::before,.dbg-root ::after{animation:none!important;transition:none!important}}
 `;
