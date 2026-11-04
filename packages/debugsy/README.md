@@ -13,20 +13,32 @@ pnpm add @n-uf/debugsy
 ```
 
 ```tsx
-import { DebugsyLook, useDebugsy, dsy, registerModule } from "@n-uf/debugsy";
+import { DebugsyLook, dsy, registerModule } from "@n-uf/debugsy";
 
 registerModule("auth", {
   label: "Auth",
   emoji: "🔐",
-  points: { session: { emoji: "🔑", label: "Session" } },
+  description: "Sign-in and session state",
+  points: {
+    session: {
+      emoji: "🔑",
+      label: "Session",
+      description: "Session refresh and expiry",
+    },
+  },
 });
 
-dsy.warn("auth.session", "expired", { ttl });
+// Point keys are bare and shared by all modules: "session", not "auth.session".
+dsy.warn("session", "Session expired", { ttlSeconds: 0 });
 
 export function Root() {
   return <DebugsyLook />;
 }
 ```
+
+A point logs nothing until it's on: its LED in the panel, `?debug=session` in
+the URL, or `dsy.enable("session")`. In development, a call that names a point
+no module registered warns once in the console.
 
 The package exports only its root. It ships TypeScript source: Next.js apps
 add `@n-uf/debugsy` to `transpilePackages`. Peer dependencies: `react`,
