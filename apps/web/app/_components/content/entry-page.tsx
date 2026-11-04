@@ -103,18 +103,18 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
 
         <div className="ct-prose" dangerouslySetInnerHTML={{ __html: e.html }} />
 
-        <aside className="ct-cta" aria-label="install debugsy">
+        <aside className="ct-cta" aria-label="about debugsy">
           <div>
             <p>
-              debugsy runs inside your own app and logs the values you pass to its hooks. It
-              installs from GitHub Packages, which asks for a token with read:packages.
+              debugsy runs inside your own app and logs the values you pass to its hooks. A
+              public npm release is in preparation.
             </p>
             <pre>
-              <code>pnpm add @n-uf/debugsy</code>
+              <code>{"<DebugsyLook />"}</code>
             </pre>
           </div>
           <Link className="ct-cta-link" href="/">
-            install debugsy
+            see the debugsy panel
           </Link>
         </aside>
 

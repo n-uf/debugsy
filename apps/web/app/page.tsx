@@ -201,8 +201,7 @@ function MainStage(): React.ReactElement {
             warnings, in the page you're debugging.
           </SpecRow>
           <SpecRow label="needs">
-            React 19 · GitHub Packages (<code>@n-uf</code> scope) ·{" "}
-            {LICENSE_NAME}
+            React 19 · {LICENSE_NAME} · public npm release in preparation
           </SpecRow>
           <SpecRow label="in prod">
             no telemetry, no network requests. It doesn't remove itself: load
@@ -232,11 +231,7 @@ function MainStage(): React.ReactElement {
           list clips at the bottom instead of spilling sideways into hidden columns. ── */}
       <ol className="m-0 grid min-h-0 flex-1 list-none content-start items-start grid-cols-1 gap-x-3 overflow-hidden p-0 sm:grid-cols-2 xl:grid-cols-3">
         <CapabilityBlock num="01" label="Install + mount">
-          <Tok kind="comment">// .npmrc (GitHub Packages)</Tok>
-          {"\n"}
-          @n-uf:registry=https://npm.pkg.github.com
-          {"\n"}
-          <Tok kind="sh">$</Tok> pnpm add @n-uf/debugsy
+          <Tok kind="comment">// public npm release in preparation</Tok>
           {"\n"}
           <Tok kind="comment">
             // app root — ↓ panel below = this same component
