@@ -122,7 +122,7 @@ export function renderMarkdown(source: string, firstNum = 1): Rendered {
           return `<a href="${escapeHtml(href)}"${t}>${inner}</a>`;
         }
         if (!/^[a-z][a-z0-9+.-]*:/i.test(href)) relativeLinks.push(href);
-        return `<a href="${escapeHtml(href)}"${t} rel="noopener">${inner}</a>`;
+        return `<a href="${escapeHtml(href)}"${t} target="_blank" rel="noopener noreferrer">${inner}</a>`;
       },
       code({ text, lang }: Tokens.Code): string {
         const l = (lang ?? "").trim().split(/\s+/)[0] ?? "";
