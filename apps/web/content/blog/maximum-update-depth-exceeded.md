@@ -103,7 +103,7 @@ The third is a different error: "Too many re-renders. React limits the number of
 |---|---|---|---|
 | Maximum update depth exceeded … componentWillUpdate or componentDidUpdate | Thrown. Production: Minified React error #185 | More than 50 nested updates of the same root, from `componentDidUpdate` or `useLayoutEffect` | Guard the update, or fix the value that changes every time |
 | Maximum update depth exceeded … setState inside useEffect | Console error, development only. The loop goes on | More than 50 nested updates scheduled from `useEffect` | Add or correct the dependency array |
-| Too many re-renders | Thrown. Production: Minified React error #301 | State set during render; React's limit is 25 re-renders in one pass | Pass the handler instead of calling it, or guard the `set` call |
+| Too many re-renders | Thrown. Production: Minified React error #301 | State set during render; React's limit is 25 extra passes of one render | Pass the handler instead of calling it, or guard the `set` call |
 
 ### Minified React error #185 in production
 
@@ -127,7 +127,7 @@ return <button onClick={handleClick()}>Click me</button>
 return <button onClick={handleClick}>Click me</button>
 ```
 
-`onClick={setOpen(true)}` has the same problem: it runs while rendering.
+`onClick={setOpen(true)}` has the same problem: it runs while rendering. The guide to [Too many re-renders in React](/blog/too-many-re-renders) covers the other causes, such as a set call in the component body or inside `map`, and where React's limit of 25 extra passes comes from.
 
 ## How to debug Maximum update depth exceeded in React
 
