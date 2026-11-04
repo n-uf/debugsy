@@ -4,7 +4,7 @@
  * Modules that ship with debugsy itself — always registered,
  * independent of any consuming application.
  *
- * - system: debugsy self-diagnostics, error tracking, health
+ * - system: debugsy self-diagnostics, an errors channel, health
  * - perf:   performance monitoring and React dependency tracking
  */
 
@@ -28,7 +28,9 @@ const SYSTEM_MODULE: DebugModuleDef = {
     errors: {
       emoji: "💥",
       label: "Errors",
-      description: "Uncaught errors and unhandled rejections",
+      // A channel for the app's own error logs: debugsy doesn't listen for
+      // uncaught errors or unhandled rejections.
+      description: 'Errors your app logs here: dsy.error("errors", …)',
     },
     health: {
       emoji: "🏥",
