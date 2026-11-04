@@ -6,14 +6,18 @@ import type { DisplayQueueItem } from "../../patterns/display-system/display-que
 import { Display, type DisplayAction } from "../shared/display/display";
 import type { DisplayEntry } from "../shared/display/renderers/entries-mode";
 
+const withClass = (base: string, extra?: string): string =>
+  extra ? `${base} ${extra}` : base;
+
 export interface TraySectionProps {
   children: React.ReactNode;
   /**
-   * Whether to show left border separator
+   * Whether to show a hairline on the left, between this section and the
+   * previous one
    */
   separator?: boolean;
   /**
-   * Additional className
+   * Additional className (appended to the section's own)
    */
   className?: string;
 }
@@ -22,21 +26,17 @@ export interface TraySectionProps {
  * TraySection - Section within a tray
  *
  * A generic section component for organizing elements within a tray.
- * Can be used at any position (top, bottom, or middle of a layout).
+ * Its items stretch to the strip's height.
  */
 export const TraySection: React.FC<TraySectionProps> = ({
   children,
   separator = false,
-  className = "",
+  className,
 }) => {
   return (
     <div
-      className={className}
-      style={
-        separator
-          ? { borderLeft: "1px solid rgb(var(--color-chrome-border))" }
-          : undefined
-      }
+      className={withClass("dbg-tray-section", className)}
+      data-separator={separator ? "true" : undefined}
     >
       {children}
     </div>
@@ -51,64 +51,37 @@ export interface TrayProps {
    */
   children: React.ReactNode;
   /**
-   * Background color
-   */
-  backgroundColor?: string;
-  /**
-   * Border color
-   */
-  borderColor?: string;
-  /**
-   * Gap between sections (Tailwind class, e.g., "gap-2", "gap-4"). Default: "gap-4"
-   */
-  gap?: string;
-  /**
-   * Additional className
+   * Additional className (appended to the tray's own)
    */
   className?: string;
 }
 
 /**
- * Tray - Horizontal container with sections
+ * Tray - the panel's bottom control strip
  *
- * A generic layout component for organizing elements in a horizontal bar.
- * Can be used at any position (top, bottom, or middle of a layout).
- * Supports multiple sections with separators and display integration.
+ * A horizontal strip on the panel background with a hairline on top. Its
+ * sections run left to right, stretched to the strip's height, with hairlines
+ * between those that ask for one.
  *
  * @example
  * ```tsx
  * <Tray>
  *   <TraySection>
- *     <IndicatorButtonGroup buttons={buttons} />
+ *     <ModuleNav />
  *   </TraySection>
  *
  *   <TraySection separator>
  *     <MyControls />
  *   </TraySection>
  *
- *   <TraySection separator className="flex-1">
- *     <Display entries={entries} />
- *   </TraySection>
+ *   <TrayDisplay entries={entries} actions={actions} />
  * </Tray>
  * ```
  */
-export const Tray: React.FC<TrayProps> = ({
-  children,
-  backgroundColor,
-  borderColor,
-  gap = "gap-4",
-  className = "",
-}) => {
+export const Tray: React.FC<TrayProps> = ({ children, className }) => {
   return (
-    <div
-      data-harbuz-tray=""
-      className={`backdrop-blur border-t shadow-sm ${className}`}
-      style={{
-        backgroundColor: backgroundColor ?? "rgb(var(--color-chrome-bg))",
-        borderTopColor: borderColor ?? "rgb(var(--color-chrome-border))",
-      }}
-    >
-      <div className={`flex items-stretch ${gap} px-4 py-1`}>{children}</div>
+    <div data-dbg-tray="" className={withClass("dbg-tray", className)}>
+      <div className="dbg-tray-row">{children}</div>
     </div>
   );
 };
@@ -117,7 +90,7 @@ Tray.displayName = "Tray";
 
 export interface TrayDisplayProps {
   /**
-   * Queue items for multi-row display (NEW - highest priority)
+   * Queue items for multi-row display (highest priority)
    */
   queueItems?: DisplayQueueItem[];
   /**
@@ -133,7 +106,7 @@ export interface TrayDisplayProps {
    */
   content?: DisplayContent | null;
   /**
-   * Actions for display
+   * Action words at the right end of the display
    */
   actions?: DisplayAction[];
   /**
@@ -149,7 +122,7 @@ export interface TrayDisplayProps {
 /**
  * TrayDisplay - Pre-configured display section for trays
  *
- * A convenience component that wraps Display in a tray section.
+ * Wraps the readout in a tray section that fills the rest of the strip.
  */
 export const TrayDisplay: React.FC<TrayDisplayProps> = ({
   queueItems,
@@ -157,11 +130,11 @@ export const TrayDisplay: React.FC<TrayDisplayProps> = ({
   entries = [],
   content,
   actions = [],
-  className = "",
+  className,
   emptyMessage,
 }) => {
   return (
-    <TraySection separator className={`flex-1 min-w-0 pl-4 ${className}`}>
+    <TraySection className={withClass("dbg-tray-display", className)}>
       <Display
         queueItems={queueItems}
         memorizedItems={memorizedItems}

@@ -3,7 +3,7 @@
 /**
  * Empty State Renderer
  *
- * Renders empty state message when no content is available.
+ * Renders a dim message when the readout has nothing to show.
  */
 
 import React from "react";
@@ -15,24 +15,9 @@ export interface EmptyStateProps {
 
 /**
  * EmptyState - Empty state renderer
- *
- * Shows centered message when display has no content.
  */
 export const EmptyState: React.FC<EmptyStateProps> = ({ message }) => {
-  return (
-    <div
-      style={{
-        color: "#6b7280",
-        fontSize: "11px",
-        fontFamily: "monospace",
-        textAlign: "center",
-        width: "100%",
-      }}
-    >
-      {message}
-    </div>
-  );
+  return <div className="dbg-readout-empty">{message}</div>;
 };
 
 EmptyState.displayName = "EmptyState";
-

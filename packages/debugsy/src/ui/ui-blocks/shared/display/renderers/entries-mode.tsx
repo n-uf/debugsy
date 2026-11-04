@@ -3,7 +3,7 @@
 /**
  * Entries Mode Renderer
  *
- * Renders list of log entries.
+ * Renders a short list of recent log entries.
  */
 
 import React from "react";
@@ -24,58 +24,20 @@ export interface EntriesModeProps {
 /**
  * EntriesMode - Entries list renderer
  *
- * Features:
- * - Multiple entries in rows
- * - Timestamp + emoji + message format
- * - Ellipsis for long messages
+ * Rows of dim timestamp, emoji and message; long messages end in an ellipsis.
  */
 export const EntriesMode: React.FC<EntriesModeProps> = ({ entries }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "1px",
-        width: "100%",
-        overflow: "hidden",
-      }}
-    >
+    <div className="dbg-readout-rows">
       {entries.map((entry) => (
-        <div
-          key={entry.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            fontSize: "10px",
-            fontFamily: "monospace",
-            lineHeight: "1.2",
-            overflow: "hidden",
-          }}
-        >
-          <span
-            style={{
-              color: "#6b7280",
-              flexShrink: 0,
-              fontSize: "9px",
-            }}
-          >
-            {formatTime(entry.timestamp)}
-          </span>
-          <span style={{ flexShrink: 0, fontSize: "10px" }}>
-            {entry.emoji}
-          </span>
-          <span
-            style={{
-              color: "#10b981",
-              flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {entry.message}
-          </span>
+        <div key={entry.id} className="dbg-readout-row">
+          {entry.timestamp !== "" && (
+            <span className="dbg-readout-time">{formatTime(entry.timestamp)}</span>
+          )}
+          {entry.emoji !== "" && (
+            <span className="dbg-readout-emoji">{entry.emoji}</span>
+          )}
+          <span className="dbg-readout-msg">{entry.message}</span>
         </div>
       ))}
     </div>
@@ -83,4 +45,3 @@ export const EntriesMode: React.FC<EntriesModeProps> = ({ entries }) => {
 };
 
 EntriesMode.displayName = "EntriesMode";
-
