@@ -17,6 +17,37 @@ import {
   debugSettingsControls,
   getGlobalDebugState,
 } from "./debugsy-space-settings";
+import { getAllPointKeys, isKnownPoint } from "../config";
+
+const IS_DEVELOPMENT = (() => {
+  try {
+    return process.env.NODE_ENV !== "production";
+  } catch {
+    return false; // no bundler-provided process.env
+  }
+})();
+
+/** Unknown point keys already warned about: each warns once */
+const warnedUnknownPoints = new Set<string>();
+
+/**
+ * Development only: a log call to a point no module registered is dropped,
+ * since nothing in the panel can turn that point on. Say so once per key.
+ * The registry is checked again a microtask later, so a module registered
+ * right after the call doesn't warn.
+ */
+function warnUnknownPointOnce(point: DebugPoint): void {
+  if (warnedUnknownPoints.has(point)) return;
+  queueMicrotask(() => {
+    if (isKnownPoint(point) || warnedUnknownPoints.has(point)) return;
+    warnedUnknownPoints.add(point);
+    console.warn(
+      `[debugsy] No module registers the debug point "${point}", so log calls to it are dropped. ` +
+        `Point keys are bare ("session", not "auth.session"); register them with registerModule(). ` +
+        `Registered points: ${getAllPointKeys().join(", ")}.`
+    );
+  });
+}
 
 /**
  * Core Debug Manager Interface
@@ -125,6 +156,9 @@ function createDebugsySpace(): DebugsySpace {
     const globalState = getGlobalDebugState();
 
     if (!globalState.enabled.has(point)) {
+      if (IS_DEVELOPMENT && !isKnownPoint(point)) {
+        warnUnknownPointOnce(point);
+      }
       return;
     }
 
