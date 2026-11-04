@@ -594,7 +594,10 @@ export function useRenderTracker(
         return;
       }
       const unmountTime = Date.now();
-      if (unmountTime - counter.lastUnmountTime > resetMs) {
+      if (
+        unmountTime - counter.lastUnmountTime >
+        DEPS_CONFIG_DEFAULTS.mountRateResetMs
+      ) {
         counter.pendingUnmounts = 0; // older unmounts can't pair any more
       }
       counter.pendingUnmounts += 1;
