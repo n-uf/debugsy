@@ -59,6 +59,7 @@ import { DebugsyActions } from "./debugsy-actions";
 import { DebugsyShortcutsDisplay } from "./debugsy-shortcuts";
 import { DebugsyStats } from "./debugsy-stats";
 import { DependencyControls } from "./dependency-controls";
+import { DependencyAdvancedPanel } from "./dependency-advanced-panel";
 import { ModuleNav, SYSTEM_MODULE_KEY } from "./module-nav";
 import { TagFilter, useDiscoveredTags, type TagFilterMode } from "./tag-filter";
 import { useClear } from "./use-clear";
@@ -131,6 +132,9 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   const [isVisible, setIsVisible] = useState(initialVisible);
   const [isCompact, setIsCompact] = useState(initialIsCompact);
   const [activeModule, setActiveModule] = useState<string | null>(null);
+  const [showDepsAdvanced, setShowDepsAdvanced] = useState(false);
+  // Dependency controls show at the root or inside the system module
+  const showDepsControls = activeModule === null || activeModule === SYSTEM_MODULE_KEY;
   const [depthSetting, setDepthSetting] = useState<DepthSetting>("all"); // Depth setting for copy operations
   const [clearLocalStateCallback, setClearLocalStateCallback] = useState<
     (() => void) | null
@@ -734,6 +738,11 @@ Enable debug points and interact with the surface to see logs here.`}
         )}
 
         <WindowControl>
+          {/* Advanced dependency strip — full width, above the tray row */}
+          {showDepsControls && showDepsAdvanced && (
+            <DependencyAdvancedPanel showToggle={false} isVisible />
+          )}
+
           <Tray>
             {/* Debug point words — module navigation */}
             <TraySection>
@@ -750,9 +759,12 @@ Enable debug points and interact with the surface to see logs here.`}
             </TraySection>
 
             {/* Dependency controls — at the root or inside the system module */}
-            {(activeModule === null || activeModule === SYSTEM_MODULE_KEY) && (
+            {showDepsControls && (
               <TraySection separator>
-                <DependencyControls />
+                <DependencyControls
+                  showAdvanced={showDepsAdvanced}
+                  onAdvancedToggle={setShowDepsAdvanced}
+                />
               </TraySection>
             )}
 

@@ -12,6 +12,10 @@ export interface DependencyControlsProps {
   theme?: unknown;
   className?: string;
   onAdvancedToggle?: (show: boolean) => void;
+  /**
+   * Controlled Adv state. When given, the parent renders the advanced strip
+   * (the panel puts it above the tray); left out, it renders below the words.
+   */
   showAdvanced?: boolean;
 }
 
@@ -33,7 +37,8 @@ const FILTER_LABEL: Record<string, string> = {
 /**
  * DependencyControls - the dependency-tracking words in the control tray:
  * on/off, level (Quiet → Normal → Verbose), filter (All → Func → Obj →
- * Unstable), the re-render probe and the advanced panel.
+ * Unstable), the re-render probe and the Adv word that opens the advanced
+ * strip.
  */
 export const DependencyControls: React.FC<DependencyControlsProps> = ({
   className = "",
@@ -215,7 +220,7 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
             active={showAdvanced}
             ariaPressed={showAdvanced}
             onClick={handleAdvancedToggle}
-            title="Toggle advanced dependency controls panel"
+            title="Advanced dependency controls: level, changes to log, what's logged, console commands"
           >
             Adv
           </Word>
@@ -230,8 +235,8 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
         />
       )}
 
-      {/* Advanced Panel */}
-      {showAdvanced && (
+      {/* Advanced strip, when no parent places it */}
+      {showAdvanced && externalShowAdvanced === undefined && (
         <DependencyAdvancedPanel showToggle={false} isVisible={true} />
       )}
     </div>
