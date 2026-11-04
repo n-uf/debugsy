@@ -154,10 +154,10 @@ function MainStage(): React.ReactElement {
   return (
     <section
       aria-label="debugsy"
-      className="flex min-h-0 flex-col gap-3 px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12"
+      className="flex min-h-0 flex-col gap-3 px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12 xl:pt-6"
     >
       {/* ── Intro: spec block ────────────────────────────────────── */}
-      <header className="flex flex-col gap-1.5 font-mono">
+      <header className="flex flex-col gap-1 font-mono">
         {/* The h1 holds only the title; the name and version sit beside it. */}
         <div className="flex flex-wrap items-baseline gap-x-2">
           <span
@@ -395,7 +395,7 @@ function CapabilityBlock({
   children,
 }: CapabilityBlockProps): React.ReactElement {
   return (
-    <li className="m-0 mb-3 flex break-inside-avoid flex-col gap-1">
+    <li className="m-0 mb-3 flex flex-col gap-1">
       <h3 className="m-0 flex items-baseline gap-1.5">
         <span aria-hidden="true" className="dbg-cap-num">
           {num}
