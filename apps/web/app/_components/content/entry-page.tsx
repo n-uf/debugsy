@@ -134,7 +134,7 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
           <ol className="ct-sources">
             {e.sources.map((s) => (
               <li key={s.url}>
-                <a href={s.url} target="_blank" rel="noopener noreferrer">
+                <a href={s.url} target="_blank" rel="noopener">
                   {s.title}
                 </a>{" "}
                 · checked {s.checked}
