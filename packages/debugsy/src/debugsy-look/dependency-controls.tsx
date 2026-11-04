@@ -182,8 +182,8 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
             onClick={handleDependenciesToggle}
             title={
               dependencyState.enabled
-                ? "Click to disable (surfaceDebug.deps.off)"
-                : "Click to enable (surfaceDebug.deps.normal)"
+                ? 'Dependency tracking is on. Click to turn it off (debugsy.disable("dependencies"))'
+                : 'Dependency tracking is off. Click to turn it on (debugsy.enable("dependencies"))'
             }
           >
             Deps
