@@ -290,7 +290,7 @@ VS Code has a built-in debugger for Edge and Chrome, so breakpoints go in the ed
 
 Change `url` to your dev server's address. VS Code's own examples use `msedge` and say to replace it with `chrome` for Chrome. `webRoot` is used to resolve source maps. Start the dev server, then press F5. Code that runs at start-up has already run by the time the debugger attaches, so VS Code's React tutorial says to refresh the page to hit a breakpoint there. For a Next.js app, the launch configurations for server and browser code are in the guide on how to [debug a Next.js app](/blog/debug-next-js-app).
 
-When it pauses, VARIABLES shows the selected frame's values, WATCH evaluates expressions and CALL STACK shows the active calls. F10 steps over, F11 steps in, Shift+F11 steps out and F5 continues. Conditional breakpoints and logpoints are in the margin's context menu. A logpoint takes plain text with expressions in curly braces, such as `User ID: {user.id}`.
+When it pauses, VARIABLES shows the selected frame's values, WATCH evaluates expressions and CALL STACK shows the active calls. F10 steps over, F11 steps in, Shift+F11 steps out and F5 continues. Conditional breakpoints and logpoints are in the margin's context menu. A logpoint takes plain text with expressions in curly braces, such as `User ID: {user.id}`. The longer guide on how to [debug React in VS Code](/blog/debug-react-vscode) covers attaching to a browser you started yourself, where breakpoints pause in components and hooks, and what to check when one won't bind.
 
 ## Debug a React app in production
 
