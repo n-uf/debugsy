@@ -355,4 +355,4 @@ function Results({ filters, onPick }: ResultsProps) {
 
 A changed object shows up as `📦 [Results] filters: object changed (#2)`, and a changed function as `📝 [Results] onPick: function changed (#3) (function → function)`. When the component renders and none of the keys changed, nothing is logged, which points at the parent, a context or the component's own state. The hook sees only components where you call it and only the values you pass, and it does nothing until the Deps toggle (the `dependencies` debug point) is on. It logs. It never stops a render.
 
-The package installs from GitHub Packages, which asks for a GitHub token with `read:packages` even for public packages. debugsy doesn't remove itself from production builds, so guard the mount yourself. It is independent and not affiliated with Meta or the React team.
+It isn't on npmjs yet: a public release there is in preparation. debugsy doesn't remove itself from production builds, so guard the mount yourself. It is independent and not affiliated with Meta or the React team.
