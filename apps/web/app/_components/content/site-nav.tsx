@@ -27,7 +27,7 @@ export function SiteNav({
     <nav aria-label={label} className={className}>
       {items.map((it) =>
         it.external ? (
-          <a key={it.href} href={it.href} rel="noopener">
+          <a key={it.href} href={it.href} target="_blank" rel="noopener noreferrer">
             {it.label}
           </a>
         ) : (
