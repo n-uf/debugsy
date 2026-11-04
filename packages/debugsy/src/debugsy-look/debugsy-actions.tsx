@@ -3,11 +3,9 @@
 import {
   ActionToolbar,
   DEFAULT_COPY_CONFIG,
-  getProgressColor as getActionProgressColor,
-  getProgressWidth as getActionProgressWidth,
-  getDepthColor,
+  DEPTH_SETTINGS,
   getDepthDescription,
-  getDepthWidth,
+  getDepthSegments,
   getLogsToCopy,
   safeSuperjsonStringify,
   // Context-based queue system (isolated)
@@ -19,63 +17,35 @@ import {
   type DepthSetting,
   type HoverMessageHandlers,
   type PauseState,
-  type ProgressControl,
   type ScrollFollowingState,
 } from "../ui";
 import React, { useCallback, useState } from "react";
 
 export interface DebugsyActionsProps<T> {
-  /**
-   * Active logs to display/copy
-   */
+  /** Active logs to display/copy */
   activeLogs: T[];
-  /**
-   * Filtered logs (for snapshot capture)
-   */
+  /** Filtered logs (for snapshot capture) */
   filteredLogs: T[];
-  /**
-   * Copy state hook return
-   */
+  /** Copy state hook return */
   copyState: CopyStateReturn;
-  /**
-   * Pause state hook return
-   */
+  /** Pause state hook return */
   pauseState: PauseState<T>;
-  /**
-   * Scroll following state hook return
-   */
+  /** Scroll following state hook return */
   scrollFollowing: ScrollFollowingState<T>;
-  /**
-   * Hover message handlers
-   */
+  /** Hover message handlers */
   hoverMessage: HoverMessageHandlers;
-  /**
-   * Depth setting for copy operations (optional, defaults to "all")
-   */
+  /** Depth setting for copy operations (optional, defaults to "all") */
   depthSetting?: DepthSetting;
-  /**
-   * Callback when depth setting changes
-   */
+  /** Callback when depth setting changes */
   onDepthChange?: (depth: DepthSetting) => void;
 }
 
+/** Copy state 0 / 1 / 2 as the COPY word's LED fill */
+const COPY_PROGRESS = [0, 50, 100] as const;
+
 /**
- * DebugsyActions - Action toolbar with all action logic
- *
- * Encapsulates copy, pause, and health snapshot actions.
- * Self-contained with all handlers and configuration.
- *
- * @example
- * ```tsx
- * <DebugsyActions
- *   activeLogs={activeLogs}
- *   filteredLogs={filteredLogs}
- *   copyState={copyState}
- *   pauseState={pauseState}
- *   scrollFollowing={scrollFollowing}
- *   hoverMessage={hoverMessage}
- * />
- * ```
+ * DebugsyActions - the action rail: copy (twice copies everything), pause,
+ * health snapshot, and the copy depth.
  */
 export const DebugsyActions = <T,>({
   activeLogs,
@@ -90,7 +60,7 @@ export const DebugsyActions = <T,>({
   // Context-based display queue helpers (isolated to this component tree)
   const { startLoading, completeLoading } = useDisplayQueueHelpers();
   const { setDisplayContent } = useLegacyDisplayCompat();
-  
+
   const [internalDepthSetting, setInternalDepthSetting] =
     useState<DepthSetting>("all");
 
@@ -139,7 +109,7 @@ export const DebugsyActions = <T,>({
     };
     const depth = depthMap[depthSetting];
 
-    // Start loading (NEW: returns ID for later update)
+    // Start loading (returns ID for later update)
     const loadingId = startLoading(`Copying ${logsToCopy.length} logs...`, {
       type: "info",
       showProcessingTime: false,
@@ -148,8 +118,8 @@ export const DebugsyActions = <T,>({
     // Copy with depth setting (wrapped in promise for async/await)
     await new Promise<void>((resolve) => {
       setTimeout(() => {
-    const serialized = safeSuperjsonStringify(logsToCopy, depth);
-    navigator.clipboard.writeText(serialized);
+        const serialized = safeSuperjsonStringify(logsToCopy, depth);
+        navigator.clipboard.writeText(serialized);
         resolve();
       }, 50); // Small delay to show loading state
     });
@@ -157,12 +127,9 @@ export const DebugsyActions = <T,>({
     // Advance copy state
     copyState.setState(nextState);
 
-    // Calculate progress value (0-100) based on next state
-    const progressValue = nextState === 0 ? 0 : nextState === 1 ? 50 : 100;
-
-    // Complete loading with success (NEW: updates item by ID)
+    // Complete loading with success (updates item by ID)
     completeLoading(loadingId, `${message} (depth: ${depthSetting})`, {
-      progressValue,
+      progressValue: COPY_PROGRESS[nextState],
       duration: 2000,
     });
   }, [activeLogs, copyState, depthSetting]);
@@ -170,7 +137,7 @@ export const DebugsyActions = <T,>({
   // Depth control configuration
   const depthControl: DepthControl<DepthSetting> = {
     value: depthSetting,
-    options: ["str", "1", "3", "5", "10", "all"],
+    options: DEPTH_SETTINGS,
     onChange: (newDepth) => {
       setDepthSetting(newDepth);
       setDisplayContent({
@@ -180,68 +147,54 @@ export const DebugsyActions = <T,>({
       });
     },
     getDescription: getDepthDescription,
-    getColor: getDepthColor,
-    getWidth: getDepthWidth,
+    getSegments: getDepthSegments,
   };
 
-  const progressControl: ProgressControl<typeof copyState.state> = {
-    value: copyState.state,
-    getIcon: copyState.getIcon,
-    getWidth: getActionProgressWidth,
-    getColor: getActionProgressColor,
-  };
-
-  // Action buttons configuration
   const actionButtons: ActionButton[] = [
     {
-      icon: copyState.getIcon(),
+      label: "Copy",
       title:
         copyState.state === 0
           ? `Copy ${activeLogs.length} logs to clipboard`
           : copyState.state === 1
             ? "Click again to copy all"
             : "Copy complete",
-      variant: copyState.getVariant(),
+      tone: copyState.state === 2 ? "led" : undefined,
+      progress: copyState.state === 0 ? undefined : COPY_PROGRESS[copyState.state],
       onClick: handleCopyLogs,
       disabled: activeLogs.length === 0,
       ...hoverMessage.getHandlers(
         `Copy ${activeLogs.length} logs (depth: ${depthSetting})`,
-        "info"
+        "info",
       ),
     },
     {
-      icon: pauseState.isPaused ? "▶️" : "⏸",
+      label: pauseState.isPaused ? "Resume" : "Pause",
       title: pauseState.isPaused
         ? "Resume log rendering"
         : "Pause log rendering",
-      variant: pauseState.isPaused ? "paused" : "default",
+      tone: pauseState.isPaused ? "warn" : undefined,
+      active: pauseState.isPaused,
       onClick: () => pauseState.toggle(filteredLogs),
       ...hoverMessage.getHandlers(
         pauseState.isPaused
           ? "Resume live log updates"
           : "Pause live log updates",
-        "info"
+        "info",
       ),
     },
     {
-      icon: "🏥",
-      title: "Capture health snapshot to debug logs",
-      variant: "success",
+      label: "Health",
+      title: "Capture a health snapshot into the logs",
       onClick: handleHealthSnapshot,
       ...hoverMessage.getHandlers(
         "Capture health snapshot and save to debug logs",
-        "info"
+        "info",
       ),
     },
   ];
 
-  return (
-    <ActionToolbar
-      depthControl={depthControl}
-      actions={actionButtons}
-      progressControl={progressControl}
-    />
-  );
+  return <ActionToolbar depthControl={depthControl} actions={actionButtons} />;
 };
 
 DebugsyActions.displayName = "DebugsyActions";

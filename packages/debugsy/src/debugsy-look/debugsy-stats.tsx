@@ -1,84 +1,43 @@
 "use client";
 
-import { TerminalWindowStatItem, TerminalWindowStats } from "../ui";
+import { SidebarSection, StatList } from "../ui";
 import React from "react";
 
 export interface DebugsyStatsProps {
-  /**
-   * Total number of logs
-   */
   totalLogs: number;
-  /**
-   * Number of filtered logs
-   */
   filteredLogs: number;
-  /**
-   * Number of active logs (displayed)
-   */
   activeLogs: number;
-  /**
-   * Number of active debug points
-   */
   activePoints: number;
-  /**
-   * Current panel height
-   */
   panelHeight: number;
 }
 
-/**
- * DebugsyStats - Statistics display component
- *
- * Displays key statistics about the debug panel state.
- * Self-contained with all stat calculation and display logic.
- *
- * @example
- * ```tsx
- * <DebugsyStats
- *   totalLogs={logs.length}
- *   filteredLogs={filteredLogs.length}
- *   activeLogs={activeLogs.length}
- *   activePoints={activePoints}
- *   panelHeight={panelHeight}
- * />
- * ```
- */
+/** The sidebar's Info block: log counts, points, panel height */
 export const DebugsyStats: React.FC<DebugsyStatsProps> = ({
   totalLogs,
   filteredLogs,
   activeLogs,
   activePoints,
   panelHeight,
-}) => {
-  return (
-    <TerminalWindowStats title="Info">
-      <TerminalWindowStatItem
-        label="Total"
-        value={totalLogs}
-        color="rgb(var(--color-success))"
-      />
-      <TerminalWindowStatItem
-        label="Filtered"
-        value={filteredLogs}
-        color="rgb(var(--color-info))"
-      />
-      <TerminalWindowStatItem
-        label="Active"
-        value={activeLogs}
-        color="rgb(var(--color-warning))"
-      />
-      <TerminalWindowStatItem
-        label="Points"
-        value={activePoints}
-        color="rgb(var(--color-accent))"
-      />
-      <TerminalWindowStatItem
-        label="Height"
-        value={`${panelHeight}px`}
-        color="rgb(var(--color-warning))"
-      />
-    </TerminalWindowStats>
-  );
-};
+}) => (
+  <SidebarSection title="Info">
+    <StatList
+      items={[
+        { label: "Total", value: totalLogs },
+        {
+          label: "Filtered",
+          value: filteredLogs,
+          tone: filteredLogs !== totalLogs ? "led" : undefined,
+        },
+        {
+          label: "Active",
+          value: activeLogs,
+          tone: activeLogs !== filteredLogs ? "warn" : undefined,
+        },
+        { label: "Points", value: activePoints, tone: "led" },
+        { label: "Height", value: `${panelHeight}px` },
+      ]}
+    />
+  </SidebarSection>
+);
 
 DebugsyStats.displayName = "DebugsyStats";

@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Indicator,
-  IndicatorButtonGroup,
-  type IndicatorButtonGroupItem,
-  type IndicatorButtonTheme,
-} from "../ui";
+import { DebugsyStyles, Word, WordDivider, type LampState } from "../ui";
 import React, { useCallback, useMemo, useReducer, useRef, useState } from "react";
-
-const LONG_PRESS_MS = 400;
 
 import {
   getAllPointKeys,
@@ -19,48 +12,33 @@ import {
 import type { ModuleLedState } from "../config/types";
 import { useDebugsy } from "../debugsy-logs/use-debugsy";
 
-// =============================================================================
-// LED variant mapping
-// =============================================================================
+const LONG_PRESS_MS = 400;
 
-interface LedAppearance {
-  variant: "success" | "error" | "info";
-  active: boolean;
-  indicatorClassName: string;
-}
-
-const LED_APPEARANCE: Record<ModuleLedState, LedAppearance> = {
-  "all-on": { variant: "success", active: true, indicatorClassName: "" },
-  partial: { variant: "info", active: true, indicatorClassName: "" },
-  "all-off": { variant: "error", active: true, indicatorClassName: "opacity-50" },
+/** A module's lamp: lit when all its points are on, half lit when some are */
+const LAMP: Record<ModuleLedState, LampState> = {
+  "all-on": "on",
+  partial: "partial",
+  "all-off": "off",
 };
-
-// =============================================================================
-// Types
-// =============================================================================
 
 /** The module key for the built-in system/debugsy module */
 export const SYSTEM_MODULE_KEY = "system";
 
 interface ModuleNavProps {
-  theme: IndicatorButtonTheme;
+  /** @deprecated Ignored since the panel styles itself; kept so existing calls compile */
+  theme?: unknown;
   onDisplayMessage?: (message: string) => void;
   /** Called when the selected module changes (null = root level) */
   onModuleSelect?: (moduleKey: string | null) => void;
 }
 
-// =============================================================================
-// Component
-// =============================================================================
-
 /**
- * Two-level module navigation for debugsy control panel.
+ * Two-level module navigation for the control tray.
  *
- * Level 1: Module buttons with LED dot indicators
- * Level 2: Individual point buttons with slit indicators (with back)
+ * Level 1: a word per module with a lamp (click to open, hold to switch all
+ * its points). Level 2: a word per point, with a way back.
  */
 export const ModuleNav: React.FC<ModuleNavProps> = ({
-  theme,
   onDisplayMessage,
   onModuleSelect,
 }) => {
@@ -76,7 +54,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     [debug],
   );
 
-  // ─── Module-level buttons ───────────────────────────────────────────────────
+  // ─── Module-level words ───────────────────────────────────────────────────
 
   const modules = useMemo(() => {
     void ledVersion;
@@ -97,7 +75,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     return result;
   }, [isPointEnabled, ledVersion]);
 
-  // ─── Point-level buttons (when a module is selected) ────────────────────────
+  // ─── Point-level words (when a module is selected) ────────────────────────
 
   const selectedModuleDef = useMemo(() => {
     if (!selectedModule) return null;
@@ -117,17 +95,17 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     });
   }, [selectedModule, selectedModuleDef]);
 
-  // ─── Handlers ───────────────────────────────────────────────────────────────
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleModuleClick = useCallback(
     (moduleKey: string) => {
-      setSelectedModule((prev) => {
-        const next = prev === moduleKey ? null : moduleKey;
-        onModuleSelect?.(next);
-        return next;
-      });
+      // Tell the parent outside the state updater: updaters run during
+      // render, where setting another component's state is an error.
+      const next = selectedModule === moduleKey ? null : moduleKey;
+      setSelectedModule(next);
+      onModuleSelect?.(next);
     },
-    [onModuleSelect],
+    [selectedModule, onModuleSelect],
   );
 
   const handleModuleToggleAll = useCallback(
@@ -163,9 +141,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     (pointKey: string, label: string) => {
       debug.toggle(pointKey);
       const nowEnabled = debug.isEnabled(pointKey);
-      onDisplayMessage?.(
-        `${nowEnabled ? "Enabled" : "Disabled"} ${label}`,
-      );
+      onDisplayMessage?.(`${nowEnabled ? "Enabled" : "Disabled"} ${label}`);
       bumpLedVersion();
     },
     [debug, onDisplayMessage],
@@ -176,167 +152,120 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     onModuleSelect?.(null);
   }, [onModuleSelect]);
 
-  // ─── ALL button (shared between root and module views) ──────────────────────
+  const clearLongPress = (): void => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
-  const buildAllButton = useCallback(
-    (scope: "global" | "module") => {
-      const isModule = scope === "module" && selectedModule;
-      const keys = isModule ? getModulePointKeys(selectedModule) : getAllPointKeys();
-      const onCount = keys.filter((k) => debug.isEnabled(k)).length;
-      const ledState: ModuleLedState =
-        onCount === keys.length ? "all-on" : onCount === 0 ? "all-off" : "partial";
-      const led = LED_APPEARANCE[ledState];
+  // ─── ALL word (root and module views) ─────────────────────────────────────
 
-      return {
-        label: "ALL",
-        buttonVariant: "ghost" as const,
-        buttonSize: "xxs" as const,
-        onClick: isModule
-          ? () => handleModuleToggleAll(selectedModule)
-          : handleGlobalToggleAll,
-        title: isModule
-          ? `Toggle all ${selectedModuleDef?.label ?? ""} points`
-          : `Toggle all debug points (${ledState === "all-on" ? "disable" : "enable"})`,
-        customIndicator: (
-          <Indicator
-            size="md"
-            shape="slit"
-            variant={led.variant}
-            active={led.active}
-            inactiveVariant="error"
-            className={led.indicatorClassName}
-          />
-        ),
-      };
-    },
-    [debug, selectedModule, selectedModuleDef, handleModuleToggleAll, handleGlobalToggleAll],
+  const renderAllWord = (scope: "global" | "module"): React.ReactElement => {
+    const moduleKey = scope === "module" ? selectedModule : null;
+    const keys = moduleKey ? getModulePointKeys(moduleKey) : getAllPointKeys();
+    const onCount = keys.filter((k) => debug.isEnabled(k)).length;
+    const ledState: ModuleLedState =
+      onCount === keys.length ? "all-on" : onCount === 0 ? "all-off" : "partial";
+    return (
+      <Word
+        block
+        lamp={LAMP[ledState]}
+        onClick={moduleKey ? () => handleModuleToggleAll(moduleKey) : handleGlobalToggleAll}
+        title={
+          moduleKey
+            ? `Toggle all ${selectedModuleDef?.label ?? ""} points`
+            : `Toggle all debug points (${ledState === "all-on" ? "disable" : "enable"})`
+        }
+      >
+        All
+      </Word>
+    );
+  };
+
+  const wrap = (content: React.ReactNode): React.ReactElement => (
+    <div className="dbg-root dbg-contents">
+      <DebugsyStyles />
+      <div className="dbg-nav">{content}</div>
+    </div>
   );
 
-  // ─── Layout: first column (header + ALL) | separator | rest (2-row grid) ────
-
-  const SEPARATOR = (
-    <div className="w-px self-stretch bg-[rgb(var(--color-border-muted))] opacity-40 mx-0.5 shrink-0" />
-  );
-
-  // ─── Render: Point-level (expanded module) ──────────────────────────────────
+  // ─── Render: point level (an open module) ─────────────────────────────────
 
   if (selectedModule && selectedModuleDef) {
-    const backButton: IndicatorButtonGroupItem = {
-      label: `← ${selectedModuleDef.label}`,
-      indicatorType: "none" as const,
-      onClick: handleBack,
-      buttonVariant: "ghost" as const,
-      buttonSize: "xxs" as const,
-      title: "Back to modules",
-    };
-
-    const restButtons: IndicatorButtonGroupItem[] = pointButtons.map((point) => {
-      const enabled = debug.isEnabled(point.key);
-      return {
-        label: point.label,
-        indicatorType: "single" as const,
-        variant: (enabled ? "success" : "error") as "success" | "error",
-        active: enabled,
-        inactiveVariant: "error" as const,
-        onClick: () => handlePointToggle(point.key, point.label),
-        buttonVariant: "ghost" as const,
-        buttonSize: "xxs" as const,
-        title: `Toggle ${point.label}`,
-      };
-    });
-
-    return (
-      <div className="flex items-stretch">
-        <IndicatorButtonGroup
-          buttons={[backButton, buildAllButton("module")]}
-          theme={theme}
-          orientation="grid"
-          gridRows={2}
-          gap="2px"
-        />
-        {SEPARATOR}
-        <IndicatorButtonGroup
-          buttons={restButtons}
-          theme={theme}
-          orientation="grid"
-          gridRows={2}
-          gap="2px"
-        />
-      </div>
+    return wrap(
+      <>
+        <div className="dbg-grid">
+          <Word block tone="led" onClick={handleBack} title="Back to modules">
+            ← {selectedModuleDef.label}
+          </Word>
+          {renderAllWord("module")}
+        </div>
+        <WordDivider />
+        <div className="dbg-grid">
+          {pointButtons.map((point) => {
+            const enabled = debug.isEnabled(point.key);
+            return (
+              <Word
+                key={point.key}
+                block
+                lamp={enabled ? "on" : "off"}
+                active={enabled}
+                ariaPressed={enabled}
+                onClick={() => handlePointToggle(point.key, point.label)}
+                title={`Toggle ${point.label}`}
+              >
+                {point.label}
+              </Word>
+            );
+          })}
+        </div>
+      </>,
     );
   }
 
-  // ─── Render: Module-level ───────────────────────────────────────────────────
+  // ─── Render: module level ─────────────────────────────────────────────────
 
-  const firstModule = modules[0];
-  const restModules = modules.slice(1);
-
-  const buildModuleButton = (mod: (typeof modules)[number]): IndicatorButtonGroupItem => {
-    const led = LED_APPEARANCE[mod.ledState];
-    return {
-      label: mod.label,
-      onClick: () => {
+  const renderModuleWord = (mod: (typeof modules)[number]): React.ReactElement => (
+    <Word
+      key={mod.key}
+      block
+      lamp={LAMP[mod.ledState]}
+      active={mod.ledState !== "all-off"}
+      onClick={() => {
         if (longPressFired.current) {
           longPressFired.current = false;
           return;
         }
         handleModuleClick(mod.key);
-      },
-      onPointerDown: () => {
+      }}
+      onPointerDown={() => {
         longPressFired.current = false;
         longPressTimer.current = setTimeout(() => {
           longPressFired.current = true;
           handleModuleToggleAll(mod.key);
         }, LONG_PRESS_MS);
-      },
-      onPointerUp: () => {
-        if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
-        }
-      },
-      onPointerLeave: () => {
-        if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-          longPressTimer.current = null;
-        }
-      },
-      buttonVariant: "ghost" as const,
-      buttonSize: "xxs" as const,
-      title: `${mod.label} — click to expand, hold to toggle all`,
-      customIndicator: (
-        <Indicator
-          size="md"
-          shape="slit"
-          variant={led.variant}
-          active={led.active}
-          inactiveVariant="error"
-          className={led.indicatorClassName}
-        />
-      ),
-    };
-  };
+      }}
+      onPointerUp={clearLongPress}
+      onPointerLeave={clearLongPress}
+      title={`${mod.label} — click to open, hold to toggle all`}
+    >
+      {mod.label}
+    </Word>
+  );
 
+  const firstModule = modules[0];
   if (!firstModule) return null;
 
-  return (
-    <div className="flex items-stretch">
-      <IndicatorButtonGroup
-        buttons={[buildModuleButton(firstModule), buildAllButton("global")]}
-        theme={theme}
-        orientation="grid"
-        gridRows={2}
-        gap="2px"
-      />
-      {SEPARATOR}
-      <IndicatorButtonGroup
-        buttons={restModules.map(buildModuleButton)}
-        theme={theme}
-        orientation="grid"
-        gridRows={2}
-        gap="2px"
-      />
-    </div>
+  return wrap(
+    <>
+      <div className="dbg-grid">
+        {renderModuleWord(firstModule)}
+        {renderAllWord("global")}
+      </div>
+      <WordDivider />
+      <div className="dbg-grid">{modules.slice(1).map(renderModuleWord)}</div>
+    </>,
   );
 };
 

@@ -1,31 +1,19 @@
 "use client";
 
 import {
-  Banner,
+  DebugsyStyles,
   DisplayQueueProvider,
-  getProgressColor as getActionProgressColor,
-  IndicatorButtonGroup,
-  IndicatorButtonTheme,
   LogEntry,
+  LogsContainer,
+  Notice,
   PauseState,
   safeSuperjsonStringify,
   ScrollFollowingState,
+  SidebarSection,
   setProgressDisplay,
-  TerminalWindow,
-  TerminalWindowActions,
-  TerminalWindowBody,
-  TerminalWindowContent,
-  TerminalWindowControlPanel,
-  TerminalWindowHeader,
-  TerminalWindowLogsContainer,
-  TerminalWindowResizeHandle,
-  TerminalWindowResizePresets,
-  TerminalWindowSettings,
-  TerminalWindowSidebar,
   Tray,
   TrayDisplay,
   TraySection,
-  TruncationPanel,
   useClickOutside,
   useCopyState,
   useDisplayQueueContext,
@@ -38,8 +26,16 @@ import {
   usePauseState,
   useResizable,
   useScrollFollowing,
-  VirtualizedList,
+  Window,
+  WindowBody,
+  WindowContent,
+  WindowControl,
+  WindowEdge,
+  WindowRail,
+  WindowSidebar,
+  Word,
   Z_INDEX,
+  type DisplayAction,
 } from "../ui";
 import React, {
   useCallback,
@@ -84,6 +80,9 @@ export interface DebugsyLookProps {
    */
   initialIsCompact?: boolean;
 }
+
+/** Copy state 0 / 1 / 2 as a progress value */
+const COPY_PROGRESS = [0, 50, 100] as const;
 
 /**
  * DebugsyLookInternal - Core implementation
@@ -131,23 +130,19 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [tagSearch, setTagSearch] = useState("");
   const [tagMode, setTagMode] = useState<TagFilterMode>("and");
-  // Local setting states (demo placeholders for now, consistent with Showcase)
   const [closeOnClickOutsideState, setCloseOnClickOutsideState] =
     useState(closeOnClickOutside);
 
-  // Display system (NEW: context-based isolated queue)
+  // Display system (context-based isolated queue)
   const { visible: displayQueue, memorized: memorizedItems } =
     useDisplayQueueFullScoped();
   const { configureQueue } = useDisplayQueueContext();
-  // REMOVED: useDisplay() uses global state - we use scoped queue only
   const { setDisplayContent, clearDisplayContent } = useLegacyDisplayCompat(); // Scoped legacy compat
 
   // Configure display slots (3 rows max)
   useEffect(() => {
     configureQueue({ maxSlots: 3 });
   }, [configureQueue]);
-
-  // 🔥 HARBUZ HOOKS INTEGRATION 🔥
 
   // 1. Pause State Hook - Preserves logs when paused
   const pauseState = usePauseState<DebugLogEntry>({
@@ -228,14 +223,9 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
       const isCopyMessage = message.toLowerCase().includes("copy");
 
       if (isCopyMessage) {
-        const progressValue =
-          copyState.state === 0 ? 0 : copyState.state === 1 ? 50 : 100;
-
         // Use progress display for copy messages
-        setProgressDisplay(message, progressValue, {
+        setProgressDisplay(message, COPY_PROGRESS[copyState.state], {
           type,
-          color: getActionProgressColor(copyState.state),
-          height: 2,
           duration: 0, // Manual clear on hover
         });
       } else {
@@ -262,17 +252,16 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   // Resizable panel
   //
   // `bodyHeight` (= `panelHeight`) is the height of the LOG VIEWPORT inside
-  // the shell — the shell adds its own header (with the resize handle) and a
-  // control panel below the body, both with intrinsic heights summing to
-  // ~`SHELL_CHROME_PX`. To keep the WHOLE panel within the visible window
-  // (so the resize handle remains reachable at the top), we cap
-  // `panelHeight` at `window.innerHeight - SHELL_CHROME_PX`.
+  // the window — the window adds its resize edge above the body and the
+  // control tray below it, both with intrinsic heights summing to about
+  // `SHELL_CHROME_PX`. To keep the WHOLE panel within the visible window
+  // (so the resize edge stays reachable at the top), we cap `panelHeight` at
+  // `window.innerHeight - SHELL_CHROME_PX`.
   //
   // Tracking `window.innerHeight` via a `resize` listener (rather than
   // calling it in render and capturing a stale snapshot) lets the cap follow
-  // browser-window resizes — the handle can always travel to the very top of
-  // the current viewport.
-  const SHELL_CHROME_PX = 80; // header (~30) + control panel (~50)
+  // browser-window resizes.
+  const SHELL_CHROME_PX = 80; // resize edge (~10) + control tray (~60)
   const [maxPanelHeight, setMaxPanelHeight] = useState<number>(() =>
     typeof window !== "undefined"
       ? Math.max(0, window.innerHeight - SHELL_CHROME_PX)
@@ -303,19 +292,15 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   //
   //   .static-area { height: calc(100dvh - var(--debugsy-panel-h, 400px)); }
   //
-  // We must observe the SHELL element, not `containerRef` (the wrapper). The
-  // shell is `position: absolute; bottom: 0` inside the wrapper, so it does
-  // not contribute to the wrapper's natural height — `containerRef`'s own
-  // `offsetHeight` is 0. TerminalLayout renders the shell `<div>` first and
-  // a sibling `<style>` second, both inside the wrapper, so
-  // `firstElementChild` reliably resolves to the shell. Using a
-  // `ResizeObserver` covers compact mode (`height: auto`), drag resizes, and
-  // any future programmatic height changes for free.
+  // We observe the window element, not `containerRef` (the wrapper): the
+  // window is `position: absolute; bottom: 0` inside the wrapper, so it does
+  // not contribute to the wrapper's own height. A `ResizeObserver` covers
+  // compact mode, drag resizes and any programmatic height change.
   useEffect(() => {
     if (typeof document === "undefined") return;
     const wrapper = containerRef.current;
     if (!wrapper) return;
-    const shell = wrapper.firstElementChild as HTMLElement | null;
+    const shell = wrapper.querySelector<HTMLElement>(".dbg-window");
     if (!shell) return;
     const root = document.documentElement;
     const apply = (): void => {
@@ -409,18 +394,10 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   const totalLogs = logs.length;
   const filteredCount = filteredLogs.length;
 
-  const controlButtonTheme: IndicatorButtonTheme = {
-    style: {
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    },
-  };
-
   // Truncation info
   const MAX_RENDERED = 1000;
-  const shouldShowTruncation = totalLogs > MAX_RENDERED;
-  const hiddenCount = totalLogs - MAX_RENDERED;
 
-  // Truncation handlers (matching Showcase pattern)
+  // Truncation handlers
   const handleCopyAllLogs = useCallback(() => {
     navigator.clipboard.writeText(JSON.stringify(logs, null, 2));
     setDisplayContent({
@@ -439,7 +416,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     });
   }, [onClearLogs]);
 
-  // Long-press copy handler (generic hook from Harbuz UI with custom formatter)
+  // Long-press copy handler (with the copy depth applied)
   const handleLongPressCopyLog = useLogEntryCopy({
     onSuccess: (message) =>
       setDisplayContent({ message, type: "success", duration: 2000 }),
@@ -479,43 +456,87 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     return null;
   }
 
+  const globals = globalThis as Record<string, unknown>;
+  const toggleCompact = (): void => {
+    const nextIsCompact = !isCompact;
+    setIsCompact(nextIsCompact);
+    setDisplayContent({
+      message: `Mode: ${nextIsCompact ? "Compact" : "Extended"}`,
+      type: "info",
+      duration: 1500,
+    });
+  };
+
+  const trayActions: DisplayAction[] = [
+    ...(typeof globals.__toggleRQDevtools === "function"
+      ? [
+          {
+            label: "RQ",
+            onClick: () => (globals.__toggleRQDevtools as () => void)(),
+            title: "Toggle React Query DevTools",
+            active: Boolean(globals.__isRQDevtoolsOpen),
+          },
+        ]
+      : []),
+    ...(typeof globals.__toggleNextDevIndicator === "function"
+      ? [
+          {
+            label: "Next",
+            onClick: () => (globals.__toggleNextDevIndicator as () => void)(),
+            title: "Toggle Next.js Dev Indicator",
+            active: Boolean(globals.__isNextDevIndicatorOpen),
+          },
+        ]
+      : []),
+    {
+      label: isCompact ? "Expand" : "Compact",
+      onClick: toggleCompact,
+      title: isCompact
+        ? "Switch to Extended mode (⌘+D)"
+        : "Switch to Compact mode (⌘+D)",
+      tone: "led",
+    },
+    {
+      label: clearConfirmation ? "Clear 2" : "Clear",
+      onClick: handleSmartClear,
+      title: clearConfirmation
+        ? "Click again to clear snapshot and resume"
+        : "Clear logs (⌘+K)",
+      tone: clearConfirmation ? "warn" : undefined,
+    },
+    {
+      label: "Close",
+      onClick: onClose,
+      title: "Close panel (Esc)",
+      tone: "caution",
+    },
+  ];
+
+  const presets = [200, 400, 600, maxPanelHeight];
+
   return (
     <div
       ref={containerRef}
+      className="dbg-root"
       style={{
         position: "fixed",
         bottom: 0,
         left: 0,
         width: "100vw",
-        // `height: auto` lets the wrapper hug the shell's actual rendered
-        // size (body + header + control panel). The previous explicit
-        // `${panelHeight}px` understated the real panel by ~`SHELL_CHROME_PX`,
-        // which made the published `--debugsy-panel-h` smaller than the
-        // visible panel and let the static page chrome peek through under
-        // the panel during resize.
+        // `height: auto` lets the wrapper hug the window's rendered size.
         height: "auto",
         zIndex: Z_INDEX.DEBUG_PANEL,
       }}
     >
-      <TerminalWindow
-        bodyHeight={panelHeight}
-        isResizing={isResizing}
-        isCompact={isCompact}
-      >
+      <DebugsyStyles />
+      <Window bodyHeight={panelHeight} isResizing={isResizing} isCompact={isCompact}>
         {!isCompact && (
           <>
-            <TerminalWindowHeader>
-              <TerminalWindowResizeHandle
-                onResizeStart={handleResizeStart}
-                isResizing={isResizing}
-              />
-            </TerminalWindowHeader>
+            <WindowEdge onResizeStart={handleResizeStart} isResizing={isResizing} />
 
-            <TerminalWindowBody>
-              <TerminalWindowContent>
-                <TerminalWindowLogsContainer<
-                  DebugLogEntry & { _uniqueId: string }
-                >
+            <WindowBody>
+              <WindowContent>
+                <LogsContainer<DebugLogEntry & { _uniqueId: string }>
                   containerRef={logsContainerRef}
                   logsOnlyRef={logsOnlyRef}
                   items={[...activeLogs]
@@ -580,7 +601,6 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                       duration: 2000,
                     });
                   }}
-                  BannerComponent={Banner}
                   truncationThreshold={1000}
                   maxRendered={MAX_RENDERED}
                   totalCount={totalLogs}
@@ -588,13 +608,14 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                     {
                       show: clearConfirmation,
                       content: (
-                        <Banner
-                          emoji="🔄"
-                          message="Storage cleared. Press Clear again to clear snapshot and resume following."
-                          variant="warning"
+                        <Notice
+                          tone="warn"
                           onClick={handleSmartClear}
                           title="Click to complete clear and resume"
-                        />
+                        >
+                          Storage cleared. Press Clear again to clear the
+                          snapshot and resume following.
+                        </Notice>
                       ),
                     },
                   ]}
@@ -602,17 +623,15 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                     onCopyAll: handleCopyAllLogs,
                     onClearAll: handleClearAllLogs,
                   }}
-                  TruncationPanel={TruncationPanel}
-                  VirtualizedList={VirtualizedList}
                   itemHeight={24}
                   virtualizationThreshold={50}
                   overscan={5}
                   emptyMessage={`No debug logs yet.
 Enable debug points and interact with the surface to see logs here.`}
                 />
-              </TerminalWindowContent>
+              </WindowContent>
 
-              <TerminalWindowActions>
+              <WindowRail>
                 <DebugsyActions
                   activeLogs={activeLogs}
                   filteredLogs={filteredLogs}
@@ -623,20 +642,24 @@ Enable debug points and interact with the surface to see logs here.`}
                   depthSetting={depthSetting}
                   onDepthChange={setDepthSetting}
                 />
-              </TerminalWindowActions>
+              </WindowRail>
 
-              <TerminalWindowSidebar>
-                <TagFilter
-                  activeTags={selectedTags}
-                  knownTags={knownTags}
-                  onToggleTag={handleToggleTag}
-                  onClearAll={handleClearTags}
-                  searchQuery={tagSearch}
-                  onSearchChange={setTagSearch}
-                  mode={tagMode}
-                  onModeChange={setTagMode}
-                  onRefresh={refreshTags}
-                />
+              <WindowSidebar>
+                {knownTags.length > 0 && (
+                  <SidebarSection title="Tags">
+                    <TagFilter
+                      activeTags={selectedTags}
+                      knownTags={knownTags}
+                      onToggleTag={handleToggleTag}
+                      onClearAll={handleClearTags}
+                      searchQuery={tagSearch}
+                      onSearchChange={setTagSearch}
+                      mode={tagMode}
+                      onModeChange={setTagMode}
+                      onRefresh={refreshTags}
+                    />
+                  </SidebarSection>
+                )}
 
                 <DebugsyStats
                   totalLogs={totalLogs}
@@ -648,65 +671,55 @@ Enable debug points and interact with the surface to see logs here.`}
 
                 <DebugsyShortcutsDisplay shortcuts={shortcuts} />
 
-                <TerminalWindowResizePresets
-                  presets={[200, 400, 600, maxPanelHeight]}
-                  currentHeight={panelHeight}
-                  maxHeight={maxPanelHeight}
-                  onResize={setPanelHeight}
-                />
+                <SidebarSection title="Height">
+                  <div className="dbg-presets">
+                    {presets.map((height, i) => {
+                      const isMax = i === presets.length - 1;
+                      return (
+                        <Word
+                          key={isMax ? "max" : height}
+                          size="sm"
+                          pill
+                          active={panelHeight === height}
+                          onClick={() => setPanelHeight(Math.min(height, maxPanelHeight))}
+                          title={`Resize panel to ${height}px`}
+                        >
+                          {isMax ? "Max" : height}
+                        </Word>
+                      );
+                    })}
+                  </div>
+                </SidebarSection>
 
-                {/* Settings Section */}
-                <TerminalWindowSettings noBorder={true}>
-                  <IndicatorButtonGroup
-                    orientation="horizontal"
-                    wrap={true}
-                    justify="flex-start"
-                    align="center"
-                    buttons={[
-                      {
-                        label: "Click Outside",
-                        indicatorType: "toggle" as const,
-                        active: closeOnClickOutsideState,
-                        onClick: () => {
-                          setCloseOnClickOutsideState(
-                            !closeOnClickOutsideState,
-                          );
-                          setDisplayContent({
-                            message: `Click outside: ${!closeOnClickOutsideState ? "ON" : "OFF"}`,
-                            type: "info",
-                            duration: 1500,
-                          });
-                        },
-                        buttonVariant: "ghost" as const,
-                        buttonSize: "xxs" as const,
-                        title: "Toggle click outside to close",
-                      },
-                    ]}
-                    theme={{
-                      color: "rgb(var(--color-text-primary))",
-                      style: {
-                        fontFamily: "monospace",
-                        fontWeight: "bold",
-                        borderRadius: "3px",
-                        padding: "3px 6px",
-                      },
+                <SidebarSection title="Settings" noBorder>
+                  <Word
+                    size="sm"
+                    lamp={closeOnClickOutsideState ? "on" : "off"}
+                    active={closeOnClickOutsideState}
+                    ariaPressed={closeOnClickOutsideState}
+                    onClick={() => {
+                      setCloseOnClickOutsideState(!closeOnClickOutsideState);
+                      setDisplayContent({
+                        message: `Click outside: ${!closeOnClickOutsideState ? "ON" : "OFF"}`,
+                        type: "info",
+                        duration: 1500,
+                      });
                     }}
-                    gap="3px"
-                  />
-                </TerminalWindowSettings>
-
-                <div style={{ flexGrow: 1 }} />
-              </TerminalWindowSidebar>
-            </TerminalWindowBody>
+                    title="Toggle click outside to close"
+                  >
+                    Click outside closes
+                  </Word>
+                </SidebarSection>
+              </WindowSidebar>
+            </WindowBody>
           </>
         )}
 
-        <TerminalWindowControlPanel>
+        <WindowControl>
           <Tray>
-            {/* Debug Point Buttons — Module Navigation */}
+            {/* Debug point words — module navigation */}
             <TraySection>
               <ModuleNav
-                theme={controlButtonTheme}
                 onDisplayMessage={(msg) =>
                   setDisplayContent({
                     message: msg,
@@ -718,10 +731,10 @@ Enable debug points and interact with the surface to see logs here.`}
               />
             </TraySection>
 
-            {/* Dependency Controls — visible at root or inside the system module */}
+            {/* Dependency controls — at the root or inside the system module */}
             {(activeModule === null || activeModule === SYSTEM_MODULE_KEY) && (
-              <TraySection separator className="pl-4">
-                <DependencyControls theme={controlButtonTheme} />
+              <TraySection separator>
+                <DependencyControls />
               </TraySection>
             )}
 
@@ -730,7 +743,7 @@ Enable debug points and interact with the surface to see logs here.`}
               memorizedItems={memorizedItems}
               entries={
                 isCompact
-                  ? // COMPACT MODE: Show recent logs (3 entries)
+                  ? // COMPACT MODE: recent logs (3 entries)
                     [...filteredLogs]
                       .reverse()
                       .slice(0, 3)
@@ -748,13 +761,13 @@ Enable debug points and interact with the surface to see logs here.`}
                         emoji: getPointEmoji(log.point),
                         message: log.message,
                       }))
-                  : // FULL MODE: Show status info (matching V1 behavior)
+                  : // FULL MODE: status line
                     [
                       {
                         id: 0,
                         timestamp: "",
-                        emoji: "🚧",
-                        message: `Debugsy  ${activePoints} points • ${totalLogs} logs`,
+                        emoji: "",
+                        message: `debugsy · ${activePoints} points · ${totalLogs} logs`,
                       },
                     ]
               }
@@ -763,166 +776,11 @@ Enable debug points and interact with the surface to see logs here.`}
                   ? "No debug logs yet. Enable debug points and interact."
                   : "" // Full mode: empty message not used (status entry always present)
               }
-              actions={[
-                ...(typeof globalThis !== "undefined" &&
-                typeof (globalThis as Record<string, unknown>)
-                  .__toggleRQDevtools === "function"
-                  ? [
-                      {
-                        icon: (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                          >
-                            <path
-                              fill="#FF4154"
-                              d="M6.93 13.688a.343.343 0 0 1 .468.132l.063.106q.72 1.277 1.5 2.426a36 36 0 0 0 2.074 2.742a.346.346 0 0 1-.039.484l-.074.066c-2.543 2.223-4.191 2.665-4.953 1.333c-.746-1.305-.477-3.672.808-7.11a.34.34 0 0 1 .153-.18M17.75 16.3a.34.34 0 0 1 .395.27l.02.1q.942 4.93-1.325 4.93c-1.48 0-3.36-1.402-5.649-4.203a.33.33 0 0 1-.074-.222c0-.188.156-.34.344-.34h.121a33 33 0 0 0 2.809-.098q1.606-.128 3.359-.437m.871-6.977a.353.353 0 0 1 .445-.21l.102.034q4.895 1.665 3.719 3.664q-1.148 1.957-6.684 2.848a.36.36 0 0 1-.238-.047a.343.343 0 0 1-.125-.476l.062-.106a34 34 0 0 0 1.367-2.523q.717-1.484 1.352-3.184M7.797 8.34a.36.36 0 0 1 .238.047a.343.343 0 0 1 .125.476l-.062.106a34 34 0 0 0-1.367 2.523q-.717 1.483-1.352 3.184a.353.353 0 0 1-.445.21l-.102-.034q-4.895-1.666-3.719-3.664Q2.261 9.23 7.797 8.34m5.281-3.984c2.543-2.223 4.192-2.664 4.953-1.332q1.12 1.954-.808 7.109a.34.34 0 0 1-.153.18a.343.343 0 0 1-.468-.133l-.063-.106a35 35 0 0 0-1.5-2.426a36 36 0 0 0-2.074-2.742a.346.346 0 0 1 .039-.484ZM7.285 2.274q2.22 0 5.649 4.203a.35.35 0 0 1 .078.218a.35.35 0 0 1-.348.344l-.117-.004a35 35 0 0 0-2.809.102a36 36 0 0 0-3.363.437a.343.343 0 0 1-.394-.273l-.02-.098q-.944-4.929 1.324-4.93"
-                            />
-                            <path
-                              fill="#002C4B"
-                              d="m10.156 8.086h3.688a.64.64 0 0 1 .55.316l1.848 3.22a.64.64 0 0 1 0 .628l-1.847 3.223a.64.64 0 0 1-.551.316h-3.688a.63.63 0 0 1-.547-.316L7.758 12.25a.64.64 0 0 1 0-.629L9.61 8.402a.63.63 0 0 1 .546-.316m3.23.793a.64.64 0 0 1 .552.316l1.39 2.426a.64.64 0 0 1 0 .629l-1.39 2.43a.64.64 0 0 1-.551.316h-2.774a.63.63 0 0 1-.546-.316l-1.395-2.43a.64.64 0 0 1 0-.629l1.395-2.426a.63.63 0 0 1 .546-.316Zm-.491.867h-1.79a.62.62 0 0 0-.546.316l-.899 1.56a.64.64 0 0 0 0 .628l.899 1.563a.63.63 0 0 0 .547.316h1.789a.63.63 0 0 0 .547-.316l.898-1.563a.64.64 0 0 0 0-.629l-.898-1.558a.62.62 0 0 0-.547-.317m-.477.828c.227 0 .438.121.547.317l.422.73a.63.63 0 0 1 0 .629l-.422.734a.63.63 0 0 1-.547.317h-.836a.63.63 0 0 1-.547-.317l-.422-.734a.63.63 0 0 1 0-.629l.422-.73a.63.63 0 0 1 .547-.317zm-.418.817a.55.55 0 0 0-.473.273a.55.55 0 0 0 0 .547a.54.54 0 0 0 .473.27a.54.54 0 0 0 .473-.27a.55.55 0 0 0 0-.547a.55.55 0 0 0-.473-.273"
-                            />
-                            <path
-                              fill="#FF4154"
-                              d="M18.982 7.75c.39-1.894.476-3.344.222-4.398c-.148-.63-.422-1.137-.84-1.508c-.441-.39-1-.582-1.625-.582c-1.035 0-2.12.472-3.281 1.367a15 15 0 0 0-1.473 1.316a1 1 0 0 0-.136-.144c-1.446-1.285-2.66-2.082-3.7-2.39c-.617-.184-1.195-.2-1.722-.024c-.559.187-1.004.574-1.317 1.117c-.515.894-.652 2.074-.46 3.527q.119.885.402 1.934a1 1 0 0 0-.215.047C3.008 8.62 1.71 9.269.926 10.015c-.465.442-.77.938-.883 1.481c-.113.578 0 1.156.312 1.7c.516.894 1.465 1.597 2.817 2.155q.813.334 1.844.61a1 1 0 0 0-.07.226c-.391 1.891-.477 3.344-.223 4.395c.148.629.425 1.14.84 1.508c.44.39 1 .582 1.625.582c1.035 0 2.12-.473 3.28-1.364q.715-.556 1.489-1.336a1.2 1.2 0 0 0 .195.227c1.446 1.285 2.66 2.082 3.7 2.39c.617.184 1.195.2 1.722.024c.559-.187 1.004-.574 1.317-1.117c.515-.894.652-2.074.46-3.527a15 15 0 0 0-.425-2.012a1.2 1.2 0 0 0 .238-.047c1.828-.61 3.125-1.258 3.91-2.004c.465-.441.77-.937.883-1.48c.113-.578 0-1.157-.312-1.7c-.516-.894-1.465-1.597-2.817-2.156a15 15 0 0 0-1.906-.625a1 1 0 0 0 .059-.195"
-                            />
-                          </svg>
-                        ),
-                        onClick: () => {
-                          const fn = (globalThis as Record<string, unknown>)
-                            .__toggleRQDevtools as (() => void) | undefined;
-                          fn?.();
-                        },
-                        title: "Toggle React Query DevTools",
-                        backgroundColor: (globalThis as Record<string, unknown>)
-                          .__isRQDevtoolsOpen
-                          ? "#e8590c"
-                          : "#374151",
-                        hoverBackgroundColor: "#e8590c",
-                        color: "#ffffff",
-                      },
-                    ]
-                  : []),
-                ...(typeof globalThis !== "undefined" &&
-                typeof (globalThis as Record<string, unknown>)
-                  .__toggleNextDevIndicator === "function"
-                  ? [
-                      {
-                        icon: (
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 180 180"
-                            fill="none"
-                          >
-                            <circle cx="90" cy="90" r="90" fill="black" />
-                            <path
-                              d="M149.508 157.52L69.142 54H54v71.97h12.114V69.384l73.885 95.461A90.09 90.09 0 01149.508 157.52z"
-                              fill="url(#dbg-nGrad)"
-                            />
-                            <rect
-                              x="115"
-                              y="54"
-                              width="12"
-                              height="72"
-                              fill="url(#dbg-nGrad2)"
-                            />
-                            <defs>
-                              <linearGradient
-                                id="dbg-nGrad"
-                                x1="109"
-                                y1="116.5"
-                                x2="144.5"
-                                y2="160.5"
-                                gradientUnits="userSpaceOnUse"
-                              >
-                                <stop stopColor="white" />
-                                <stop
-                                  offset="1"
-                                  stopColor="white"
-                                  stopOpacity="0"
-                                />
-                              </linearGradient>
-                              <linearGradient
-                                id="dbg-nGrad2"
-                                x1="121"
-                                y1="54"
-                                x2="120.799"
-                                y2="106.875"
-                                gradientUnits="userSpaceOnUse"
-                              >
-                                <stop stopColor="white" />
-                                <stop
-                                  offset="1"
-                                  stopColor="white"
-                                  stopOpacity="0"
-                                />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                        ),
-                        onClick: () => {
-                          const fn = (globalThis as Record<string, unknown>)
-                            .__toggleNextDevIndicator as
-                            | (() => void)
-                            | undefined;
-                          fn?.();
-                        },
-                        title: "Toggle Next.js Dev Indicator",
-                        backgroundColor: (globalThis as Record<string, unknown>)
-                          .__isNextDevIndicatorOpen
-                          ? "#ffffff"
-                          : "#d1d5db",
-                        hoverBackgroundColor: "#ffffff",
-                        color: "#000000",
-                      },
-                    ]
-                  : []),
-                {
-                  icon: isCompact ? "⬇️" : "⬆️",
-                  onClick: () => {
-                    const nextIsCompact = !isCompact;
-                    setIsCompact(nextIsCompact);
-                    setDisplayContent({
-                      message: `Mode: ${nextIsCompact ? "Compact" : "Extended"}`,
-                      type: "info",
-                      duration: 1500,
-                    });
-                  },
-                  title: isCompact
-                    ? "Switch to Extended mode (⌘+D)"
-                    : "Switch to Compact mode (⌘+D)",
-                  backgroundColor: "#64748b",
-                  hoverBackgroundColor: "#475569",
-                  color: "#ffffff",
-                },
-                {
-                  icon: clearConfirmation ? "🔄" : "🗑️",
-                  onClick: handleSmartClear,
-                  title: clearConfirmation
-                    ? "Click again to clear snapshot and resume"
-                    : "Clear logs (Cmd+K)",
-                  backgroundColor: clearConfirmation ? "#f59e0b" : "#ffffff",
-                  hoverBackgroundColor: clearConfirmation
-                    ? "#d97706"
-                    : "#e5e7eb",
-                  color: clearConfirmation ? "#ffffff" : "#4b5563",
-                },
-                {
-                  icon: "✕",
-                  onClick: onClose,
-                  title: "Close panel (Esc)",
-                  backgroundColor: "#dc2626",
-                  hoverBackgroundColor: "#b91c1c",
-                  color: "#ffffff",
-                },
-              ]}
+              actions={trayActions}
             />
           </Tray>
-        </TerminalWindowControlPanel>
-      </TerminalWindow>
+        </WindowControl>
+      </Window>
     </div>
   );
 };
@@ -930,13 +788,13 @@ Enable debug points and interact with the surface to see logs here.`}
 DebugsyLookInternal.displayName = "DebugsyLookInternal";
 
 /**
- * DebugsyLook - the panel, with an isolated display queue
+ * DebugsyLook - the panel, with an isolated display queue.
  *
- * Built from debugsy's own UI kit (`../ui`, ported from harbuz 0.6.0).
- * TerminalLayout structure with comprehensive debugging features.
+ * Styles itself (kavun's look as a scoped `dbg-` stylesheet), so the app
+ * needs no CSS import and no Tailwind.
  *
  * Wrapped with DisplayQueueProvider to ensure display messages are isolated
- * from other components (e.g., Showcase).
+ * from other components.
  */
 export const DebugsyLook: React.FC<DebugsyLookProps> = (props) => {
   return (

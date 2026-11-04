@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  IndicatorButtonGroup,
-  type IndicatorButtonTheme,
-} from "../ui";
+import { Word } from "../ui";
 import React, { useState } from "react";
 import { ProbeReRenderDetection } from "./probe-rerender-detection";
 import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";
@@ -11,20 +8,34 @@ import { setDebugDisplayContent } from "../shared/debug-display-state";
 import { DependencyAdvancedPanel } from "./dependency-advanced-panel";
 
 export interface DependencyControlsProps {
-  theme?: IndicatorButtonTheme;
+  /** @deprecated Ignored since the panel styles itself */
+  theme?: unknown;
   className?: string;
   onAdvancedToggle?: (show: boolean) => void;
   showAdvanced?: boolean;
 }
 
+const LEVELS: readonly string[] = ["quiet", "normal", "verbose"];
+const LEVEL_LABEL: Record<string, string> = {
+  silent: "Silent",
+  quiet: "Quiet",
+  normal: "Normal",
+  verbose: "Verbose",
+};
+const FILTER_OPTIONS = ["functions-only", "objects-only", "unstable-only"] as const;
+const FILTER_LABEL: Record<string, string> = {
+  all: "All",
+  "functions-only": "Func",
+  "objects-only": "Obj",
+  "unstable-only": "Unstable",
+};
+
 /**
- * DependencyControls - Harbuz-themed implementation
- *
- * Follows exact structure and pattern from Showcase control buttons.
- * Uses IndicatorButtonGroup for consistent theming and layout.
+ * DependencyControls - the dependency-tracking words in the control tray:
+ * on/off, level (Quiet → Normal → Verbose), filter (All → Func → Obj →
+ * Unstable), the re-render probe and the advanced panel.
  */
 export const DependencyControls: React.FC<DependencyControlsProps> = ({
-  theme,
   className = "",
   onAdvancedToggle,
   showAdvanced: externalShowAdvanced,
@@ -33,12 +44,12 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
   const [internalShowAdvanced, setInternalShowAdvanced] = useState(false);
   const [isRunningProbe, setIsRunningProbe] = useState(false);
 
+  // Use external control if provided, otherwise use internal state
   const showAdvanced =
     externalShowAdvanced !== undefined
       ? externalShowAdvanced
       : internalShowAdvanced;
 
-  // Button handlers
   const handleDependenciesToggle = () => {
     if (dependencyState.enabled) {
       dependencyState.disable();
@@ -58,6 +69,7 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
   };
 
   const handleQuietCycle = () => {
+    // Auto-enable dependencies when changing log level
     dependencyState.enable();
 
     const currentLevel = dependencyState.logLevel;
@@ -84,6 +96,7 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
   };
 
   const handleFilterCycle = () => {
+    // Auto-enable dependencies when changing filter
     dependencyState.enable();
 
     const currentFilter = dependencyState.filter;
@@ -115,7 +128,7 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
   const handleProbeTest = () => {
     if (isRunningProbe) return;
 
-    // Ensure dependency tracking is enabled
+    // Ensure dependencies are enabled with appropriate log level for probe
     if (!dependencyState.enabled) {
       dependencyState.enable();
       dependencyState.setLogLevel("verbose");
@@ -148,88 +161,66 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
     onAdvancedToggle?.(newValue);
   };
 
-  // IndicatorButtonGroup configuration with type-based indicators
+  const level = dependencyState.logLevel;
+  const levelIndex = LEVELS.indexOf(level);
+  const filter = dependencyState.filter ?? "all";
+  const filterLit = FILTER_OPTIONS.map((option) => filter === "all" || option === filter);
+
   return (
-    <>
-      <IndicatorButtonGroup
-        buttons={[
-          {
-            label: "Deps",
-            indicatorType: "single" as const,
-            onClick: handleDependenciesToggle,
-            buttonVariant: "ghost" as const,
-            buttonSize: "xxs" as const,
-            variant: "success" as const,
-            active: dependencyState.enabled,
-            inactiveVariant: "error" as const,
-            title: dependencyState.enabled
-              ? "Click to disable (surfaceDebug.deps.off)"
-              : "Click to enable (surfaceDebug.deps.normal)",
-          },
-          {
-            label: "Quiet",
-            indicatorType: "sequential" as const,
-            value: dependencyState.logLevel,
-            levels: ["quiet", "normal", "verbose"],
-            labelMap: {
-              quiet: "Quiet",
-              normal: "Normal",
-              verbose: "Verbose",
-            },
-            disabled: !dependencyState.enabled,
-            onClick: handleQuietCycle,
-            buttonVariant: "ghost" as const,
-            buttonSize: "xxs" as const,
-            title: "Cycle between Quiet → Normal → Verbose modes",
-          },
-          { type: "row-break" as const }, // Start new row (V1 layout: 2+3 buttons)
-          {
-            label: "All",
-            indicatorType: "parallel" as const,
-            value: dependencyState.filter ?? "all",
-            options: ["functions-only", "objects-only", "unstable-only"],
-            allValue: "all",
-            labelMap: {
-              all: "All",
-              "functions-only": "Func",
-              "objects-only": "Obj",
-              "unstable-only": "Unstable",
-            },
-            disabled: !dependencyState.enabled,
-            onClick: handleFilterCycle,
-            buttonVariant: "ghost" as const,
-            buttonSize: "xxs" as const,
-            title: "Cycle between All → Func → Obj → Unstable filters",
-          },
-          {
-            label: "Probe",
-            indicatorType: "executing" as const,
-            executingLabel: "Probe",
-            onClick: handleProbeTest,
-            disabled: isRunningProbe,
-            buttonVariant: "ghost" as const,
-            buttonSize: "xxs" as const,
-            width: "narrow" as const,
-            justify: "center" as const,
-            title:
-              "Run comprehensive re-render probe to verify dependency tracking",
-          },
-          {
-            label: "Adv.",
-            indicatorType: "toggle" as const,
-            active: showAdvanced,
-            onClick: handleAdvancedToggle,
-            buttonVariant: "ghost" as const,
-            buttonSize: "xxs" as const,
-            width: "narrow" as const,
-            justify: "center" as const,
-            title: "Toggle advanced dependency controls panel",
-          },
-        ]}
-        theme={theme}
-        gap="2px"
-        className={className}
-      />
+    <div className={className ? `dbg-deps ${className}` : "dbg-deps"}>
+      <div className="dbg-rows">
+        <div className="dbg-words">
+          <Word
+            lamp={dependencyState.enabled ? "on" : "off"}
+            active={dependencyState.enabled}
+            ariaPressed={dependencyState.enabled}
+            onClick={handleDependenciesToggle}
+            title={
+              dependencyState.enabled
+                ? "Click to disable (surfaceDebug.deps.off)"
+                : "Click to enable (surfaceDebug.deps.normal)"
+            }
+          >
+            Deps
+          </Word>
+          <Word
+            segments={LEVELS.map((_, i) => i <= levelIndex)}
+            disabled={!dependencyState.enabled}
+            onClick={handleQuietCycle}
+            title="Cycle between Quiet → Normal → Verbose modes"
+          >
+            {LEVEL_LABEL[level] ?? level}
+          </Word>
+        </div>
+        <div className="dbg-words">
+          <Word
+            segments={filterLit}
+            disabled={!dependencyState.enabled}
+            onClick={handleFilterCycle}
+            title="Cycle between All → Func → Obj → Unstable filters"
+          >
+            {FILTER_LABEL[filter] ?? filter}
+          </Word>
+          <Word
+            lamp={isRunningProbe ? "busy" : undefined}
+            busy={isRunningProbe}
+            disabled={isRunningProbe}
+            onClick={handleProbeTest}
+            title="Run comprehensive re-render probe to verify dependency tracking"
+          >
+            Probe
+          </Word>
+          <Word
+            pill
+            active={showAdvanced}
+            ariaPressed={showAdvanced}
+            onClick={handleAdvancedToggle}
+            title="Toggle advanced dependency controls panel"
+          >
+            Adv
+          </Word>
+        </div>
+      </div>
 
       {/* Probe component (hidden until triggered) */}
       {isRunningProbe && (
@@ -241,14 +232,8 @@ export const DependencyControls: React.FC<DependencyControlsProps> = ({
 
       {/* Advanced Panel */}
       {showAdvanced && (
-        <div className="mt-2">
-          <DependencyAdvancedPanel
-            showToggle={false}
-            isVisible={true}
-            theme={theme}
-          />
-        </div>
+        <DependencyAdvancedPanel showToggle={false} isVisible={true} />
       )}
-    </>
+    </div>
   );
 };
