@@ -42,16 +42,17 @@
           "default": "./dist/index.cjs"
         }
       },
-      "./styles": "./src/styles.css",
+      "./styles": "./styles.css",
       "./package.json": "./package.json"
     }
   },
   "files": [
     "dist",
-    "src/styles.css",
+    "styles.css",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
     "build": "tsup && node ./scripts/check-dist.mjs",
@@ -88,6 +89,6 @@
       "types": "./index.ts",
       "default": "./index.ts"
     },
-    "./styles": "./src/styles.css"
+    "./styles": "./styles.css"
   }
 }
