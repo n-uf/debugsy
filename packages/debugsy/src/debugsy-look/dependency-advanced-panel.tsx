@@ -206,13 +206,18 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                 </>
               ) : (
                 <>
+                  {/* Lines break only between items, never inside "2 functions" */}
                   <span className="dbg-advanced-value">
-                    {logs.length} {logs.length === 1 ? "log" : "logs"}
+                    <span className="dbg-advanced-item">
+                      {logs.length} {logs.length === 1 ? "log" : "logs"}
+                    </span>
                     {tally.map((t) => (
-                      <span key={t.word} className="dbg-advanced-tally">
-                        {" · "}
-                        {t.n} {t.word}
-                      </span>
+                      <React.Fragment key={t.word}>
+                        {" "}
+                        <span className="dbg-advanced-item dbg-advanced-tally">
+                          · {t.n} {t.word}
+                        </span>
+                      </React.Fragment>
                     ))}
                   </span>
                   <p className="dbg-advanced-hint">Latest at {latestTime}.</p>
