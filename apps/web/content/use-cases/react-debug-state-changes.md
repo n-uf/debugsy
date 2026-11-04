@@ -201,7 +201,7 @@ Now it reads as a story: the coupon changed only the total, and the second add r
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Your action logs and the changed values land in one list, in order. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19, and `react18-json-view`. It ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so a Next.js app adds both to `transpilePackages`. Its styles are Tailwind CSS v4 classes, so the app needs Tailwind v4 and imports `@n-uf/harbuz/styles` and `@n-uf/debugsy/styles` after `tailwindcss` in its CSS.
+It isn't on npmjs yet: a public release there is in preparation. It needs React 19.
 
 ### Declare a debug point for the feature
 
