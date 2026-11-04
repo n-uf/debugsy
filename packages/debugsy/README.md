@@ -40,8 +40,27 @@ A point logs nothing until it's on: its LED in the panel, `?debug=session` in
 the URL, or `dsy.enable("session")`. In development, a call that names a point
 no module registered warns once in the console.
 
-The package exports only its root. It ships TypeScript source: Next.js apps
-add `@n-uf/debugsy` to `transpilePackages`. Peer dependencies: `react`,
-`react-dom` 19 and `react18-json-view`.
+The package exports only its root. Peer dependencies: `react`, `react-dom` 19
+and `react18-json-view`.
+
+It ships TypeScript source, and so does its dependency `@n-uf/harbuz`. Next.js
+apps transpile both:
+
+```js
+// next.config.mjs
+const nextConfig = {
+  transpilePackages: ["@n-uf/debugsy", "@n-uf/harbuz"],
+};
+```
+
+The panel is styled with Tailwind v4 classes; no compiled CSS ships. The app
+needs Tailwind v4, with both style entries imported after Tailwind in its
+global stylesheet:
+
+```css
+@import "tailwindcss";
+@import "@n-uf/harbuz/styles"; /* theme variables and utilities */
+@import "@n-uf/debugsy/styles"; /* lets Tailwind see debugsy's classes */
+```
 
 Licence: PolyForm Perimeter 1.0.1.

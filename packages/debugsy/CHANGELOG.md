@@ -25,7 +25,9 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 - The built-in Errors point is described as what it is, a point your app
   logs errors to; debugsy doesn't listen for uncaught errors.
 - README: the example logs to a bare point key and gives `registerModule`
-  the `description` fields it requires.
+  the `description` fields it requires. The setup lists both packages for
+  `transpilePackages` (`@n-uf/harbuz` ships TypeScript source too) and the
+  Tailwind v4 stylesheet imports the panel needs.
 - Tests: vitest, run in CI.
 
 ## 26.11.0

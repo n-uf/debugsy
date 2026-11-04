@@ -58,7 +58,25 @@ A point logs nothing until it's on: its LED in the panel, `?debug=session` in
 the URL, or `dsy.enable("session")`.
 
 The package exports only its root; the folders under `src/` are internal. It
-ships TypeScript source, so Next.js consumers add it to `transpilePackages`.
+ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so Next.js
+consumers add both to `transpilePackages`:
+
+```js
+// next.config.mjs
+const nextConfig = {
+  transpilePackages: ["@n-uf/debugsy", "@n-uf/harbuz"],
+};
+```
+
+The panel is styled with Tailwind v4 classes; no compiled CSS ships. The app
+needs Tailwind v4, with both style entries imported after Tailwind in its
+global stylesheet (as `apps/web/app/globals.css` does):
+
+```css
+@import "tailwindcss";
+@import "@n-uf/harbuz/styles"; /* theme variables and utilities */
+@import "@n-uf/debugsy/styles"; /* lets Tailwind see debugsy's classes */
+```
 
 ## Develop
 
