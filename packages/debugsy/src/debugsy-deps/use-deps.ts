@@ -382,17 +382,21 @@ export function useRenderTracker(
   // ✅ Mark render phase to prevent state updates during render
   enterRenderPhase();
 
-  // Parse options from parameters (backward compatibility)
-  const options: RenderTrackerOptions =
+  // Parse options from parameters (backward compatibility). Both forms track
+  // renders and mounts unless the options turn one off.
+  const givenOptions: RenderTrackerOptions =
     typeof thresholdOrOptions === "object" && thresholdOrOptions !== null
       ? thresholdOrOptions
       : {
           renderThreshold: thresholdOrOptions ?? 10,
           mountThreshold: DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold,
-          trackRenders: true,
-          trackMounts: true,
           onExcessiveRenders,
         };
+  const options: RenderTrackerOptions = {
+    ...givenOptions,
+    trackRenders: givenOptions.trackRenders ?? true,
+    trackMounts: givenOptions.trackMounts ?? true,
+  };
 
   // ✅ ALWAYS call ALL hooks first - never conditionally skip them
   const renderCount = useRef(0);
