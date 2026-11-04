@@ -174,7 +174,7 @@ Put your dev server's port in `url`, and replace `msedge` with `chrome` to debug
 
 A breakpoint shows one moment. "This renders more than I expect" needs something that records over time.
 
-The guide on how to [debug a React app](/blog/how-to-debug-react-app) shows where breakpoints fit alongside reading the error, React DevTools, logging and production builds.
+[A walkthrough of debugging a React app](/blog/how-to-debug-react-app) shows where breakpoints fit alongside reading the error, React DevTools, logging and production builds.
 
 ## Watch network requests and app state
 
