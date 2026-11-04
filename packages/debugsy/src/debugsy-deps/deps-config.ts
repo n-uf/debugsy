@@ -47,8 +47,13 @@ export interface DepsConfigThresholds {
   renderRateDisplayDuration: number;
 
   // === MOUNT TRACKING ===
-  /** Default mount count threshold before warnings */
+  /** Default remount count threshold before warnings */
   mountRateDefaultThreshold: number;
+  /**
+   * A component name's remount count starts again after this long without a
+   * remount, and an unmount older than this no longer pairs with a mount (ms)
+   */
+  mountRateResetMs: number;
   /** Multiplier for error vs warning severity for mounts (error = threshold * multiplier) */
   mountRateSeverityMultiplier: number;
   /** Cooldown between mount rate notifications (ms) */
@@ -104,6 +109,7 @@ export const DEPS_CONFIG_DEFAULTS: DepsConfigThresholds = {
 
   // === MOUNT TRACKING ===
   mountRateDefaultThreshold: 3, // 3 remounts before warning
+  mountRateResetMs: 5000, // count starts again after 5 seconds without a remount
   mountRateSeverityMultiplier: 3, // over 9 remounts/sec = error
   mountRateNotificationCooldown: 3000, // 3 seconds between notifications
   mountRateDisplayDuration: 8000, // Show alerts for 8 seconds
