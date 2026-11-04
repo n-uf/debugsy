@@ -218,6 +218,11 @@ export function validateDepsConfig(config: DepsConfigThresholds): void {
       name: "mountRateDefaultThreshold",
     },
     {
+      value: config.mountRateResetMs,
+      min: 0,
+      name: "mountRateResetMs",
+    },
+    {
       value: config.dependencyThrottleMs,
       min: 0,
       name: "dependencyThrottleMs",
