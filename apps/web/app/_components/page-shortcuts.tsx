@@ -103,10 +103,10 @@ export function PageShortcuts(): React.ReactElement {
             type="button"
             onClick={() => triggerShortcut(s)}
             aria-label={`${s.meta ? `${modifierWord} ` : ""}${s.key} — ${s.label}`}
-            className="group inline-flex cursor-pointer items-center gap-2 rounded-sm py-0.5 pr-1 text-left font-mono text-[12px] focus:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-chrome-text)/0.4)]"
+            className="group inline-flex cursor-pointer items-center gap-2 rounded-sm py-0 pr-1 text-left font-mono text-[12px] focus:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-chrome-text)/0.4)]"
           >
             <span
-              className="inline-flex items-baseline justify-center gap-1 rounded border px-1.5 py-0.5 font-mono font-semibold uppercase tracking-wide transition-colors group-hover:bg-chrome-button-hover group-active:bg-[rgb(var(--color-chrome-button-pressed))] group-active:text-[rgb(var(--color-chrome-button-pressed-text))]"
+              className="inline-flex items-baseline justify-center gap-1 rounded border px-1.5 py-px font-mono font-semibold uppercase tracking-wide transition-colors group-hover:bg-chrome-button-hover group-active:bg-[rgb(var(--color-chrome-button-pressed))] group-active:text-[rgb(var(--color-chrome-button-pressed-text))]"
               style={{
                 borderColor: "rgb(var(--color-chrome-border))",
                 background: "rgb(var(--color-chrome-button))",
