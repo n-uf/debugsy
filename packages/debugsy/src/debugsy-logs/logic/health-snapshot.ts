@@ -80,13 +80,16 @@ export function collectHealthMetrics(
   const emergencyStop = (globalThis as any).__DEBUGSY_EMERGENCY_STOP;
 
   // Gather dependency tracking and infinite render debugging metrics
+  // The settings keep deps config under `deps`; "enabled" is the
+  // "dependencies" debug point (see DepsTrackingConfig)
+  const deps = globalDebugState.deps ?? {};
   const dependencyTrackingMetrics = {
-    enabled: globalDebugState.dependencies.enabled,
-    level: globalDebugState.dependencies.level,
-    filter: globalDebugState.dependencies.filter,
-    allowedHooks: globalDebugState.dependencies.allowedHooks?.length || "all",
-    excludedHooks: globalDebugState.dependencies.excludedHooks?.length || 0,
-    throttleMs: globalDebugState.dependencies.throttleMs,
+    enabled: globalDebugState.enabled?.has?.("dependencies") ?? false,
+    level: deps.level,
+    filter: deps.filter,
+    allowedHooks: deps.allowedHooks?.length || "all",
+    excludedHooks: deps.excludedHooks?.length || 0,
+    throttleMs: deps.throttleMs,
   };
 
   // Circuit breaker and infinite render debugging metrics
