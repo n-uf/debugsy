@@ -50,11 +50,6 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
   const section = SECTIONS[e.section];
   const next = e.headings.length + 1;
   const num = (n: number): string => String(n).padStart(2, "0");
-  const toc = [
-    ...e.headings.map((h) => ({ id: h.id, text: h.text })),
-    { id: "questions", text: "Questions" },
-    { id: "sources", text: "Sources" },
-  ];
 
   return (
     <div className="ct-page">
@@ -139,7 +134,7 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
           <ol className="ct-sources">
             {e.sources.map((s) => (
               <li key={s.url}>
-                <a href={s.url} rel="noopener">
+                <a href={s.url} target="_blank" rel="noopener noreferrer">
                   {s.title}
                 </a>{" "}
                 · checked {s.checked}
@@ -161,15 +156,6 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
           </ul>
         </section>
       </article>
-
-      <nav className="ct-toc" aria-label="on this page">
-        <p className="ct-label">On this page</p>
-        {toc.map((t) => (
-          <a key={t.id} href={`#${t.id}`}>
-            {t.text}
-          </a>
-        ))}
-      </nav>
     </div>
   );
 }

@@ -318,6 +318,20 @@ export function findByPath(p: string): Entry | undefined {
   return allEntries().find((e) => e.path === p);
 }
 
+export interface TocLink {
+  readonly id: string;
+  readonly text: string;
+}
+
+/** A page's "On this page" list: its section headings, then the questions and the sources. */
+export function entryToc(e: Entry): readonly TocLink[] {
+  return [
+    ...e.headings.map((h) => ({ id: h.id, text: h.text })),
+    { id: "questions", text: "Questions" },
+    { id: "sources", text: "Sources" },
+  ];
+}
+
 /** The sections that have at least one page (an empty section has no index page and no nav link). */
 export function liveSections(): readonly SectionInfo[] {
   return (["use-cases", "blog"] as const).filter((s) => entriesOf(s).length > 0).map((s) => SECTIONS[s]);

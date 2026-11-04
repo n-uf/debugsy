@@ -27,6 +27,8 @@
 
 /* ── frame ─────────────────────────────────────────────────────────── */
 
+/* The rail's width, padding and gap match the home page's rail (page.tsx), and its identity block
+   and links are the shared SiteRail (site-rail.css), so nothing moves between pages. */
 .ct-shell {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -40,14 +42,11 @@
   flex-direction: column;
   gap: 24px;
   padding: 24px 20px;
+  overflow: hidden;
   border-right: 1px solid var(--ct-line);
   font-family: var(--ct-mono);
 }
-.ct-ident {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+/* the phone top bar */
 .ct-wordmark {
   font-family: var(--ct-mono);
   font-size: 20px;
@@ -56,29 +55,14 @@
   letter-spacing: -0.01em;
   text-decoration: none;
 }
-.ct-meta {
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--ct-muted);
-}
-.ct-meta a:hover,
-.ct-nav a:hover,
 .ct-topnav a:hover,
 .ct-crumbs a:hover {
   text-decoration: underline;
 }
-.ct-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 11px;
-}
-.ct-nav a,
 .ct-topnav a {
   color: var(--ct-muted);
   text-decoration: none;
 }
-.ct-nav a.on,
 .ct-topnav a.on {
   color: var(--ct-text);
   font-weight: 600;
@@ -94,10 +78,9 @@
 
 /* ── article page ─────────────────────────────────────────────────── */
 
+/* The page's "On this page" list sits in the rail (rail-toc.tsx), so the article is one column. */
 .ct-page {
-  display: grid;
-  grid-template-columns: minmax(0, 700px) 220px;
-  gap: 48px;
+  max-width: 700px;
 }
 .ct-crumbs {
   display: flex;
@@ -427,11 +410,10 @@
   line-height: 1.65;
 }
 
-/* on this page */
+/* on this page: in the rail, under the links; it scrolls on its own when it's taller than the rest */
 .ct-toc {
-  position: sticky;
-  top: 28px;
-  align-self: start;
+  min-height: 0;
+  overflow-y: auto;
   font: 11px/1.5 var(--ct-mono);
 }
 .ct-toc a {
@@ -447,12 +429,6 @@
 }
 
 @media (max-width: 1100px) {
-  .ct-page {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .ct-toc {
-    display: none;
-  }
   .ct-main {
     padding: 24px 28px 64px;
   }

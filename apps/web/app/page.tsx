@@ -4,13 +4,12 @@ import { liveSections } from "./_content/content";
 import { jsonLdHtml } from "./_content/jsonld";
 import { DebugsyLookMounted } from "./_components/debugsy-look-mounted";
 import { PageShortcuts } from "./_components/page-shortcuts";
-import { ThemeSwitcherClient } from "./_components/theme-switcher-client";
+import { SiteRail } from "./_components/site-rail";
 import { CAPABILITIES, SEO_LOGS } from "./_data/feature-log";
 import { HOME_DESCRIPTION, HOME_H1 } from "./home-meta";
 import {
   absoluteUrl,
   APP_ID,
-  CHANGELOG_URL,
   LIB_VERSION,
   LICENSE_NAME,
   LICENSE_URL,
@@ -141,81 +140,8 @@ function LeftRail(): React.ReactElement {
         borderColor: "rgb(var(--color-chrome-border))",
       }}
     >
-      {/* Wordmark cluster — debugsy + meta lines + horizontal switcher
-          share a tight gap so they read as one identity block. The
-          switcher is the second drop-in of the same component used by
-          `<ThemeDock>`; both share the persisted theme via `useTheme`
-          — click either, both update. The outer `<aside>` keeps `gap-6`
-          for everything else (nav, shortcuts). */}
-      <div className="flex flex-col gap-1.5">
-        <span
-          className="font-mono text-[20px] font-semibold leading-none tracking-tight"
-          style={{ color: "rgb(var(--color-chrome-text))" }}
-        >
-          debugsy
-        </span>
-
-        {/* tiny horizontal palette strip — sits directly under the
-            wordmark, before the meta lines, as a visual underline. */}
-        <ThemeSwitcherClient orientation="horizontal" size="sm" />
-
-        <span
-          className="font-mono text-[10px] tracking-wide"
-          style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-        >
-          {LIB_VERSION} · {LICENSE_NAME.toLowerCase()}
-        </span>
-        <span
-          className="font-mono text-[10px] tracking-wide"
-          style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-        >
-          by{" "}
-          <a
-            className="hover:underline"
-            style={{ color: "rgb(var(--color-chrome-text))" }}
-            href="https://n-uf.com"
-            rel="noopener"
-          >
-            n-uf
-          </a>
-        </span>
-      </div>
-
-      {/* nav: the content sections that have pages, then the project's own pages on GitHub */}
-      <nav
-        aria-label="primary"
-        className="flex flex-col gap-0.5 font-mono text-[11px]"
-      >
-        {liveSections().map((s) => (
-          <Link
-            key={s.path}
-            className="hover:underline"
-            style={{ color: "rgb(var(--color-chrome-text))" }}
-            href={s.path}
-          >
-            {s.section === "blog" ? "blog" : "use cases"}
-          </Link>
-        ))}
-        <a
-          className="hover:underline"
-          style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-          href={REPO_URL}
-          rel="noopener"
-        >
-          source
-        </a>
-        <a
-          className="hover:underline"
-          style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-          href={CHANGELOG_URL}
-          rel="noopener"
-        >
-          changelog
-        </a>
-      </nav>
-
-      {/* shortcuts */}
-      <PageShortcuts />
+      {/* The same rail as the content pages (site-rail.tsx), so nothing moves between pages. */}
+      <SiteRail />
     </aside>
   );
 }
@@ -249,6 +175,11 @@ function MainStage(): React.ReactElement {
           >
             {HOME_H1}
           </h1>
+        </div>
+
+        {/* The panel's keys, one row under the title; desktop only, like the panel. */}
+        <div className="hidden lg:block">
+          <PageShortcuts />
         </div>
 
         <dl

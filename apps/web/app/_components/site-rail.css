@@ -1,0 +1,49 @@
+/* The left rail's identity block and links (site-rail.tsx), the same on every page.
+   Fonts come from next/font's own variables: harbuz's unlayered :root sets --font-mono to a
+   system font, so these rules read the font file directly. */
+.sr-ident,
+.sr-nav {
+  font-family: var(--font-jetbrains), "Fira Code", ui-monospace, monospace;
+}
+.sr-ident {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sr-wordmark {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: rgb(var(--color-chrome-text));
+  text-decoration: none;
+}
+.sr-meta {
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: rgb(var(--color-chrome-text-muted));
+}
+.sr-meta a {
+  color: rgb(var(--color-chrome-text));
+  text-decoration: none;
+}
+.sr-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.sr-nav a {
+  color: rgb(var(--color-chrome-text-muted));
+  text-decoration: none;
+}
+.sr-nav a.on {
+  color: rgb(var(--color-chrome-text));
+  font-weight: 600;
+}
+.sr-meta a:hover,
+.sr-nav a:hover {
+  text-decoration: underline;
+}
