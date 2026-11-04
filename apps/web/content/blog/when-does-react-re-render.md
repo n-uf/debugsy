@@ -277,7 +277,7 @@ return (
 );
 ```
 
-The page's fix is to wrap `login` in `useCallback` and the object in `useMemo`, so the value changes only when `currentUser` does. It also says that in smaller apps these extra renders aren't a problem. To re-render only for part of a context, the `memo` page suggests splitting the component: read the context in an outer component and pass the part you need to a memoized child as a prop.
+The page's fix is to wrap `login` in `useCallback` and the object in `useMemo`, so the value changes only when `currentUser` does. It also says that in smaller apps these extra renders aren't a problem. To re-render only for part of a context, the `memo` page suggests splitting the component: read the context in an outer component and pass the part you need to a memoized child as a prop. The [React context re-render](/blog/react-context-re-render) guide covers why a new provider value renders every reader, and the other ways to limit it.
 
 ## How does React re-render? Render, then commit
 
