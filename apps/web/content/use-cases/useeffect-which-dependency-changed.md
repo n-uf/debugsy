@@ -160,7 +160,7 @@ The hook watches the same array React sees. Put `useEffect` back when you're don
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Its `useWhyDidYouUpdate` hook does the comparison for you, and the result lands in that log next to your other messages. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19, and `react18-json-view`. It ships TypeScript source, so a Next.js app adds `@n-uf/debugsy` to `transpilePackages`. The [home page](/) has the install and mount steps.
+It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19, and `react18-json-view`. It ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so a Next.js app adds both to `transpilePackages`. Its styles are Tailwind CSS v4 classes, so the app needs Tailwind v4 and imports `@n-uf/harbuz/styles` and `@n-uf/debugsy/styles` after `tailwindcss` in its CSS. The [home page](/) has the install and mount steps.
 
 Mount `<DebugsyLook />` once near the app root, then call the hook next to the effect with the same values you list in its array:
 
