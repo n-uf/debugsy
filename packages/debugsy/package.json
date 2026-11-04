@@ -29,11 +29,11 @@
     "version:bump": "node ./scripts/calendar-version-bump.mjs --apply"
   },
   "dependencies": {
-    "@n-uf/harbuz": "^0.6.0",
-    "@uidotdev/usehooks": "^2.4.1",
-    "react-window": "^2.2.7",
-    "react-window-infinite-loader": "^2.0.1",
-    "superjson": "^2.2.6"
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "superjson": "^2.2.6",
+    "tailwind-merge": "^3.5.0"
   },
   "peerDependencies": {
     "react": "^19.2.0",
