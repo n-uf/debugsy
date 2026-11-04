@@ -50,8 +50,9 @@ no module registered warns once in the console.
 - **Styles itself.** The panel renders its own scoped stylesheet, so it looks
   the same in a Tailwind app and a plain one, and the app's CSS doesn't leak
   into it. To retune colours, override the `--dbg-*` tokens on `.dbg-root`.
-- **ESM and CommonJS** builds with type definitions. The package exports only
-  its root (`@n-uf/debugsy/styles` is an empty file kept for older setups).
+- **An ES module** with type definitions, for bundlers (Node 22.12+ can also
+  `require()` it). The package exports only its root (`@n-uf/debugsy/styles`
+  is an empty file kept for older setups).
 
 Licence: PolyForm Perimeter 1.0.1 (source-available). Third-party notices:
 THIRD_PARTY_NOTICES.md.
