@@ -1,6 +1,6 @@
 {
   "name": "@n-uf/debugsy",
-  "version": "26.11.1",
+  "version": "26.11.2",
   "description": "In-process React debugging panel: structured logs, render and dependency tracking, module LEDs, and a virtualised log view.",
   "keywords": [
     "react",
@@ -27,7 +27,7 @@
   "type": "module",
   "sideEffects": true,
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "access": "public",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {

@@ -3,8 +3,10 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
-## Unreleased
+## 26.11.2
 
+- First release on npmjs, public, with provenance: `npm i @n-uf/debugsy`
+  needs no token and no `.npmrc`. Releases still go to GitHub Packages too.
 - Install is `npm i @n-uf/debugsy` and mounting `<DebugsyLook />` from a
   client component. The package now ships one built ES module with type
   definitions and a `"use client"` directive, so Next.js needs no
