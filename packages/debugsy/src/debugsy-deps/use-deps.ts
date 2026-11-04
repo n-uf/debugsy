@@ -241,7 +241,10 @@ export interface MountRateInfo {
 
 // Options for configuring render tracker behavior
 export interface RenderTrackerOptions {
-  /** Threshold for render count warnings (default: 10) */
+  /**
+   * Renders of this component instance before a warning
+   * (default: 10, `DEPS_CONFIG_DEFAULTS.renderRateDefaultThreshold`)
+   */
   renderThreshold?: number;
   /**
    * Remounts of components with this name before a warning (default: 3).
@@ -430,8 +433,7 @@ export function useRenderTracker(
     typeof thresholdOrOptions === "object" && thresholdOrOptions !== null
       ? thresholdOrOptions
       : {
-          renderThreshold: thresholdOrOptions ?? 10,
-          mountThreshold: DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold,
+          renderThreshold: thresholdOrOptions,
           onExcessiveRenders,
         };
   const options: RenderTrackerOptions = {
@@ -439,6 +441,8 @@ export function useRenderTracker(
     trackRenders: givenOptions.trackRenders ?? true,
     trackMounts: givenOptions.trackMounts ?? true,
   };
+  const renderThreshold =
+    options.renderThreshold ?? DEPS_CONFIG_DEFAULTS.renderRateDefaultThreshold;
 
   // ✅ ALWAYS call ALL hooks first - never conditionally skip them
   const renderCount = useRef(0);
@@ -453,7 +457,7 @@ export function useRenderTracker(
     renderCount: 0,
     timeElapsed: 0,
     renderRate: 0,
-    threshold: options.renderThreshold ?? 10,
+    threshold: renderThreshold,
     isExcessive: false,
     alertsTriggered: 0,
   });
@@ -574,13 +578,13 @@ export function useRenderTracker(
       renderCount: renderCount.current,
       timeElapsed,
       renderRate,
-      threshold: options.renderThreshold ?? 10,
-      isExcessive: renderCount.current >= (options.renderThreshold ?? 10),
+      threshold: renderThreshold,
+      isExcessive: renderCount.current >= renderThreshold,
       alertsTriggered: renderAlertsTriggered.current,
     };
 
     // Log warning if excessive renders detected
-    if (renderCount.current >= (options.renderThreshold ?? 10)) {
+    if (renderCount.current >= renderThreshold) {
       renderAlertsTriggered.current += 1;
       renderInfo.current.alertsTriggered = renderAlertsTriggered.current;
 
@@ -594,7 +598,7 @@ export function useRenderTracker(
           renderCount: renderCount.current,
           timeElapsed,
           renderRate,
-          threshold: options.renderThreshold,
+          threshold: renderThreshold,
           type: "render-loop",
           severity: "warning",
         },
@@ -607,7 +611,7 @@ export function useRenderTracker(
         renderCount.current,
         timeElapsed,
         renderRate,
-        options.renderThreshold ?? 10
+        renderThreshold
       );
 
       // 🔔 Callback support for external handling
