@@ -14,6 +14,7 @@ export const WINDOW_CSS = `
   background:rgb(var(--dbg-bg));border-bottom:1px solid rgb(var(--dbg-line))}
 .dbg-edge::after{content:"";position:absolute;left:50%;top:3px;width:40px;height:3px;margin-left:-20px;border-radius:2px;
   background:rgb(var(--dbg-dim) / .35);transition:background-color .12s,box-shadow .12s,width .12s,margin-left .12s}
+.dbg-edge:focus-visible{box-shadow:inset 0 0 0 1px rgb(var(--dbg-led) / .6)}
 .dbg-edge:hover::after,.dbg-edge:focus-visible::after,.dbg-edge[data-active="true"]::after{width:64px;margin-left:-32px;
   background:rgb(var(--dbg-led));box-shadow:0 0 6px rgb(var(--dbg-led) / .7)}
 .dbg-body{position:relative;display:flex;align-items:stretch;flex:none;overflow:hidden;background:rgb(var(--dbg-canvas))}
@@ -41,7 +42,6 @@ export const WINDOW_CSS = `
 .dbg-stat-value[data-tone="caution"]{color:rgb(var(--dbg-caution))}
 .dbg-shortcuts{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 8px;font-size:var(--dbg-fs-small);
   line-height:1.2;color:rgb(var(--dbg-dim))}
-.dbg-shortcuts>button{display:contents;cursor:pointer}
 .dbg-presets{display:flex;flex-wrap:wrap;gap:2px}
 .dbg-control{position:relative;flex:none}
 `;

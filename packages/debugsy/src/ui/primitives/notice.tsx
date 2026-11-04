@@ -8,7 +8,7 @@ export type NoticeTone = "info" | "ok" | "warn" | "caution" | "neutral";
 export interface NoticeProps {
   children: React.ReactNode;
   tone?: NoticeTone;
-  /** Makes the whole line a button */
+  /** Makes the notice's text a button (the whole line when there are no actions) */
   onClick?: () => void;
   title?: string;
   /** Words at the end of the line (actions) */
@@ -23,22 +23,23 @@ export interface NoticeProps {
 export const Notice: React.FC<NoticeProps> = ({ children, tone = "neutral", onClick, title, actions, className }) => {
   const cls = className ? `dbg-notice ${className}` : "dbg-notice";
   const toneAttr = tone === "neutral" ? undefined : tone;
-  const body = (
-    <>
-      <span className="dbg-notice-body">{children}</span>
-      {actions && <span className="dbg-notice-actions">{actions}</span>}
-    </>
-  );
   if (onClick && !actions) {
     return (
       <button type="button" className={cls} data-tone={toneAttr} onClick={onClick} title={title}>
-        {body}
+        <span className="dbg-notice-body">{children}</span>
       </button>
     );
   }
   return (
-    <div className={cls} data-tone={toneAttr} title={title} role="status">
-      {body}
+    <div className={cls} data-tone={toneAttr} title={title}>
+      {onClick ? (
+        <button type="button" className="dbg-notice-body" onClick={onClick}>
+          {children}
+        </button>
+      ) : (
+        <span className="dbg-notice-body">{children}</span>
+      )}
+      {actions && <span className="dbg-notice-actions">{actions}</span>}
     </div>
   );
 };

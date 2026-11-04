@@ -532,7 +532,13 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
       <Window bodyHeight={panelHeight} isResizing={isResizing} isCompact={isCompact}>
         {!isCompact && (
           <>
-            <WindowEdge onResizeStart={handleResizeStart} isResizing={isResizing} />
+            <WindowEdge
+              onResizeStart={handleResizeStart}
+              isResizing={isResizing}
+              height={panelHeight}
+              maxHeight={maxPanelHeight}
+              onKeyResize={setPanelHeight}
+            />
 
             <WindowBody>
               <WindowContent>
@@ -555,7 +561,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
                       timestamp: new Date(log.timestamp).toLocaleTimeString(),
                       point: log.point,
                       message: log.message,
-                      level: log.level as "info" | "warn" | "error" | undefined,
+                      level: log.level,
                       data: log.data,
                       tags: log.tags,
                     };
@@ -645,7 +651,7 @@ Enable debug points and interact with the surface to see logs here.`}
               </WindowRail>
 
               <WindowSidebar>
-                {knownTags.length > 0 && (
+                {(knownTags.length > 0 || selectedTags.size > 0) && (
                   <SidebarSection title="Tags">
                     <TagFilter
                       activeTags={selectedTags}

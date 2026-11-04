@@ -21,6 +21,13 @@ const LAMP: Record<ModuleLedState, LampState> = {
   "all-off": "off",
 };
 
+/** The lamp's state in words, for screen readers */
+const LAMP_TEXT: Record<ModuleLedState, string> = {
+  "all-on": "all points on",
+  partial: "some points on",
+  "all-off": "all points off",
+};
+
 /** The module key for the built-in system/debugsy module */
 export const SYSTEM_MODULE_KEY = "system";
 
@@ -171,6 +178,8 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
       <Word
         block
         lamp={LAMP[ledState]}
+        ariaPressed={ledState === "all-on" ? true : ledState === "all-off" ? false : undefined}
+        ariaLabel={`All ${moduleKey ? `${selectedModuleDef?.label ?? ""} ` : ""}points, ${LAMP_TEXT[ledState]}`}
         onClick={moduleKey ? () => handleModuleToggleAll(moduleKey) : handleGlobalToggleAll}
         title={
           moduleKey
@@ -232,6 +241,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
       block
       lamp={LAMP[mod.ledState]}
       active={mod.ledState !== "all-off"}
+      ariaLabel={`${mod.label}, ${LAMP_TEXT[mod.ledState]}`}
       onClick={() => {
         if (longPressFired.current) {
           longPressFired.current = false;

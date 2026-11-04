@@ -120,10 +120,7 @@ export const Word = React.forwardRef<HTMLButtonElement, WordProps>(function Word
       {progress !== undefined && (
         <span
           className="dbg-fill"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress)}
+          aria-hidden
           style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
         />
       )}
