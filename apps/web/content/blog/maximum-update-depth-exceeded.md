@@ -328,7 +328,7 @@ useLayoutEffect(() => {
 
 ## Debugging a render loop with debugsy
 
-debugsy is an [in-app React debug panel](/) that shows structured logs, render counts and dependency changes in one ordered list inside your own app. Two of its hooks fit this bug. The package comes from GitHub Packages, which asks for a GitHub token with `read:packages` even though the source is public; the install steps are on the home page.
+debugsy is an [in-app React debug panel](/) that shows structured logs, render counts and dependency changes in one ordered list inside your own app. Two of its hooks fit this bug. It isn't on npmjs yet: a public release there is in preparation.
 
 Put both hooks in the looping component, here `Results` from the parent and child example:
 

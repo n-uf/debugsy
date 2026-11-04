@@ -5,7 +5,7 @@ h1: "How to find what's causing a React component to re-render"
 mainKeyword: "react find what causes re render"
 kind: use-case
 published: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-05
 author: n-uf
 takeaways:
   - "A React component renders again when its own state changes, when a parent renders, or when a context it reads changes."
@@ -137,7 +137,7 @@ It compares by reference only. You add it to each component by hand and take it 
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Its `useWhyDidYouUpdate` hook does the same job as the hook above, and the results land in that log, so you can debug a component re-render without leaving the page. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19, and `react18-json-view`. It ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so a Next.js app adds both to `transpilePackages`. Its styles are Tailwind CSS v4 classes, so the app needs Tailwind v4 and imports `@n-uf/harbuz/styles` and `@n-uf/debugsy/styles` after `tailwindcss` in its CSS. The [home page](/) has the install and mount steps.
+debugsy isn't on npmjs yet: a public release there is in preparation. It needs React 19. The [home page](/) has the mount steps.
 
 Mount the panel once near the root, then call the hook in the component you're chasing.
 
@@ -252,7 +252,7 @@ const ShippingForm = memo(function ShippingForm({ onSubmit }: Props) {
 | | React DevTools Profiler | why-did-you-render | Hook you write | debugsy |
 |---|---|---|---|---|
 | Runs | Browser extension or standalone app | Library that patches React in your app | Your component code | Panel in your app |
-| Setup | Install, tick the setting, record | Dev dependency, JSX `importSource` in Babel, `wdyr.js` as the first import | Paste, call per component | Token, `pnpm add`, mount, call the hook, switch on Deps |
+| Setup | Install, tick the setting, record | Dev dependency, JSX `importSource` in Babel, `wdyr.js` as the first import | Paste, call per component | Install (npmjs release in preparation), mount, call the hook, switch on Deps |
 | Shows | Props, state, hooks or context changed, or the parent rendered | Re-renders it flags as potentially avoidable | Changed keys you pass | From and to per key you pass, a counter, a frequent flag |
 | React | Not stated on react.dev's DevTools page | Latest version tested with React 19 only; React 18 uses its v8 readme, 16 and 17 v7 | Whatever your app runs | 19 |
 | In production | Nothing in your code | README says never | Stays until deleted | Not removed for you: guard it |

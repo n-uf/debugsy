@@ -160,7 +160,7 @@ The hook watches the same array React sees. Put `useEffect` back when you're don
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Its `useWhyDidYouUpdate` hook does the comparison for you, and the result lands in that log next to your other messages. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19, and `react18-json-view`. It ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so a Next.js app adds both to `transpilePackages`. Its styles are Tailwind CSS v4 classes, so the app needs Tailwind v4 and imports `@n-uf/harbuz/styles` and `@n-uf/debugsy/styles` after `tailwindcss` in its CSS. The [home page](/) has the install and mount steps.
+debugsy isn't on npmjs yet: a public release there is in preparation. It needs React 19. The [home page](/) has the mount steps.
 
 Mount `<DebugsyLook />` once near the app root, then call the hook next to the effect with the same values you list in its array:
 
@@ -265,7 +265,7 @@ React's `StrictMode` page says that with Strict Mode on, React runs one extra se
 | | Console and `Object.is` | Hook you write | debugsy |
 |---|---|---|---|
 | Runs | Browser console | Your component code | Panel in your app |
-| Setup | `console.log` the array, store two as globals | Paste, replace `useEffect` | Token, `pnpm add`, mount, call the hook, switch on Deps |
+| Setup | `console.log` the array, store two as globals | Paste, replace `useEffect` | Install (npmjs release in preparation), mount, call the hook, switch on Deps |
 | You give it | The array itself | Effect, array and names | An object with the values |
 | Shows | Same or different, one index at a time | Names, old and new value of what changed | From and to per key, a counter, a frequent flag |
 | Reads your real array | Yes | Yes | No, you pass the values |

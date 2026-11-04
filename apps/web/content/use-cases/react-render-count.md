@@ -199,7 +199,7 @@ export function Results({ items }: { items: Item[] }) {
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Its `useRenderTracker` hook counts committed renders the same way the ref counter does, and warns when the count reaches a number you set.
 
-It installs from GitHub Packages, not npmjs: add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. Peer dependencies are `react` and `react-dom` 19, and `react18-json-view`. It ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so a Next.js app adds both to `transpilePackages`. Its styles are Tailwind CSS v4 classes, so the app needs Tailwind v4 and imports `@n-uf/harbuz/styles` and `@n-uf/debugsy/styles` after `tailwindcss` in its CSS. The [home page](/) has the mount steps.
+debugsy isn't on npmjs yet: a public release there is in preparation. It needs React 19. The [home page](/) has the mount steps.
 
 Mount `<DebugsyLook />` once near the root, then call the hook in the component you want to count.
 
@@ -260,7 +260,7 @@ A count tells you where to look, not why. To see which prop, state or context di
 |---|---|---|---|---|
 | Runs | Browser extension or standalone app | Your component code | Wraps a subtree in your code | Hook in your component, log in the panel |
 | Counts | Commits, and the ones each component rendered in | Committed renders (+1 on mount in Strict Mode) | Commits of the subtree | Committed renders since the last warning (+1 on mount in Strict Mode) |
-| Setup | Install, record | Paste a hook | Wrap, write a callback | Token, `pnpm add`, mount, Deps on, `trackRenders: true` |
+| Setup | Install, record | Paste a hook | Wrap, write a callback | Install (npmjs release in preparation), mount, Deps on, `trackRenders: true` |
 | In production | Nothing in your code | Stays until deleted | Disabled in production by default | Not removed for you: guard it |
 
 The DevTools Profiler needs nothing in your code, so try it first. A ref counter is enough for a one-off check, and `<Profiler>` for commits of one section. debugsy fits when you want the warning in the same ordered log as your own debug messages and don't mind a hook call in each component.
