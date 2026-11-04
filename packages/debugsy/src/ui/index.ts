@@ -1,7 +1,30 @@
-// debugsy's own UI kit: the parts of the panel that used to come from
-// @n-uf/harbuz, ported from harbuz 0.6.0 (n-uf's own code) so the library has
-// no private dependency. Internal to the library: the package root
-// (`index.ts`) is still its only public entry.
+// debugsy's own UI kit. The logic came from harbuz 0.6.0 (n-uf's own code);
+// the look is kavun's, as debugsy's own scoped `dbg-` stylesheet, so the
+// panel needs no Tailwind and no CSS import. Internal to the library: the
+// package root (`index.ts`) is still its only public entry.
+
+// Styles
+export { DebugsyStyles } from "./styles/sheet";
+
+// Primitives
+export { Lamp, Meter, Segments, type LampState, type MeterTone } from "./primitives/lamp";
+export { Notice, type NoticeTone } from "./primitives/notice";
+export { Word, WordDivider, type WordTone } from "./primitives/word";
+
+// Window
+export {
+  ShortcutList,
+  SidebarSection,
+  StatList,
+  Window,
+  WindowBody,
+  WindowContent,
+  WindowControl,
+  WindowEdge,
+  WindowRail,
+  WindowSidebar,
+  type StatItem,
+} from "./window/window";
 
 // Hooks
 export { useClickOutside } from "./hooks/use-click-outside";
@@ -27,8 +50,6 @@ export {
 export {
   DEFAULT_COPY_CONFIG,
   getLogsToCopy,
-  getProgressColor,
-  getProgressWidth,
 } from "./patterns/copy-system/copy-state";
 export {
   DisplayQueueProvider,
@@ -43,52 +64,24 @@ export { useLegacyDisplayCompat } from "./patterns/display-system/use-display-le
 export { Z_INDEX } from "./tokens/z-index";
 export { safeSuperjsonStringify } from "./utils/safe-stringify";
 
-// Log entry
+// Logs
 export { LogEntry } from "./ui-blocks/log-entry/log-entry";
 export { useLogEntryCopy } from "./ui-blocks/log-entry/use-log-entry-copy";
+export { LogsContainer } from "./ui-blocks/logs-container/logs-container";
 
-// Action toolbar
+// Action rail
 export {
   ActionToolbar,
   type ActionButton,
   type DepthControl,
-  type ProgressControl,
 } from "./ui-blocks/shared/action-toolbar/action-toolbar";
 export {
-  getDepthColor,
+  DEPTH_SETTINGS,
   getDepthDescription,
-  getDepthWidth,
+  getDepthSegments,
   type DepthSetting,
 } from "./ui-blocks/shared/action-toolbar/depth-control-helpers";
 
-// Lists, tray, panels
-export { VirtualizedList } from "./ui-blocks/shared/virtualized-list/virtualized-list";
+// Control tray
 export { Tray, TrayDisplay, TraySection } from "./ui-blocks/tray/tray";
-export { TruncationPanel } from "./ui-blocks/truncation-panel/truncation-panel";
-export { Banner } from "./ui-primitives/shared/banner/banner";
-
-// Indicators
-export { Indicator } from "./ui-primitives/shared/indicator/indicator";
-export {
-  IndicatorButtonGroup,
-  type IndicatorButtonGroupItem,
-  type IndicatorButtonTheme,
-} from "./ui-primitives/terminal/indicator-button/indicator-button-group";
-export { IndicatorButton } from "./ui-primitives/terminal/indicator-button/indicator-button";
-
-// Terminal window (harbuz's TerminalLayout* blocks under their TerminalWindow* names)
-export { TerminalLayout as TerminalWindow } from "./ui-blocks/terminal-layout/terminal-layout";
-export { TerminalLayoutActions as TerminalWindowActions } from "./ui-blocks/terminal-layout/terminal-layout-actions";
-export { TerminalLayoutBody as TerminalWindowBody } from "./ui-blocks/terminal-layout/terminal-layout-body";
-export { TerminalLayoutContent as TerminalWindowContent } from "./ui-blocks/terminal-layout/terminal-layout-content";
-export { TerminalLayoutControlPanel as TerminalWindowControlPanel } from "./ui-blocks/terminal-layout/terminal-layout-control-panel";
-export { TerminalLayoutHeader as TerminalWindowHeader } from "./ui-blocks/terminal-layout/terminal-layout-header";
-export { TerminalLayoutLogsContainer as TerminalWindowLogsContainer } from "./ui-blocks/terminal-layout/terminal-layout-logs-container";
-export { TerminalLayoutResizeHandle as TerminalWindowResizeHandle } from "./ui-blocks/terminal-layout/terminal-layout-resize-handle";
-export { TerminalLayoutResizePresets as TerminalWindowResizePresets } from "./ui-blocks/terminal-layout/terminal-layout-resize-presets";
-export { TerminalLayoutSettings as TerminalWindowSettings } from "./ui-blocks/terminal-layout/terminal-layout-settings";
-export { TerminalLayoutShortcut as TerminalWindowShortcut } from "./ui-blocks/terminal-layout/terminal-layout-shortcut";
-export { TerminalLayoutShortcuts as TerminalWindowShortcuts } from "./ui-blocks/terminal-layout/terminal-layout-shortcuts";
-export { TerminalLayoutSidebar as TerminalWindowSidebar } from "./ui-blocks/terminal-layout/terminal-layout-sidebar";
-export { TerminalLayoutStatItem as TerminalWindowStatItem } from "./ui-blocks/terminal-layout/terminal-layout-stat-item";
-export { TerminalLayoutStats as TerminalWindowStats } from "./ui-blocks/terminal-layout/terminal-layout-stats";
+export type { DisplayAction } from "./ui-blocks/shared/display/display";

@@ -1,45 +1,22 @@
 "use client";
 
-import {
-  type KeyboardShortcut,
-  TerminalWindowShortcut,
-  TerminalWindowShortcuts,
-} from "../ui";
+import { type KeyboardShortcut, ShortcutList, SidebarSection } from "../ui";
 import React from "react";
 
 export interface DebugsyShortcutsDisplayProps {
-  /**
-   * Keyboard shortcuts to display
-   */
   shortcuts: KeyboardShortcut[];
 }
 
-/**
- * DebugsyShortcutsDisplay - Display keyboard shortcuts in sidebar
- *
- * Pure presentational component - only displays shortcuts.
- * Keyboard handler registration is handled by useDebugsyShortcuts hook.
- *
- * @example
- * ```tsx
- * const { shortcuts } = useDebugsyShortcuts({ ... });
- * <DebugsyShortcutsDisplay shortcuts={shortcuts} />
- * ```
- */
-export const DebugsyShortcutsDisplay: React.FC<
-  DebugsyShortcutsDisplayProps
-> = ({ shortcuts }) => {
-  return (
-    <TerminalWindowShortcuts title="Shortcuts">
-      {shortcuts.map((shortcut, index) => (
-        <TerminalWindowShortcut
-          key={`${shortcut.key}-${index}`}
-          keys={shortcut.keys}
-          description={shortcut.description}
-        />
-      ))}
-    </TerminalWindowShortcuts>
-  );
-};
+/** The sidebar's Shortcuts block: keycaps and what they do */
+export const DebugsyShortcutsDisplay: React.FC<DebugsyShortcutsDisplayProps> = ({ shortcuts }) => (
+  <SidebarSection title="Shortcuts">
+    <ShortcutList
+      items={shortcuts.map((shortcut) => ({
+        keys: shortcut.keys,
+        description: shortcut.description,
+      }))}
+    />
+  </SidebarSection>
+);
 
 DebugsyShortcutsDisplay.displayName = "DebugsyShortcutsDisplay";
