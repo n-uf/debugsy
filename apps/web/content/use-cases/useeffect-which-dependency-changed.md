@@ -260,7 +260,7 @@ A deep comparison hides the unstable reference instead of removing it. It's usua
 
 ## Why does my useEffect run twice in development?
 
-React's `StrictMode` page says that with Strict Mode on, React runs one extra setup and cleanup cycle for every effect in development, and also renders components an extra time. The `useEffect` page places that extra cycle immediately after the component mounts. It isn't a dependency change, so the hook above skips it and debugsy writes nothing for it. If the double run breaks something, the `useEffect` page says your cleanup is missing logic that undoes the setup. To count renders rather than effect runs, see how to read a [React render count](/use-cases/react-render-count).
+React's `StrictMode` page says that with Strict Mode on, React runs one extra setup and cleanup cycle for every effect in development, and also renders components an extra time. The `useEffect` page places that extra cycle immediately after the component mounts. It isn't a dependency change, so the hook above skips it and debugsy writes nothing for it. If the double run breaks something, the `useEffect` page says your cleanup is missing logic that undoes the setup. The article on why [useEffect runs twice](/blog/useeffect-runs-twice) shows what to put in the cleanup and how to tell Strict Mode from a real re-run. To count renders rather than effect runs, see how to read a [React render count](/use-cases/react-render-count).
 
 ## Which way to use
 
