@@ -5,14 +5,19 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 
 ## 26.11.1
 
-- `useRenderTracker(name, { … })` counts renders and mounts again. The options
+- `useRenderTracker(name, { … })` now counts renders and mounts. The options
   form left `trackRenders` and `trackMounts` undefined, so it counted nothing;
   both now default to `true`, as documented. Passing them is still fine.
 - Remounts are counted per component name, so `mountThreshold` catches a
   component that keeps remounting (a changing `key`, a component re-created
   by its parent). The count used to live in the instance and started at 0
-  on every remount. `mount.mountCount` now counts remounts: instances on
-  screen together and Strict Mode's second mount don't add to it.
+  on every remount. A remount is a new instance mounting within 5 seconds of
+  an unmount of the same name, and the count starts again after 5 seconds
+  without one (`DEPS_CONFIG_DEFAULTS.mountRateResetMs`). `mount.mountCount`
+  now counts remounts: instances on screen together, Strict Mode's second
+  mount and an `<Activity>` shown again don't add to it. Rows that other rows
+  replace under one name (paging, filtering) do: name each row, or pass
+  `trackMounts: false`.
 - The default render threshold is 10 and comes from
   `DEPS_CONFIG_DEFAULTS.renderRateDefaultThreshold`, which said 3.
 - In development, a log call to a point no module registered warns once in
