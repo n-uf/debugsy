@@ -1,4 +1,4 @@
-import { act, Fragment, StrictMode, type ReactNode } from "react";
+import { act, Activity, Fragment, StrictMode, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
   afterEach,
@@ -65,7 +65,18 @@ afterEach(() => {
   act(() => root.unmount());
   container.remove();
   getDebugsy().disable("dependencies");
+  vi.useRealTimers();
 });
+
+/** Fakes Date only: React's scheduler keeps its real timers */
+function fakeClock() {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-03T12:00:00Z"));
+}
+
+function advanceClock(ms: number) {
+  vi.setSystemTime(Date.now() + ms);
+}
 
 describe("useRenderTracker options form", () => {
   it("counts renders without trackRenders: true", () => {
@@ -287,5 +298,78 @@ describe("useRenderTracker remount count", () => {
     expect(onExcessiveMounts.mock.calls[0]![0]).toMatchObject({
       mountCount: 1,
     });
+  });
+
+  it("starts counting again after 5 seconds without a remount", () => {
+    expect(DEPS_CONFIG_DEFAULTS.mountRateResetMs).toBe(5000);
+    fakeClock();
+    const name = uniqueName();
+    const onExcessiveMounts = vi.fn();
+    const options = { mountThreshold: 2, onExcessiveMounts };
+
+    render(<Tracked key={0} name={name} options={options} />);
+    render(<Tracked key={1} name={name} options={options} />); // remount 1
+    advanceClock(6000);
+    render(<Tracked key={2} name={name} options={options} />); // new run: 1
+    expect(onExcessiveMounts).not.toHaveBeenCalled();
+
+    advanceClock(1000);
+    render(<Tracked key={3} name={name} options={options} />); // 2
+    expect(onExcessiveMounts).toHaveBeenCalledTimes(1);
+    expect(onExcessiveMounts.mock.calls[0]![0]).toMatchObject({
+      mountCount: 2,
+    });
+  });
+
+  it("pairs a mount only with a recent unmount", () => {
+    fakeClock();
+    const name = uniqueName();
+    const onExcessiveMounts = vi.fn();
+    const options = { mountThreshold: 1, onExcessiveMounts };
+
+    // Opened again long after it closed: not a remount
+    render(<Tracked name={name} options={options} />);
+    render(null);
+    advanceClock(6000);
+    render(<Tracked name={name} options={options} />);
+    expect(onExcessiveMounts).not.toHaveBeenCalled();
+
+    // Closed and opened again at once: a remount
+    render(null);
+    render(<Tracked name={name} options={options} />);
+    expect(onExcessiveMounts).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores an unmount while the dependencies point is off", () => {
+    const name = uniqueName();
+    const onExcessiveMounts = vi.fn();
+    const options = { mountThreshold: 1, onExcessiveMounts };
+
+    render(<Tracked name={name} options={options} />);
+    getDebugsy().disable("dependencies");
+    render(null);
+    getDebugsy().enable("dependencies");
+    render(<Tracked name={name} options={options} />);
+
+    expect(onExcessiveMounts).not.toHaveBeenCalled();
+  });
+
+  it("doesn't count an <Activity> shown again", () => {
+    const name = uniqueName();
+    const onExcessiveMounts = vi.fn();
+    const options = { mountThreshold: 1, onExcessiveMounts };
+    const tree = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <Tracked name={name} options={options} />
+      </Activity>
+    );
+
+    render(tree("visible"));
+    render(tree("hidden"));
+    render(tree("visible"));
+    render(tree("hidden"));
+    render(tree("visible"));
+
+    expect(onExcessiveMounts).not.toHaveBeenCalled();
   });
 });

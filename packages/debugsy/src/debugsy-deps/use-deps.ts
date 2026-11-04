@@ -247,13 +247,16 @@ export interface RenderTrackerOptions {
    */
   renderThreshold?: number;
   /**
-   * Remounts of components with this name before a warning (default: 3).
-   * A remount is a new instance mounting after one with the same name
-   * unmounted, as when its `key` changes or its parent re-creates it. The
-   * count is shared by every component that passes the same name. Instances
-   * on screen together (rows of a list) and Strict Mode's extra mount don't
-   * count. Rows of a virtualised list that scroll out and back in do: pass
-   * `trackMounts: false` there.
+   * Remounts of components with this name, each within 5 seconds of the
+   * last, before a warning (default: 3). A remount is a new instance mounting
+   * within 5 seconds after one with the same name unmounted, as when its
+   * `key` changes or its parent re-creates it. The count is shared by every
+   * component that passes the same name, and starts again after 5 seconds
+   * without a remount (`DEPS_CONFIG_DEFAULTS.mountRateResetMs`). Instances on
+   * screen together (rows of a list), Strict Mode's extra mount and an
+   * `<Activity>` shown again don't count. Rows that other rows replace (paging,
+   * filtering, a virtualised list) do: give each row its own name, or pass
+   * `trackMounts: false`.
    */
   mountThreshold?: number;
   /** Enable render tracking (default: true) */
@@ -277,14 +280,18 @@ export interface ComponentLifecycleInfo {
  * instance, so a count kept in a ref would start again at 0 every time.
  */
 interface MountCounter {
-  /** Remounts since the name first mounted or since the last warning */
+  /** Remounts in the current run (since a quiet gap or the last warning) */
   count: number;
-  /** When the current count started (ms) */
+  /** When the current run started (ms) */
   startTime: number;
+  /** When the last remount was counted (ms) */
+  lastRemountTime: number;
   /** Warnings raised for this name */
   alertsTriggered: number;
   /** Unmounts that no later mount of the same name has taken up yet */
   pendingUnmounts: number;
+  /** When the last of those unmounts happened (ms) */
+  lastUnmountTime: number;
 }
 
 const mountCounters = new Map<string, MountCounter>();
@@ -294,9 +301,11 @@ function getMountCounter(componentName: string): MountCounter {
   if (!counter) {
     counter = {
       count: 0,
-      startTime: Date.now(),
+      startTime: 0,
+      lastRemountTime: 0,
       alertsTriggered: 0,
       pendingUnmounts: 0,
+      lastUnmountTime: 0,
     };
     mountCounters.set(componentName, counter);
   }
@@ -449,9 +458,11 @@ export function useRenderTracker(
   const renderStartTime = useRef<number>(Date.now());
   const renderAlertsTriggered = useRef(0);
 
-  // Whether this instance's mount effect has run before. Remount counts live
-  // in mountCounters, per component name.
+  // Whether this instance's mount effect has run before, and whether its
+  // cleanup recorded an unmount that a re-run should take back. Remount
+  // counts live in mountCounters, per component name.
   const instanceMounted = useRef(false);
+  const unmountRecorded = useRef(false);
 
   const renderInfo = useRef<RenderRateInfo>({
     renderCount: 0,
@@ -474,6 +485,22 @@ export function useRenderTracker(
 
   // Track remounts of this component name
   useEffect(() => {
+    // Strict Mode, <Activity> and Fast Refresh run cleanup and mount again
+    // on the same instance. That's not a remount: take back the unmount its
+    // cleanup recorded, if it recorded one.
+    const isRerun = instanceMounted.current;
+    instanceMounted.current = true;
+    if (isRerun && unmountRecorded.current) {
+      unmountRecorded.current = false;
+      const rerunCounter = mountCounters.get(componentName);
+      if (rerunCounter) {
+        rerunCounter.pendingUnmounts = Math.max(
+          0,
+          rerunCounter.pendingUnmounts - 1
+        );
+      }
+    }
+
     // Early exit for zero overhead when disabled
     const depsState = getDepsSettings();
     if (!depsState.enabled || !options.trackMounts) {
@@ -481,25 +508,32 @@ export function useRenderTracker(
     }
 
     const counter = getMountCounter(componentName);
+    const resetMs = DEPS_CONFIG_DEFAULTS.mountRateResetMs;
+    const now = Date.now();
 
-    if (instanceMounted.current) {
-      // Strict Mode (or <Activity>) ran this instance's cleanup and mount
-      // again. Same instance, so not a remount: take back the unmount its
-      // cleanup just recorded.
-      counter.pendingUnmounts = Math.max(0, counter.pendingUnmounts - 1);
-    } else {
-      instanceMounted.current = true;
+    // Unmounts too old to pair with this mount
+    if (now - counter.lastUnmountTime > resetMs) {
+      counter.pendingUnmounts = 0;
+    }
 
+    if (!isRerun) {
       // A new instance that takes the place of one that unmounted: a remount.
       // New instances with no unmount before them (rows of a list) don't count.
       if (counter.pendingUnmounts > 0) {
         counter.pendingUnmounts -= 1;
+
+        // A quiet gap ends the run: start counting again
+        if (counter.count === 0 || now - counter.lastRemountTime > resetMs) {
+          counter.count = 0;
+          counter.startTime = counter.lastUnmountTime;
+        }
         counter.count += 1;
+        counter.lastRemountTime = now;
 
         const threshold =
           options.mountThreshold ??
           DEPS_CONFIG_DEFAULTS.mountRateDefaultThreshold;
-        const timeElapsed = Date.now() - counter.startTime;
+        const timeElapsed = now - counter.startTime;
         const mountRate = counter.count / (Math.max(timeElapsed, 1) / 1000);
 
         // Update mount info
@@ -550,14 +584,22 @@ export function useRenderTracker(
 
           // Reset counter to prevent spam
           counter.count = 0;
-          counter.startTime = Date.now();
         }
       }
     }
 
     // Cleanup: record the unmount for the next mount of this name to take up
     return () => {
+      if (!getDepsSettings().enabled) {
+        return;
+      }
+      const unmountTime = Date.now();
+      if (unmountTime - counter.lastUnmountTime > resetMs) {
+        counter.pendingUnmounts = 0; // older unmounts can't pair any more
+      }
       counter.pendingUnmounts += 1;
+      counter.lastUnmountTime = unmountTime;
+      unmountRecorded.current = true;
     };
   }, []); // Empty dependency array to track mount/unmount only
 
