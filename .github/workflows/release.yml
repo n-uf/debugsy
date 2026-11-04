@@ -2,13 +2,23 @@ name: Release
 
 # Calendar versions (YY.M.R, the same scheme as @n-uf/hypr-tiling). A PR bumps
 # packages/debugsy/package.json with `pnpm version:bump` and adds a CHANGELOG
-# entry; merging it to main publishes that version to GitHub Packages, tags it
-# v<version> and notifies finfactory/pdf-n-uf. A push whose version is already
-# published publishes nothing, so every other merge only deploys the site.
+# entry; merging it to main publishes that version to npmjs (public, with
+# provenance) and to GitHub Packages, tags it v<version> and notifies
+# finfactory/pdf-n-uf. Each registry is checked on its own: a run publishes
+# only where the version is missing, so re-runs are safe, and a push whose
+# version is everywhere already only deploys the site.
 #
 # Two jobs: `verify` is read-only; `publish` has write access and only runs
-# after `verify` passed. The registry token (NODE_AUTH_TOKEN) is exposed to the
-# install and publish steps only. Re-runs are safe for the same reason.
+# after `verify` passed. `publish` packs one tarball with pnpm (which applies
+# publishConfig: the published exports point at dist/) and publishes that
+# same file to both registries.
+#
+# Tokens, each exposed only to the steps that need it:
+# - NPM_TOKEN (repo secret): a granular npmjs token with read and write access
+#   to the @n-uf scope. Trusted publishing (OIDC) can replace it once the
+#   package exists on npmjs.
+# - GITHUB_TOKEN: installs @n-uf packages from GitHub Packages and publishes
+#   there.
 
 on:
   push:
@@ -24,7 +34,7 @@ permissions:
 
 jobs:
   verify:
-    name: Lint, check types
+    name: Lint, check types, test, build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,18 +58,24 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lint, check types
-        run: pnpm turbo lint check-types
+      - name: Lint, check types, test, build the package
+        run: |
+          pnpm turbo lint check-types test
+          pnpm --filter @n-uf/debugsy build
 
   publish:
-    name: Publish the version if new
+    name: Publish the version where it's new
     needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+      id-token: write # npm provenance
     env:
       HAS_DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN != '' }}
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+      NPMJS: https://registry.npmjs.org
+      GHPKG: https://npm.pkg.github.com
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -90,15 +106,23 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if out=$(npm view "@n-uf/debugsy@$version" version 2>&1); then
-            echo "new=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::@n-uf/debugsy@$version is already published."
-          elif echo "$out" | grep -qE 'E404|No match found|is not in this registry'; then
-            echo "new=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::Could not check the registry: $out"
-            exit 1
-          fi
+
+          # is_new <registry> <output name>: true when the version isn't there yet
+          is_new() {
+            local out
+            if out=$(npm view "@n-uf/debugsy@$version" version --registry "$1" --@n-uf:registry="$1" 2>&1); then
+              echo "$2=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::@n-uf/debugsy@$version is already on $1."
+            elif echo "$out" | grep -qE 'E404|No match found|is not in this registry'; then
+              echo "$2=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Could not check $1: $out"
+              exit 1
+            fi
+          }
+          is_new "$NPMJS" npm
+          is_new "$GHPKG" github
+
           # Tagged separately, so a re-run after a failed tag step still tags.
           if [ -n "$(git ls-remote --tags origin "refs/tags/v$version")" ]; then
             echo "tagged=true" >> "$GITHUB_OUTPUT"
@@ -106,11 +130,41 @@ jobs:
             echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Pack
+        id: pack
+        if: steps.version.outputs.npm == 'true' || steps.version.outputs.github == 'true'
+        run: |
+          dest="$RUNNER_TEMP/package"
+          mkdir -p "$dest"
+          # prepack builds dist/ and checks it (scripts/check-dist.mjs)
+          pnpm --filter @n-uf/debugsy pack --pack-destination "$dest"
+          tarball=$(ls "$dest"/*.tgz)
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          tar -tzf "$tarball"
+
+      - name: Publish to npmjs
+        if: steps.version.outputs.npm == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          if [ "$HAS_NPM_TOKEN" != "true" ]; then
+            echo "::error::The NPM_TOKEN secret is not set, so the version can't be published to npmjs."
+            exit 1
+          fi
+          # A config of its own, so the npmjs token never sits in the shared one
+          rc="$RUNNER_TEMP/npmjs.npmrc"
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$rc"
+          npm publish "$TARBALL" --userconfig "$rc" --access public --provenance \
+            --registry "$NPMJS" --@n-uf:registry="$NPMJS"
+
       - name: Publish to GitHub Packages
-        if: steps.version.outputs.new == 'true'
-        run: pnpm --filter @n-uf/debugsy publish --no-git-checks
+        if: steps.version.outputs.github == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          npm publish "$TARBALL" --registry "$GHPKG" --@n-uf:registry="$GHPKG"
 
       - name: Tag
         if: steps.version.outputs.tagged == 'false'
