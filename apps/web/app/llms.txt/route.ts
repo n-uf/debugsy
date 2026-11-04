@@ -11,7 +11,7 @@ export function GET(): Response {
     "",
     "> debugsy is an in-process React debugging panel by n-uf: a React component you mount inside your own app. It shows one ordered log of your structured debug messages, the changed values you track between renders and render-count warnings.",
     "",
-    `- Package: \`@n-uf/debugsy\` ${LIB_VERSION}. Not on npmjs yet: a public release there is in preparation (today it is on GitHub Packages for n-uf's own apps).`,
+    `- Package: \`@n-uf/debugsy\` ${LIB_VERSION}. Not on npmjs yet: a public release there is in preparation.`,
     "- Needs React 19 and react-dom 19 (peer dependencies, plus react18-json-view).",
     "- Main API: `<DebugsyLook />` (the panel), `useDebugsy()` / `dsy` / `window.debugsy` (logging), `registerModule()` (debug points), `useWhyDidYouUpdate()` (which values changed between renders), `useRenderTracker()` (render and mount count warnings).",
     '- `useWhyDidYouUpdate()` and `useRenderTracker()` log nothing until the dependencies debug point is on: the panel\'s Deps toggle, or `window.debugsy.enable("dependencies")` in the console.',
