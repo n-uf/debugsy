@@ -204,7 +204,7 @@ registerModule("auth", {
   },
 });
 
-dsy.warn("auth.session", "expired", { ttl: 3600 });
+dsy.warn("session", "expired", { ttl: 3600 });
 
 function CheckoutForm({ values, errors, onSubmit }: Props) {
   useWhyDidYouUpdate("CheckoutForm", { values, errors, onSubmit });
@@ -212,9 +212,9 @@ function CheckoutForm({ values, errors, onSubmit }: Props) {
 }
 ```
 
-A debug point is a named log channel like `auth.session`. Use `dsy` anywhere, `useDebugsy()` inside components and `window.debugsy` in the browser console. The levels are `.log`, `.warn`, `.error` and `.critical`, plus `.time` and `.timeEnd`. A message sent to a point that's switched off is dropped, so switch points on in the panel or with `window.debugsy.enable(...)`.
+A debug point is a named log channel with a bare key like `session`; the module only groups points in the panel. Use `dsy` anywhere, `useDebugsy()` inside components and `window.debugsy` in the browser console. The levels are `.log`, `.warn`, `.error` and `.critical`, plus `.time` and `.timeEnd`. A message sent to a point that's switched off is dropped, so switch points on in the panel or with `window.debugsy.enable(...)`.
 
-`useWhyDidYouUpdate` compares each key of the object you pass with the previous render, by reference, and logs the keys that changed. `useRenderTracker` counts renders (more on [counting renders in React](/use-cases/react-render-count)) and warns when they pass a threshold. Neither does anything until the `dependencies` debug point is on: the Deps toggle in the panel. The panel starts hidden. ⌘+D opens it, ⌘+K clears the log, Esc closes it. If a component loops until React throws, the guide to [this React error](/blog/maximum-update-depth-exceeded) shows how the two hooks help find it.
+`useWhyDidYouUpdate` compares each key of the object you pass with the previous render, by reference, and logs the keys that changed. `useRenderTracker` counts renders (more on [counting renders in React](/use-cases/react-render-count)) and warns when the count reaches a threshold; with the options form, version 26.11 needs `trackRenders: true`. Neither does anything until the `dependencies` debug point is on: the Deps toggle in the panel. The panel starts hidden. ⌘+D opens it, ⌘+K clears the log, Esc closes it. If a component loops until React throws, the guide to [this React error](/blog/maximum-update-depth-exceeded) shows how the two hooks help find it.
 
 What it doesn't do:
 
