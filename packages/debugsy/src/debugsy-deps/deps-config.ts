@@ -97,14 +97,14 @@ export const DEPS_CONFIG_DEFAULTS: DepsConfigThresholds = {
   patternAnalysisMinCount: 3, // Need 3+ changes for pattern detection
 
   // === RENDER RATE TRACKING ===
-  renderRateDefaultThreshold: 3, // 10 renders before warning
-  renderRateSeverityMultiplier: 3, // 30+ renders = error
+  renderRateDefaultThreshold: 10, // 10 renders before warning
+  renderRateSeverityMultiplier: 3, // over 30 renders/sec = error
   renderRateNotificationCooldown: 3000, // 3 seconds between notifications
   renderRateDisplayDuration: 8000, // Show alerts for 8 seconds
 
   // === MOUNT TRACKING ===
-  mountRateDefaultThreshold: 3, // 3 mounts before warning
-  mountRateSeverityMultiplier: 3, // 30+ mounts = error
+  mountRateDefaultThreshold: 3, // 3 remounts before warning
+  mountRateSeverityMultiplier: 3, // over 9 remounts/sec = error
   mountRateNotificationCooldown: 3000, // 3 seconds between notifications
   mountRateDisplayDuration: 8000, // Show alerts for 8 seconds
 
