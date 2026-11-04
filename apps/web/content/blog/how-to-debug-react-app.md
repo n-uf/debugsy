@@ -249,7 +249,7 @@ Turn on the panel's Deps toggle (⌘+D opens the panel, and a second press shows
 
 It compares each key with the previous render by reference, so a new object with the same contents counts as a change. It sees only the components where you call it and the values you pass, and it only logs: it doesn't stop a render or a loop. `(#1)` counts the changes to that key, and 🚀 marks the start-up phase; the page on [finding what causes a re-render](/use-cases/why-did-this-component-render) explains the marks.
 
-debugsy installs from GitHub Packages, which asks for a GitHub token with `read:packages` even though the source is public. The install steps are on the home page linked above. It doesn't remove itself from production builds, so guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`.
+debugsy isn't on npmjs yet: a public release there is in preparation, and the home page linked above has the mount steps. It doesn't remove itself from production builds, so guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`.
 
 ## Debug a React app in Chrome
 

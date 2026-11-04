@@ -283,7 +283,7 @@ export function Root() {
 }
 ```
 
-That guard is yours to write: debugsy doesn't remove itself from production builds. It needs React 19. It isn't a remote logger or an error reporter, and its built-in Errors point is only a channel for your own calls; debugsy doesn't listen for uncaught errors. It installs from GitHub Packages, which asks for a GitHub token with `read:packages` even for public packages. The licence is PolyForm Perimeter 1.0.1, not MIT. The [home page](/) has the install and mount steps, and [React JS debugging tools](/blog/react-debugging-tools) shows where debugsy sits among profilers and DevTools.
+That guard is yours to write: debugsy doesn't remove itself from production builds. It needs React 19. It isn't a remote logger or an error reporter, and its built-in Errors point is only a channel for your own calls; debugsy doesn't listen for uncaught errors. It isn't on npmjs yet: a public release there is in preparation. The licence is PolyForm Perimeter 1.0.1, not MIT. The [home page](/) has the mount steps, and [React JS debugging tools](/blog/react-debugging-tools) shows where debugsy sits among profilers and DevTools.
 
 Pick it when you want your own debug messages next to render counts and dependency changes in one ordered log, with toggles you can flip without touching code.
 
