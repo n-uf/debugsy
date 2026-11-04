@@ -1,6 +1,7 @@
 "use client";
 
 import { useRenderTracker, useWhyDidYouUpdate } from "../debugsy-deps";
+import { initializationPhase } from "../debugsy-deps/logic/change-tracking";
 import React from "react";
 import {
   clearDebugDisplayContent,
@@ -96,9 +97,6 @@ export const ProbeReRenderDetection: React.FC<ProbeReRenderDetectionProps> = ({
   React.useEffect(() => {
     if (renderCount >= 3) {
       try {
-        const {
-          initializationPhase,
-        } = require("../debugsy-deps/logic/change-tracking");
         if (
           initializationPhase &&
           typeof initializationPhase.markComponentSeen === "function"
