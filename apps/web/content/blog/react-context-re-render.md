@@ -75,7 +75,7 @@ related:
 
 A React context re-render happens when a provider receives a value that is different from its last one, compared with `Object.is`. React then re-renders every component that reads that context with `useContext`, however deep it sits, and `memo` doesn't stop it. Components that don't read the context aren't touched by the change. The trap the `useContext` page warns about is a provider that builds a new object for `value` on every render, so the value counts as changed even when the data inside it hasn't.
 
-The rules below come from react.dev pages checked on 2026-11-03. The render counts in the examples come from a test we ran: a development build of React 19.3.1 in jsdom, counting how many times each component function was called. Snippets are TypeScript for React 19, where the context object is its own provider (`<CartContext value={...}>`).
+The rules below come from react.dev pages checked on 2026-11-03. The render counts in the examples come from a test we ran: a development build of React 19.3.1 in jsdom, without Strict Mode (which would call each component twice in development), counting how many times each component function was called. Snippets are TypeScript for React 19, where the context object is its own provider (`<CartContext value={...}>`).
 
 ## Does a context change re-render all child components?
 
