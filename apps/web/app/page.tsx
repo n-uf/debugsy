@@ -154,10 +154,10 @@ function MainStage(): React.ReactElement {
   return (
     <section
       aria-label="debugsy"
-      className="flex min-h-0 flex-col gap-4 px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12 xl:py-6"
+      className="flex min-h-0 flex-col gap-3 px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12"
     >
       {/* ── Intro: spec block ────────────────────────────────────── */}
-      <header className="flex flex-col gap-2.5 font-mono">
+      <header className="flex flex-col gap-1.5 font-mono">
         {/* The h1 holds only the title; the name and version sit beside it. */}
         <div className="flex flex-wrap items-baseline gap-x-2">
           <span
@@ -183,7 +183,7 @@ function MainStage(): React.ReactElement {
         </div>
 
         <dl
-          className="m-0 grid max-w-4xl grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-[12px] leading-snug"
+          className="m-0 grid max-w-4xl grid-cols-[max-content_1fr] gap-x-3 gap-y-0.5 text-[12px] leading-snug"
           style={{ color: "rgb(var(--color-chrome-text))" }}
         >
           <SpecRow label="what">
@@ -225,8 +225,10 @@ function MainStage(): React.ReactElement {
         </dl>
       </header>
 
-      {/* ── Capabilities — masonry-packed, sized to content, no wasted rows ── */}
-      <ol className="m-0 min-h-0 flex-1 list-none gap-0 overflow-hidden p-0 [column-fill:balance] columns-1 gap-x-3 sm:columns-2 xl:columns-3">
+      {/* ── Capabilities — a grid, so a card never splits across columns: cards 01–03 sit
+          side by side, each heading above its code, and when the panel leaves less height the
+          list clips at the bottom instead of spilling sideways into hidden columns. ── */}
+      <ol className="m-0 grid min-h-0 flex-1 list-none content-start items-start grid-cols-1 gap-x-3 overflow-hidden p-0 sm:grid-cols-2 xl:grid-cols-3">
         <CapabilityBlock num="01" label="Install + mount">
           <Tok kind="comment">// .npmrc (GitHub Packages)</Tok>
           {"\n"}
