@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { cn } from "../../../utils/cn";
 
 export interface VirtualizedListProps<T = unknown> {
   /**
@@ -162,7 +161,7 @@ function VirtualizedListInner<T = unknown>(
     return (
       <div
         ref={ref}
-        className={cn("flex items-center justify-center p-8", className)}
+        className={className ? `dbg-log-vempty ${className}` : "dbg-log-vempty"}
       >
         {emptyState}
       </div>
@@ -193,7 +192,10 @@ function VirtualizedListInner<T = unknown>(
     <div ref={ref} className={className}>
       {/* Spacer for items before render range */}
       {visibleRange.startIndex > 0 && (
-        <div style={{ height: visibleRange.startIndex * itemHeight }} />
+        <div
+          aria-hidden
+          style={{ height: visibleRange.startIndex * itemHeight }}
+        />
       )}
 
       {/* Rendered items with overscan */}
@@ -212,6 +214,7 @@ function VirtualizedListInner<T = unknown>(
       {/* Spacer for items after render range */}
       {visibleRange.endIndex < items.length - 1 && (
         <div
+          aria-hidden
           style={{
             height: (items.length - 1 - visibleRange.endIndex) * itemHeight,
           }}

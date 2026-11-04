@@ -25,7 +25,7 @@ export interface FormatterMeta {
  */
 export interface FormatterConfig {
   /** React component for expansion content */
-  expansionComponent: React.ComponentType<{ log: LogEntryData }>;
+  expansionComponent: React.ComponentType<ExpansionContentProps>;
 
   /** Function to get metadata (severity, expand behavior, etc.) */
   metaFunction: (log: LogEntryData) => FormatterMeta | null;
@@ -45,10 +45,5 @@ export interface FormatterConfig {
  */
 export interface ExpansionContentProps {
   log: LogEntryData;
-  colors?: {
-    textMuted?: string;
-    success?: string;
-    textSecondary?: string;
-  };
 }
 

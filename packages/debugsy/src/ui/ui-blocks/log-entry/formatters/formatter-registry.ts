@@ -15,6 +15,7 @@ import {
   getDefaultLogMeta,
 } from "./default-formatter";
 import type {
+  ExpansionContentProps,
   FormatterConfig,
   FormatterMeta,
   LogSeverity,
@@ -42,7 +43,7 @@ export const FORMATTER_REGISTRY: Record<string, FormatterConfig> = {
  */
 export const getExpansionContent = (
   log: LogEntryData
-): React.ComponentType<{ log: LogEntryData; colors?: Record<string, string> }> => {
+): React.ComponentType<ExpansionContentProps> => {
   // Check registered formatters by point name
   const config = FORMATTER_REGISTRY[log.point];
   if (config) {
