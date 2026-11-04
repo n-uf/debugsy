@@ -316,7 +316,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-debugsy doesn't remove itself from production builds, hence the guard. The panel starts hidden: ⌘+D opens it (a second press shows the full log), ⌘+K clears the log and Esc closes it.
+debugsy doesn't remove itself from production builds, hence the guard. The panel starts hidden: ⌘+D (Ctrl+D on Windows and Linux) opens it, a second press shows the full log, ⌘+K or Ctrl+K clears the log and Esc closes it.
 
 Then log from the component you're chasing:
 
