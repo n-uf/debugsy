@@ -3,10 +3,13 @@
 import React from "react";
 import type { PauseState } from "../../hooks/use-pause-state";
 import type { ScrollFollowingState } from "../../hooks/use-scroll-following";
+import { Notice } from "../../primitives/notice";
+import { VirtualizedList } from "../shared/virtualized-list/virtualized-list";
+import { TruncationPanel } from "../truncation-panel/truncation-panel";
 
 export interface LogsContainerBanner {
   /**
-   * Banner content (typically a Banner component)
+   * Banner content (typically a Notice)
    */
   content: React.ReactNode;
   /**
@@ -83,23 +86,9 @@ export interface LogsContainerProps<T> {
     type?: "info" | "success" | "error"
   ) => void;
   /**
-   * Optional Banner component to use for auto-generated banners
-   */
-  BannerComponent?: React.ComponentType<{
-    emoji: string;
-    message: string;
-    variant?: "info" | "warning" | "success" | "error" | "paused" | "snapshot";
-    onClick?: () => void;
-    title?: string;
-  }>;
-  /**
    * Optional truncation panel configuration
    */
   truncation?: LogsContainerTruncation;
-  /**
-   * Truncation panel component
-   */
-  TruncationPanel?: React.ComponentType<LogsContainerTruncation>;
   /**
    * Threshold for auto-generating truncation banner (default: 30)
    * Shows banner when totalCount > threshold
@@ -127,7 +116,7 @@ export interface LogsContainerProps<T> {
    */
   virtualizationThreshold?: number;
   /**
-   * Item height for virtualization
+   * Item height for virtualization (a collapsed log row is 24px)
    */
   itemHeight?: number;
   /**
@@ -135,28 +124,15 @@ export interface LogsContainerProps<T> {
    */
   overscan?: number;
   /**
-   * VirtualizedList component (optional)
-   */
-  VirtualizedList?: React.ComponentType<{
-    items: T[];
-    itemHeight: number;
-    containerRef: React.RefObject<HTMLDivElement | null>;
-    keyExtractor: (item: T) => string | number;
-    virtualizationThreshold: number;
-    overscan: number;
-    renderItem: (item: T, index: number) => React.ReactNode;
-    footer?: React.ReactNode;
-  }>;
-  /**
-   * Border left color
+   * Border left (any CSS border-left value)
    */
   borderLeft?: string;
   /**
-   * Padding
+   * Padding (any CSS padding value; default: none, 24px at the bottom)
    */
   padding?: string;
   /**
-   * Background color
+   * Background color (default: the panel's canvas)
    */
   backgroundColor?: string;
   /**
@@ -188,7 +164,7 @@ export interface LogsContainerProps<T> {
  *   topBanners={[
  *     {
  *       show: isPaused,
- *       content: <Banner message="Paused" onClick={resume} />
+ *       content: <Notice tone="warn" onClick={resume}>Paused</Notice>
  *     }
  *   ]}
  *   truncation={{
@@ -197,8 +173,6 @@ export interface LogsContainerProps<T> {
  *     maxRendered: 400,
  *     onCopyAll: handleCopy,
  *   }}
- *   TruncationPanel={TruncationPanel}
- *   VirtualizedList={VirtualizedList}
  * />
  * ```
  */
@@ -212,23 +186,20 @@ export const LogsContainer = <T = unknown,>({
   scrollFollowingState,
   pauseState,
   onDisplayMessage,
-  BannerComponent,
   truncation,
-  TruncationPanel,
   truncationThreshold = 30,
   maxRendered,
   totalCount: providedTotalCount,
   hiddenLogsIndicator,
   virtualized = true,
   virtualizationThreshold = 50,
-  itemHeight = 20,
+  itemHeight = 24,
   overscan = 5,
-  VirtualizedList,
   borderLeft,
-  padding = "4px 8px 24px 8px",
+  padding,
   backgroundColor,
-  style = {},
-  className = "",
+  style,
+  className,
   emptyMessage = "No entries yet.",
 }: LogsContainerProps<T>) => {
   const internalRef = React.useRef<HTMLDivElement | null>(null);
@@ -248,20 +219,23 @@ export const LogsContainer = <T = unknown,>({
   const autoBanners: LogsContainerBanner[] = [];
 
   // Pause banner (high priority)
-  if (pauseState?.isPaused && BannerComponent) {
+  if (pauseState?.isPaused) {
     autoBanners.push({
       show: true,
       content: (
-        <BannerComponent
-          emoji="⏸️"
-          message={`Log rendering paused - ${pauseState.pausedItems.length} logs frozen`}
-          variant="paused"
+        <Notice
+          tone="warn"
+          title="Click to resume log rendering"
           onClick={() => {
             pauseState.resume();
             onDisplayMessage?.("Log rendering resumed", "success");
           }}
-          title="Click to resume log rendering"
-        />
+        >
+          <span className="dbg-log-note">
+            Log rendering paused - {pauseState.pausedItems.length} logs frozen
+          </span>
+          <span className="dbg-log-note-hint">Click to resume</span>
+        </Notice>
       ),
     });
   }
@@ -270,8 +244,7 @@ export const LogsContainer = <T = unknown,>({
   if (
     scrollFollowingState &&
     !scrollFollowingState.isFollowing &&
-    !pauseState?.isPaused &&
-    BannerComponent
+    !pauseState?.isPaused
   ) {
     const snapshotCount =
       scrollFollowingState.snapshotItems.length > 0
@@ -281,78 +254,72 @@ export const LogsContainer = <T = unknown,>({
     autoBanners.push({
       show: true,
       content: (
-        <BannerComponent
-          emoji="📌"
-          message={`Viewing snapshot at ${snapshotCount} logs - Click to return to live stream`}
-          variant="snapshot"
+        <Notice
+          tone="info"
+          title="Click to return to following live logs"
           onClick={() => {
             scrollFollowingState.returnToFollowing();
             onDisplayMessage?.("Returned to following live logs", "success");
           }}
-          title="Click to return to following live logs"
-        />
+        >
+          <span className="dbg-log-note">
+            Viewing snapshot at {snapshotCount} logs
+          </span>
+          <span className="dbg-log-note-hint">Click to return to live stream</span>
+        </Notice>
       ),
     });
   }
 
   // Combine auto-generated banners with custom banners
-  const allBanners = [...autoBanners, ...topBanners];
+  const shownBanners = [...autoBanners, ...topBanners].filter(
+    (banner) => banner.show
+  );
+
+  // Inline style only for what the caller sets (the look comes from the sheet)
+  const containerStyle: React.CSSProperties = { ...style };
+  if (padding !== undefined) containerStyle.padding = padding;
+  if (backgroundColor !== undefined)
+    containerStyle.backgroundColor = backgroundColor;
+  if (borderLeft !== undefined) containerStyle.borderLeft = borderLeft;
 
   return (
     <div
       ref={effectiveRef}
-      className={className}
-      style={{
-        flex: 1,
-        overflowY: "auto",
-        overflowX: "auto",
-        display: "flex",
-        flexDirection: "column",
-        padding,
-        backgroundColor,
-        borderLeft,
-        ...style,
-      }}
+      className={
+        className
+          ? `dbg-log-scroll dbg-scroll ${className}`
+          : "dbg-log-scroll dbg-scroll"
+      }
+      style={containerStyle}
       onScroll={
         scrollFollowingState?.handleScroll
           ? (e) => scrollFollowingState.handleScroll(e)
           : undefined
       }
     >
-      {/* Conditional Banners */}
-      {allBanners.map((banner, index) =>
-        banner.show ? (
-          <React.Fragment key={`banner-${index}`}>
-            {banner.content}
-          </React.Fragment>
-        ) : null
+      {/* Conditional Banners (one sticky stack above the list) */}
+      {shownBanners.length > 0 && (
+        <div className="dbg-log-banners">
+          {shownBanners.map((banner, index) => (
+            <React.Fragment key={`banner-${index}`}>
+              {banner.content}
+            </React.Fragment>
+          ))}
+        </div>
       )}
 
       {/* Logs List - Wrapped for Cmd+A selection (only logs, not banners) */}
       <div
         ref={effectiveLogsOnlyRef}
+        className="dbg-log-list"
+        data-empty={items.length === 0 ? "true" : undefined}
         tabIndex={0}
-        style={{ flex: 1, outline: "none" }}
       >
         {items.length === 0 ? (
           // Empty state
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-              color: "rgb(var(--color-text-muted))",
-              fontSize: "11px",
-              fontFamily: "monospace",
-              textAlign: "center",
-              padding: "20px",
-              whiteSpace: "pre-line",
-            }}
-          >
-            {emptyMessage}
-          </div>
-        ) : virtualized && VirtualizedList ? (
+          <div className="dbg-log-empty">{emptyMessage}</div>
+        ) : virtualized ? (
           <VirtualizedList
             items={items}
             itemHeight={itemHeight}
@@ -376,7 +343,7 @@ export const LogsContainer = <T = unknown,>({
       </div>
 
       {/* Auto-generated Truncation Panel (when truncated) */}
-      {shouldShowTruncationBanner && TruncationPanel && (
+      {shouldShowTruncationBanner && (
         <TruncationPanel
           hiddenCount={hiddenCount}
           totalCount={totalCount}
@@ -390,7 +357,6 @@ export const LogsContainer = <T = unknown,>({
       {/* Manual Truncation Panel (for custom control when NOT auto-truncating) */}
       {!shouldShowTruncationBanner &&
         truncation &&
-        TruncationPanel &&
         truncation.hiddenCount !== undefined &&
         truncation.totalCount !== undefined &&
         truncation.maxRendered !== undefined && (
@@ -408,4 +374,3 @@ export const LogsContainer = <T = unknown,>({
 };
 
 LogsContainer.displayName = "LogsContainer";
-
