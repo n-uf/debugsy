@@ -11,12 +11,15 @@ name: Release
 # Two jobs: `verify` is read-only; `publish` has write access and only runs
 # after `verify` passed. `publish` packs one tarball with pnpm (which applies
 # publishConfig: the published exports point at dist/) and publishes that
-# same file to both registries.
+# same file to both registries. GitHub Packages, the tag and the pdf-n-uf
+# notice come first and npmjs last, so a broken npm token can't hold back
+# pdf-n-uf's releases; a re-run then publishes only to npmjs.
 #
 # Tokens, each exposed only to the steps that need it:
 # - NPM_TOKEN (repo secret): a granular npmjs token with read and write access
 #   to the @n-uf scope. Trusted publishing (OIDC) can replace it once the
-#   package exists on npmjs.
+#   package exists on npmjs; that needs npm 11.5.1 or later in the job (Node
+#   22 ships npm 10) and is best done in a job of its own.
 # - GITHUB_TOKEN: installs @n-uf packages from GitHub Packages and publishes
 #   there.
 
@@ -142,22 +145,6 @@ jobs:
           echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
           tar -tzf "$tarball"
 
-      - name: Publish to npmjs
-        if: steps.version.outputs.npm == 'true'
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-        run: |
-          if [ "$HAS_NPM_TOKEN" != "true" ]; then
-            echo "::error::The NPM_TOKEN secret is not set, so the version can't be published to npmjs."
-            exit 1
-          fi
-          # A config of its own, so the npmjs token never sits in the shared one
-          rc="$RUNNER_TEMP/npmjs.npmrc"
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$rc"
-          npm publish "$TARBALL" --userconfig "$rc" --access public --provenance \
-            --registry "$NPMJS" --@n-uf:registry="$NPMJS"
-
       - name: Publish to GitHub Packages
         if: steps.version.outputs.github == 'true'
         env:
@@ -188,3 +175,21 @@ jobs:
           jq -n -c --arg v "$VERSION" --arg sha "$(git rev-parse HEAD)" \
             '{event_type: "lib-released", client_payload: {source: "n-uf/debugsy", sha: $sha, packages: [{name: "@n-uf/debugsy", version: $v}]}}' \
             | gh api repos/finfactory/pdf-n-uf/dispatches --method POST --input -
+
+      # Last, so a broken npm token can't hold back GitHub Packages, the tag or
+      # pdf-n-uf; a re-run then publishes here only.
+      - name: Publish to npmjs
+        if: steps.version.outputs.npm == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          if [ "$HAS_NPM_TOKEN" != "true" ]; then
+            echo "::error::The NPM_TOKEN secret is not set, so the version can't be published to npmjs."
+            exit 1
+          fi
+          # A config of its own, so the npmjs token never sits in the shared one
+          rc="$RUNNER_TEMP/npmjs.npmrc"
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$rc"
+          npm publish "$TARBALL" --userconfig "$rc" --access public --provenance \
+            --registry "$NPMJS" --@n-uf:registry="$NPMJS"
