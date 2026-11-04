@@ -14,7 +14,7 @@ Site: https://debugsy.n-uf.com
 
 | Folder | What |
 | --- | --- |
-| `packages/debugsy` | `@n-uf/debugsy`, the library (TypeScript source, one entry point) |
+| `packages/debugsy` | `@n-uf/debugsy`, the library (one entry point, published as a built ES module) |
 | `apps/web` | the showcase site (Next.js), debugsy.n-uf.com |
 | `packages/eslint-config`, `packages/typescript-config` | internal shared configs |
 
@@ -23,14 +23,16 @@ with its history on 2026-11-02.
 
 ## Use it
 
-`@n-uf/debugsy` is published to GitHub Packages:
-
 ```sh
-# .npmrc
-@n-uf:registry=https://npm.pkg.github.com
+npm i @n-uf/debugsy
 ```
 
+Mount `<DebugsyLook />` from a client component. No token, no `.npmrc`, no
+CSS import, no Tailwind and no bundler config; it needs React 19.
+
 ```tsx
+"use client";
+
 import { DebugsyLook, dsy, registerModule } from "@n-uf/debugsy";
 
 registerModule("auth", {
@@ -49,7 +51,7 @@ registerModule("auth", {
 // Point keys are bare and shared by all modules: "session", not "auth.session".
 dsy.warn("session", "Session expired", { ttlSeconds: 0 });
 
-export function Root() {
+export function DebugPanel() {
   return <DebugsyLook />;
 }
 ```
@@ -57,26 +59,9 @@ export function Root() {
 A point logs nothing until it's on: its LED in the panel, `?debug=session` in
 the URL, or `dsy.enable("session")`.
 
-The package exports only its root; the folders under `src/` are internal. It
-ships TypeScript source, and so does its dependency `@n-uf/harbuz`, so Next.js
-consumers add both to `transpilePackages`:
-
-```js
-// next.config.mjs
-const nextConfig = {
-  transpilePackages: ["@n-uf/debugsy", "@n-uf/harbuz"],
-};
-```
-
-The panel is styled with Tailwind v4 classes; no compiled CSS ships. The app
-needs Tailwind v4, with both style entries imported after Tailwind in its
-global stylesheet (as `apps/web/app/globals.css` does):
-
-```css
-@import "tailwindcss";
-@import "@n-uf/harbuz/styles"; /* theme variables and utilities */
-@import "@n-uf/debugsy/styles"; /* lets Tailwind see debugsy's classes */
-```
+The package exports only its root; the folders under `src/` are internal. The
+panel renders its own scoped stylesheet, so it looks the same in a Tailwind
+app and a plain one. More in [the package README](packages/debugsy/README.md).
 
 ## Develop
 
@@ -107,8 +92,9 @@ Calendar versions, `YY.M.R`, the same scheme as `@n-uf/hypr-tiling`:
   version: `M` is always the release month, never "the last month + 1".
 - A release PR bumps the version and adds an entry to
   `packages/debugsy/CHANGELOG.md`. Merging it to `main` publishes that version
-  to GitHub Packages and tags it `v<version>` (`.github/workflows/release.yml`);
-  merges without a bump publish nothing.
+  to npmjs (public, with provenance) and to GitHub Packages, and tags it
+  `v<version>` (`.github/workflows/release.yml`); merges without a bump
+  publish nothing. npmjs needs the `NPM_TOKEN` repo secret.
 - Never reuse a version number that was published and then removed; record it
   in `BURNED_VERSIONS` in `packages/debugsy/scripts/calendar-version-bump.mjs`.
 
