@@ -5,12 +5,30 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 
 ## Unreleased
 
+- The panel styles itself: no Tailwind, no stylesheet import, no
+  `transpilePackages` entry for styles. Its CSS is a scoped `dbg-` stylesheet
+  that `<DebugsyLook />` renders as a React 19 hoisted style, so it looks the
+  same in a Tailwind app and in a plain one. `@n-uf/debugsy/styles` is now an
+  empty file, kept so existing imports don't break; you can remove the import.
+- A new look, from n-uf's kavun kit, in its dark theme: engraved monospace
+  words instead of icon buttons, status lamps and LED segments, LED cyan for
+  indicators and progress, caution pink for destructive and alert states,
+  amber and red only for log levels. The panel no longer follows the host
+  page's harbuz theme variables. An app can retune it by overriding the
+  `--dbg-*` tokens on `.dbg-root`.
+- The action rail shows COPY, PAUSE and HEALTH as words under a depth control;
+  the tray's actions are EXPAND/COMPACT, CLEAR and CLOSE.
+- `ModuleNav`'s `theme` prop is ignored (kept so existing calls compile).
 - debugsy no longer depends on `@n-uf/harbuz`. The parts of the panel that
-  came from it (terminal window, log rows, tray display, indicator buttons,
-  action toolbar, virtualized list and small hooks) are debugsy's own code,
-  ported from harbuz 0.6.0 unchanged, so the panel looks the same.
+  came from it (terminal window, log rows, tray display, action toolbar,
+  virtualized list and small hooks) are debugsy's own code. The tray display
+  dropped harbuz's unused alert mode.
 - Removed the unused dependencies `react-window`,
-  `react-window-infinite-loader` and `@uidotdev/usehooks`.
+  `react-window-infinite-loader` and `@uidotdev/usehooks`, and the Tailwind
+  helpers (`clsx`, `tailwind-merge`, `class-variance-authority`,
+  `@radix-ui/react-slot`).
+- Fixed: opening a module in the tray no longer logs React's "Cannot update a
+  component while rendering a different component" error.
 
 ## 26.11.1
 
