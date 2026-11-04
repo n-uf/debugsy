@@ -259,7 +259,7 @@ The Removing Effect Dependencies page shows the message like this:
 React Hook useEffect has a missing dependency: 'roomId'
 ```
 
-React's docs say that by suppressing the rule you "lie" to React about what the effect depends on, and recommend treating the lint error as a compilation error. The linter only knows when the dependencies are wrong, not the best way to fix them. When it asks for a dependency that makes the effect run too often, use one of the fixes above.
+React's docs say that by suppressing the rule you "lie" to React about what the effect depends on, and recommend treating the lint error as a compilation error. They add that there's always a better solution than ignoring the linter. When it asks for a dependency that makes the effect run too often, use one of the fixes above.
 
 ## useEffect dependency array best practices
 
