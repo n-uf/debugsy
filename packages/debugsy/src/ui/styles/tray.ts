@@ -21,7 +21,7 @@ export const TRAY_CSS = `
 .dbg-readout-rows{display:flex;flex-direction:column;justify-content:center;min-width:0;min-height:0;height:100%}
 .dbg-readout-row{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;min-height:0;max-height:24px;overflow:hidden;
   animation:dbg-k-tray-in .16s ease-out}
-.dbg-readout-row+.dbg-readout-row{border-top:1px solid rgb(var(--dbg-line) / .5)}
+.dbg-readout-row+.dbg-readout-row{border-top:1px solid rgb(var(--dbg-line))}
 .dbg-readout-single{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0;animation:dbg-k-tray-in .16s ease-out}
 .dbg-readout-line{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden}
 .dbg-readout-time{flex:none;color:rgb(var(--dbg-dim));font-variant-numeric:tabular-nums;letter-spacing:.02em}
