@@ -113,7 +113,7 @@ This isn't a ranking. What we say about another tool comes from its own README o
 | VS Code debugger | Breakpoints and stepping in the editor | Editor | `launch.json` | Not stated |
 | Next.js debugging | Server and client code of a Next.js app | VS Code, Chrome or Firefox DevTools | `launch.json` or `--inspect` | Not stated |
 | Reactotron | State, API requests, logs, benchmarks | Desktop app plus a dev dependency | Download the app, `reactotron-react-js` | Open source and free to use (README) |
-| debugsy | Render and dependency logs, debug messages | Panel inside your app | GitHub Packages token, `pnpm add`, mount, hooks | PolyForm Perimeter 1.0.1; no price published |
+| debugsy | Render and dependency logs, debug messages | Panel inside your app | GitHub Packages token, `pnpm add`, Tailwind v4 styles, mount, hooks | PolyForm Perimeter 1.0.1; no price published |
 
 "Not stated" means the pages we read don't say. "MIT (npm)" comes from the package's npm registry data; the other licences are in the README.
 
@@ -223,7 +223,7 @@ What it doesn't do:
 - It doesn't remove itself from production builds. Guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`.
 - It makes no network requests and sends no telemetry. Settings live in `localStorage`. It isn't a remote logger.
 
-It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. The peer dependencies are `react` and `react-dom` 19 and `react18-json-view`, and a Next.js app adds `@n-uf/debugsy` to `transpilePackages`. The licence is PolyForm Perimeter 1.0.1: the source is public and any use is allowed except providing others a product that competes with debugsy. It isn't MIT, and no price is published. The install steps are on the [home page](/).
+It installs from GitHub Packages, not npmjs. Add `@n-uf:registry=https://npm.pkg.github.com` to `.npmrc`, then run `pnpm add @n-uf/debugsy`. GitHub Packages asks for a GitHub token with `read:packages`, even for public packages. The peer dependencies are `react` and `react-dom` 19 and `react18-json-view`, and a Next.js app adds `@n-uf/debugsy` and its dependency `@n-uf/harbuz` to `transpilePackages`, since both ship TypeScript source. Its styles are Tailwind CSS v4 classes, so the app needs Tailwind v4 and imports `@n-uf/harbuz/styles` and `@n-uf/debugsy/styles` after `tailwindcss` in its CSS. The licence is PolyForm Perimeter 1.0.1: the source is public and any use is allowed except providing others a product that competes with debugsy. It isn't MIT, and no price is published. The install steps are on the [home page](/).
 
 ## Next.js debugging tools
 
