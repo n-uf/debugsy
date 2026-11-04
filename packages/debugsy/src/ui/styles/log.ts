@@ -8,7 +8,9 @@
  * `dbg-diff` (change view) and `dbg-trunc` (truncation notice).
  *
  * The `.json-view` rules style react18-json-view's own class names under
- * `.dbg-root`, so the package imports no CSS file.
+ * `.dbg-root`, so the package imports no CSS file. Their layout values are
+ * adapted from react18-json-view's `src/style.css` (MIT License, Copyright
+ * (c) 2023 Suni); see THIRD_PARTY_NOTICES.md.
  */
 
 export const LOG_CSS = `
@@ -24,13 +26,15 @@ export const LOG_CSS = `
 .dbg-log-vempty{display:flex;align-items:center;justify-content:center;padding:32px}
 
 .dbg-log-item{display:block}
-.dbg-log-row{position:relative;display:flex;align-items:center;gap:8px;height:24px;padding:0 10px 0 8px;overflow:hidden;
+.dbg-log-row{position:relative;box-sizing:border-box;display:flex;align-items:center;gap:8px;height:24px;padding:0 10px 0 8px;overflow:hidden;
   border-bottom:1px solid rgb(var(--dbg-line));font-family:var(--dbg-mono);font-size:11.5px;line-height:16px;white-space:nowrap;
   color:rgb(var(--dbg-text));cursor:text;transition:background-color .12s,box-shadow .12s}
 .dbg-log-row[data-alt="true"]{background-color:rgb(var(--dbg-text) / .025)}
 .dbg-log-row[data-level="info"]{box-shadow:inset 2px 0 0 rgb(var(--dbg-dim) / .45)}
 .dbg-log-row[data-level="warn"]{background-color:rgb(var(--dbg-warn) / .06);box-shadow:inset 2px 0 0 rgb(var(--dbg-warn))}
 .dbg-log-row[data-level="error"]{background-color:rgb(var(--dbg-error) / .08);box-shadow:inset 2px 0 0 rgb(var(--dbg-error))}
+.dbg-log-row[data-level="critical"]{background-color:rgb(var(--dbg-error) / .16);box-shadow:inset 3px 0 0 rgb(var(--dbg-error))}
+.dbg-log-row[data-level="success"]{background-color:rgb(var(--dbg-ok) / .05);box-shadow:inset 2px 0 0 rgb(var(--dbg-ok))}
 .dbg-log-row[data-expandable="true"]{cursor:pointer}
 .dbg-log-row:hover,.dbg-log-row[data-expanded="true"]{background-image:linear-gradient(rgb(var(--dbg-hover)),rgb(var(--dbg-hover)))}
 .dbg-log-row[data-copied="true"]{background-color:rgb(var(--dbg-ok) / .14)}
@@ -60,7 +64,8 @@ export const LOG_CSS = `
 .dbg-log-row[data-expanded="true"] .dbg-log-main{align-items:flex-start}
 .dbg-log-msg{flex:0 1 auto;min-width:24px;overflow:hidden;text-overflow:ellipsis;color:rgb(var(--dbg-text))}
 .dbg-log-row[data-expanded="true"] .dbg-log-msg{white-space:normal;overflow-wrap:anywhere;overflow:visible}
-.dbg-log-row[data-level="error"] .dbg-log-msg{color:rgb(var(--dbg-error))}
+.dbg-log-row:is([data-level="error"],[data-level="critical"]) .dbg-log-msg{color:rgb(var(--dbg-error))}
+.dbg-log-row[data-level="critical"] .dbg-log-msg{font-weight:700}
 .dbg-log-freq{flex:none;font-size:var(--dbg-fs-chrome);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgb(var(--dbg-warn))}
 .dbg-log-data{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:rgb(var(--dbg-dim))}
 .dbg-log-copied{position:absolute;top:4px;right:8px;display:flex;align-items:center;height:16px;padding:0 6px;pointer-events:none;
@@ -126,6 +131,7 @@ export const LOG_CSS = `
 .dbg-trunc-meta{display:block;margin-top:2px;font-size:var(--dbg-fs-chrome);letter-spacing:.04em;color:rgb(var(--dbg-dim));
   font-variant-numeric:tabular-nums}
 
+/* .json-view layout adapted from react18-json-view src/style.css (MIT License, (c) 2023 Suni) */
 .dbg-root .json-view{display:block;text-align:left;font-family:var(--dbg-mono);font-size:11.5px;line-height:1.6;
   color:rgb(var(--dbg-text));
   --json-property:rgb(var(--dbg-text));--json-index:rgb(var(--dbg-dim));--json-number:rgb(var(--dbg-led));

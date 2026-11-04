@@ -268,19 +268,3 @@ export const formatDelta = (delta: DeltaInfo): string => {
     delta.impact === "high" ? "🔴" : delta.impact === "medium" ? "🟡" : "🟢";
   return `${impactIcon} ${delta.delta}`;
 };
-
-/**
- * Get impact color for UI
- */
-export const getImpactColor = (impact: "low" | "medium" | "high"): string => {
-  switch (impact) {
-    case "low":
-      return "#22c55e"; // green
-    case "medium":
-      return "#f59e0b"; // yellow
-    case "high":
-      return "#ef4444"; // red
-    default:
-      return "#6b7280"; // gray
-  }
-};

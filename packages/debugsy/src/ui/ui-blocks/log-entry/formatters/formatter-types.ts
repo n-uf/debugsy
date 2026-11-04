@@ -9,7 +9,7 @@ import type { LogEntryData } from "../log-entry";
 /**
  * Severity levels for logs
  */
-export type LogSeverity = "info" | "warn" | "error";
+export type LogSeverity = "info" | "warn" | "error" | "critical" | "success";
 
 /**
  * Metadata returned by formatter meta functions

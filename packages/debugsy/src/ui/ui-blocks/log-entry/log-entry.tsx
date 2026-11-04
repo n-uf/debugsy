@@ -11,7 +11,7 @@ export interface LogEntryData {
   point: string; // Debug point name (Point A, Point B, etc.)
   pointEmoji?: string; // Emoji for the debug point
   message: string;
-  level?: "info" | "warn" | "error"; // Severity level
+  level?: "info" | "warn" | "error" | "critical" | "success"; // Severity level
   data?: unknown;
   frequencyBadge?: string; // e.g., "FREQUENT", "CRITICAL"
   tags?: string[];
