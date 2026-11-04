@@ -197,6 +197,8 @@ Open the Debug panel (`Ctrl+Shift+D` on Windows and Linux, `⇧+⌘+D` on a Mac)
 
 Pick the entry by where the code runs. "Next.js: debug server-side" starts the dev server with `--inspect` in a terminal. "Next.js: debug client-side" launches Chrome at the URL. "Next.js: debug full stack" runs Next.js under the debugger and opens a browser once the server is ready. The Firefox entry needs the Firefox Debugger extension for VS Code.
 
+For a plain React app with a Vite dev server, which has no server code to attach to, see how to [debug React in VS Code](/blog/debug-react-vscode) with a browser launch configuration.
+
 The guide lists the edits you may need:
 
 - `npm run dev` can be `yarn dev` or `pnpm dev`.
