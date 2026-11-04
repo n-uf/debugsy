@@ -62,11 +62,31 @@ describe("logging to a point no module registered", () => {
     const dsy = getDebugsy();
     dsy.setConsoleEnabled(false);
     dsy.enable("adhoc");
-    dsy.log("adhoc", "Logged");
-    await nextMicrotask();
+    try {
+      dsy.log("adhoc", "Logged");
+      await nextMicrotask();
 
-    expect(warn).not.toHaveBeenCalled();
-    expect(dsy.getLogs().some((entry) => entry.point === "adhoc")).toBe(true);
-    dsy.disable("adhoc");
+      expect(warn).not.toHaveBeenCalled();
+      expect(dsy.getLogs().some((entry) => entry.point === "adhoc")).toBe(
+        true
+      );
+    } finally {
+      dsy.disable("adhoc");
+    }
+  });
+
+  it("queues one check for a burst of calls to the same unknown point", async () => {
+    const queued = vi.spyOn(globalThis, "queueMicrotask");
+    try {
+      const dsy = getDebugsy();
+      for (let i = 0; i < 50; i++) {
+        dsy.log("burst.point", `call ${i}`);
+      }
+      expect(queued).toHaveBeenCalledTimes(1);
+    } finally {
+      queued.mockRestore();
+    }
+    await nextMicrotask();
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 });
