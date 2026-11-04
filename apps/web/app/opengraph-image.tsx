@@ -8,6 +8,6 @@ export default async function Image() {
   return shareCard({
     label: "in-process React debug panel",
     title: "A React debug panel that runs inside your app",
-    foot: "pnpm add @n-uf/debugsy",
+    foot: "debugsy.n-uf.com",
   });
 }
