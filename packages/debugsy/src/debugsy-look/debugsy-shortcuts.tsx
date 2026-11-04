@@ -4,7 +4,7 @@ import {
   type KeyboardShortcut,
   TerminalWindowShortcut,
   TerminalWindowShortcuts,
-} from "@n-uf/harbuz";
+} from "../ui";
 import React from "react";
 
 export interface DebugsyShortcutsDisplayProps {

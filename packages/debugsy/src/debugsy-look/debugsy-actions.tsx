@@ -21,7 +21,7 @@ import {
   type PauseState,
   type ProgressControl,
   type ScrollFollowingState,
-} from "@n-uf/harbuz";
+} from "../ui";
 import React, { useCallback, useState } from "react";
 
 export interface DebugsyActionsProps<T> {

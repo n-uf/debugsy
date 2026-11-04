@@ -3,7 +3,7 @@
 import {
   IndicatorButtonGroup,
   type IndicatorButtonTheme,
-} from "@n-uf/harbuz";
+} from "../ui";
 import React, { useState } from "react";
 import { ProbeReRenderDetection } from "./probe-rerender-detection";
 import { useDepsSettings } from "../debugsy-space/debugsy-space-settings";
