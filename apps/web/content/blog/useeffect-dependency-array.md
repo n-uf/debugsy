@@ -297,4 +297,4 @@ Mount `<DebugsyLook />` once near the app root. The hook does nothing until the 
 
 `🚀` marks lines logged during debugsy's start-up phase, and `📋 INIT` marks a key that keeps changing in that phase. Start-up ends five seconds after the last tracked change, so a loop that never pauses keeps both marks. debugsy warns; it never stops a loop, and it sees only the components where you call its hooks. If the changing dependency sets state, the [article on that error](/blog/maximum-update-depth-exceeded) has a checklist.
 
-debugsy installs from GitHub Packages, which asks for a GitHub token with `read:packages` even for public packages. It doesn't remove itself from production builds, so guard the import or the mount yourself. Install steps and the mount code are on [debugsy's home page](/). debugsy is independent and not affiliated with Meta or the React team.
+debugsy isn't on npmjs yet: a public release there is in preparation. It doesn't remove itself from production builds, so guard the import or the mount yourself. The mount code is on [debugsy's home page](/). debugsy is independent and not affiliated with Meta or the React team.
