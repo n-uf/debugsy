@@ -28,12 +28,6 @@ interface LevelChoice {
 
 // What each level logs today. The deps logger has no quieter cut for Quiet
 // yet, so the copy says Quiet logs what Normal logs rather than promise one.
-const NORMAL: LevelChoice = {
-  value: "normal",
-  label: "Normal",
-  title: "Changed dependencies, recreated functions and objects",
-  hint: "Changed dependencies, recreated functions and objects. Verbose adds changed primitive values.",
-};
 const LEVELS: readonly LevelChoice[] = [
   {
     value: "quiet",
@@ -41,7 +35,12 @@ const LEVELS: readonly LevelChoice[] = [
     title: "Logs what Normal logs",
     hint: "Quiet logs what Normal logs: changed dependencies, recreated functions and objects.",
   },
-  NORMAL,
+  {
+    value: "normal",
+    label: "Normal",
+    title: "Changed dependencies, recreated functions and objects",
+    hint: "Changed dependencies, recreated functions and objects. Verbose adds changed primitive values.",
+  },
   {
     value: "verbose",
     label: "Verbose",
@@ -56,15 +55,25 @@ interface FilterChoice {
   hint: string;
 }
 
-const ALL: FilterChoice = { value: "all", label: "All", hint: "Every dependency that changed." };
+// A change counts as Unstable once it keeps coming back within a few seconds
+// (logic/change-tracking.ts, isFrequent). Unstable changes leave the Functions
+// and Objects filters, so their hints say so.
 const FILTERS: readonly FilterChoice[] = [
-  ALL,
-  { value: "functions-only", label: "Functions", hint: "Only functions recreated since the last render." },
-  { value: "objects-only", label: "Objects", hint: "Only objects and arrays recreated since the last render." },
+  { value: "all", label: "All", hint: "Every dependency that changed." },
+  {
+    value: "functions-only",
+    label: "Functions",
+    hint: "Recreated functions. Ones that keep changing show under Unstable instead.",
+  },
+  {
+    value: "objects-only",
+    label: "Objects",
+    hint: "Recreated objects and arrays. Ones that keep changing show under Unstable instead.",
+  },
   {
     value: "unstable-only",
     label: "Unstable",
-    hint: "Only dependencies that keep changing, render after render, in quick succession.",
+    hint: "Dependencies that changed again within a few seconds, several times in a row.",
   },
 ];
 
@@ -74,8 +83,13 @@ const TALLY: ReadonlyArray<{ tags: readonly string[]; one: string; many: string 
   { tags: ["fn-recreation"], one: "function", many: "functions" },
   { tags: ["obj-recreation"], one: "object", many: "objects" },
   { tags: ["prim-change"], one: "value", many: "values" },
-  { tags: ["render-warn", "mount-warn"], one: "warning", many: "warnings" },
+  { tags: ["render-warn"], one: "render warning", many: "render warnings" },
+  { tags: ["mount-warn"], one: "remount warning", many: "remount warnings" },
 ];
+
+// A level or filter the strip doesn't offer (silent, debug, loop-risks…) can
+// still be set from code: name it instead of lighting a choice that isn't set.
+const setElsewhere = (value: string) => `Set to "${value}" outside the panel. Pick one to change it.`;
 
 const DEPS_POINT = "dependencies";
 
@@ -112,8 +126,8 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
     deps.setFilter(value);
   };
 
-  const level = LEVELS.find((l) => l.value === deps.logLevel) ?? NORMAL;
-  const filter = FILTERS.find((f) => f.value === deps.filter) ?? ALL;
+  const level = LEVELS.find((l) => l.value === deps.logLevel);
+  const filter = FILTERS.find((f) => f.value === deps.filter);
 
   const logs = deps.logs;
   const counted = TALLY.map((t) => ({ ...t, n: 0 }));
@@ -128,7 +142,7 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
     .map((t) => ({ n: t.n, word: t.n === 1 ? t.one : t.many }));
   const latest = logs[logs.length - 1];
   const latestTime = latest
-    ? new Date(latest.timestamp || Date.now()).toLocaleTimeString("en-US", { hour12: false })
+    ? new Date(latest.timestamp || Date.now()).toLocaleTimeString("en-US", { hourCycle: "h23" })
     : null;
 
   return (
@@ -153,8 +167,8 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                     key={l.value}
                     size="sm"
                     pill
-                    active={level.value === l.value}
-                    ariaPressed={level.value === l.value}
+                    active={level?.value === l.value}
+                    ariaPressed={level?.value === l.value}
                     onClick={() => pickLevel(l.value)}
                     title={l.title}
                   >
@@ -162,7 +176,7 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                   </Word>
                 ))}
               </div>
-              <p className="dbg-advanced-hint">{level.hint}</p>
+              <p className="dbg-advanced-hint">{level?.hint ?? setElsewhere(deps.logLevel)}</p>
             </div>
 
             <div className="dbg-advanced-group">
@@ -173,8 +187,8 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                     key={f.value}
                     size="sm"
                     pill
-                    active={filter.value === f.value}
-                    ariaPressed={filter.value === f.value}
+                    active={filter?.value === f.value}
+                    ariaPressed={filter?.value === f.value}
                     onClick={() => pickFilter(f.value)}
                     title={f.hint}
                   >
@@ -182,7 +196,7 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                   </Word>
                 ))}
               </div>
-              <p className="dbg-advanced-hint">{filter.hint}</p>
+              <p className="dbg-advanced-hint">{filter?.hint ?? setElsewhere(deps.filter)}</p>
             </div>
 
             <div className="dbg-advanced-group">
@@ -193,7 +207,7 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                     Off
                   </span>
                   <p className="dbg-advanced-hint">
-                    Nothing is logged. Turn on Deps, or pick a level or a filter.
+                    Nothing new is logged. Turn on Deps, or pick a level or a filter.
                   </p>
                 </>
               ) : logs.length === 0 ? (
