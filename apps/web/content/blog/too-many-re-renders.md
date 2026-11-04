@@ -306,4 +306,4 @@ function Counter() {
 }
 ```
 
-When the count reaches `renderThreshold`, it logs a warning, shows a short notice in the panel and starts counting again. The [React debug panel](/) installs from GitHub Packages, which asks for a GitHub token with `read:packages` even though the source is public; the install steps are on the home page. debugsy is independent and not affiliated with Meta or the React team. It doesn't remove itself from production builds, so guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`.
+When the count reaches `renderThreshold`, it logs a warning, shows a short notice in the panel and starts counting again. The [React debug panel](/) isn't on npmjs yet: a public release there is in preparation. debugsy is independent and not affiliated with Meta or the React team. It doesn't remove itself from production builds, so guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`.
