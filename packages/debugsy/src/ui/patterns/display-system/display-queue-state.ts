@@ -8,7 +8,6 @@
  * - Auto-restoration (memorized items restore when interrupting items complete)
  */
 
-import type { DisplayAlert } from "./display-alert";
 import { DisplayPriority, sortByPriority, shouldMemorize } from "./display-priority";
 
 /** Individual display item in the queue */
@@ -49,9 +48,6 @@ export interface DisplayQueueItem {
 
   // Animation Control (per-item)
   animateProgress?: boolean; // Animate progress bar with pulse effect (default: false)
-
-  // Alert (error with recovery) — see display-alert.ts
-  alert?: DisplayAlert; // When set, Display renders alert mode and swaps its action slots
 
   // Memorization State
   memorized?: boolean; // Currently memorized (not visible but in memory)

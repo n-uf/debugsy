@@ -15,7 +15,6 @@
 
 import { useCallback } from "react";
 import { useDisplayQueueContext } from "./display-queue-context";
-import { createAlertQueueItem, type DisplayAlert } from "./display-alert";
 import { DisplayPriority } from "./display-priority";
 
 /**
@@ -46,8 +45,7 @@ import { DisplayPriority } from "./display-priority";
  * ```
  */
 export const useDisplayQueueHelpers = () => {
-  const { addToQueue, updateQueueItem, removeFromQueue } =
-    useDisplayQueueContext();
+  const { addToQueue, updateQueueItem } = useDisplayQueueContext();
 
   // =============================================================================
   // ERROR Priority Helpers (Priority 0 - Highest)
@@ -77,33 +75,6 @@ export const useDisplayQueueHelpers = () => {
       });
     },
     [addToQueue]
-  );
-
-  /**
-   * Show an error-with-recovery alert (imperative form of `useDisplayAlert`).
-   * The display swaps its action slots for the alert's actions until the
-   * alert is dismissed (built-in Dismiss slot, the returned `dismiss`, or
-   * `autoClearMs`). `onDismiss` is called in every case.
-   */
-  const showAlert = useCallback(
-    (alert: DisplayAlert): { id: string; dismiss: () => void } => {
-      let id = "";
-      let done = false;
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const dismiss = () => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        removeFromQueue(id);
-        alert.onDismiss?.();
-      };
-      id = addToQueue(createAlertQueueItem({ ...alert, onDismiss: dismiss }));
-      if (alert.autoClearMs && alert.autoClearMs > 0) {
-        timer = setTimeout(dismiss, alert.autoClearMs);
-      }
-      return { id, dismiss };
-    },
-    [addToQueue, removeFromQueue]
   );
 
   // =============================================================================
@@ -393,7 +364,6 @@ export const useDisplayQueueHelpers = () => {
   return {
     // Semantic helpers (RECOMMENDED)
     showError,
-    showAlert,
     showAction,
     startLoading,
     completeLoading,
