@@ -97,7 +97,7 @@ useEffect(() => {
 }, [count]);
 ```
 
-In development, Strict Mode re-runs every effect one extra time to find missing cleanup. That extra run doesn't mean your array is wrong. The article on why [useEffect runs twice](/blog/useeffect-runs-twice) covers what the extra run checks and how to write a cleanup that passes it.
+In development, Strict Mode re-runs every effect one extra time to find missing cleanup. That extra run doesn't mean your array is wrong. A separate article on [Strict Mode's extra effect run](/blog/useeffect-runs-twice) covers what it checks and how to write a cleanup that passes it.
 
 ## Does useEffect need a dependency array?
 
