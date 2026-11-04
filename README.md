@@ -31,8 +31,31 @@ with its history on 2026-11-02.
 ```
 
 ```tsx
-import { DebugsyLook, useDebugsy, dsy, registerModule } from "@n-uf/debugsy";
+import { DebugsyLook, dsy, registerModule } from "@n-uf/debugsy";
+
+registerModule("auth", {
+  label: "Auth",
+  emoji: "🔐",
+  description: "Sign-in and session state",
+  points: {
+    session: {
+      emoji: "🔑",
+      label: "Session",
+      description: "Session refresh and expiry",
+    },
+  },
+});
+
+// Point keys are bare and shared by all modules: "session", not "auth.session".
+dsy.warn("session", "Session expired", { ttlSeconds: 0 });
+
+export function Root() {
+  return <DebugsyLook />;
+}
 ```
+
+A point logs nothing until it's on: its LED in the panel, `?debug=session` in
+the URL, or `dsy.enable("session")`.
 
 The package exports only its root; the folders under `src/` are internal. It
 ships TypeScript source, so Next.js consumers add it to `transpilePackages`.
