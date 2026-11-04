@@ -240,7 +240,7 @@ const onPick = useCallback(() => select(id), [id, select]);
 
 `useCallback` returns the same function until a dependency changes, again judged by `Object.is`. [React compares an effect's dependencies](/blog/useeffect-dependency-array) the same way.
 
-`memo` has limits. The page calls it a performance optimization, not a guarantee, so React may still render a memoized component. And it only watches props: a memoized component still re-renders for its own state or a context it uses.
+`memo` has limits. The page calls it a performance optimization, not a guarantee, so React may still render a memoized component. And it only watches props: a memoized component still re-renders for its own state or a context it uses. For a child that renders more often than it should, the fixes, from moving state down to `memo`, are in the guide to [preventing re-renders in React](/blog/prevent-re-renders-react).
 
 ### Pass JSX as children
 

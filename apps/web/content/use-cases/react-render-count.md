@@ -166,7 +166,7 @@ Every keystroke sets `query`, so `SearchPage` renders, and by default every row 
 | Rows wrapped in `memo`, `onSelect` still an inline function | 6 |
 | Rows wrapped in `memo`, `onSelect` wrapped in `useCallback` | 1 |
 
-The middle row is the one that teaches something. The `memo` page says it compares props with `Object.is` and is useless when you pass a plain function defined during rendering, since every render makes a new one. [`useCallback`](https://react.dev/reference/react/useCallback) gives you the same function until its dependencies change, and then `memo` can skip the rows.
+The middle row is the one that teaches something. The `memo` page says it compares props with `Object.is` and is useless when you pass a plain function defined during rendering, since every render makes a new one. [`useCallback`](https://react.dev/reference/react/useCallback) gives you the same function until its dependencies change, and then `memo` can skip the rows. Moving state down and passing `children` bring the number down too; the guide on how to [prevent re-renders in React](/blog/prevent-re-renders-react) takes them in order.
 
 ## React's Profiler component counts commits in code
 
