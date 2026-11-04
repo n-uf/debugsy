@@ -3,6 +3,15 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
+## Unreleased
+
+- debugsy no longer depends on `@n-uf/harbuz`. The parts of the panel that
+  came from it (terminal window, log rows, tray display, indicator buttons,
+  action toolbar, virtualized list and small hooks) are debugsy's own code,
+  ported from harbuz 0.6.0 unchanged, so the panel looks the same.
+- Removed the unused dependencies `react-window`,
+  `react-window-infinite-loader` and `@uidotdev/usehooks`.
+
 ## 26.11.1
 
 - `useRenderTracker(name, { … })` now counts renders and mounts. The options
