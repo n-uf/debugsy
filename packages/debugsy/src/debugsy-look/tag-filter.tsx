@@ -69,7 +69,8 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   onModeChange,
   onRefresh,
 }) => {
-  if (knownTags.length === 0) return null;
+  // Stay visible while a filter is active, so it can always be cleared
+  if (knownTags.length === 0 && activeTags.size === 0) return null;
 
   const hasActiveFilter = activeTags.size > 0;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -143,6 +144,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
           tone={hasActiveFilter ? "caution" : "led"}
           onClick={onClearAll}
           title={hasActiveFilter ? "Clear tag filter" : "Showing all tags"}
+          ariaLabel={hasActiveFilter ? "Clear tag filter" : "Showing all tags"}
         >
           {hasActiveFilter ? "Clr" : "All"}
         </Word>
@@ -168,12 +170,23 @@ export const TagFilter: React.FC<TagFilterProps> = ({
                 ? "AND: all selected tags must match"
                 : "OR: any selected tag matches"
             }
+            ariaLabel={
+              mode === "and"
+                ? "Tag match: all selected tags (switch to any)"
+                : "Tag match: any selected tag (switch to all)"
+            }
           >
             {mode}
           </Word>
         )}
         {onRefresh && (
-          <Word size="sm" tone="caution" onClick={onRefresh} title="Rebuild tags from current logs">
+          <Word
+            size="sm"
+            tone="caution"
+            onClick={onRefresh}
+            title="Rebuild tags from current logs"
+            ariaLabel="Rebuild tags from current logs"
+          >
             Rst
           </Word>
         )}

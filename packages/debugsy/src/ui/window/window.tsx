@@ -38,18 +38,45 @@ export const Window: React.FC<WindowProps> = ({ bodyHeight, isResizing = false, 
 export interface WindowEdgeProps {
   onResizeStart: (event: React.MouseEvent) => void;
   isResizing?: boolean;
+  /** Current body height, for assistive tech and the arrow keys */
+  height?: number;
+  maxHeight?: number;
+  /** Arrow keys: called with the new height (±20px, ±100px with Shift) */
+  onKeyResize?: (height: number) => void;
 }
 
-/** The top edge: drag it to resize the panel */
-export const WindowEdge: React.FC<WindowEdgeProps> = ({ onResizeStart, isResizing = false }) => (
+/** The top edge: drag it, or focus it and use the arrow keys, to resize the panel */
+export const WindowEdge: React.FC<WindowEdgeProps> = ({
+  onResizeStart,
+  isResizing = false,
+  height,
+  maxHeight,
+  onKeyResize,
+}) => (
   <div
     className="dbg-edge"
     role="separator"
     aria-orientation="horizontal"
     aria-label="Resize panel"
+    aria-valuenow={height}
+    aria-valuemin={height !== undefined ? 0 : undefined}
+    aria-valuemax={height !== undefined ? maxHeight : undefined}
     title="Drag to resize"
+    tabIndex={onKeyResize ? 0 : undefined}
     data-active={isResizing ? "true" : undefined}
     onMouseDown={onResizeStart}
+    onKeyDown={
+      onKeyResize && height !== undefined
+        ? (event) => {
+            const step = event.shiftKey ? 100 : 20;
+            const delta = event.key === "ArrowUp" ? step : event.key === "ArrowDown" ? -step : 0;
+            if (delta === 0) return;
+            event.preventDefault();
+            const next = height + delta;
+            onKeyResize(Math.max(0, maxHeight !== undefined ? Math.min(maxHeight, next) : next));
+          }
+        : undefined
+    }
   />
 );
 
@@ -132,26 +159,16 @@ export interface ShortcutItem {
   /** Display form of the keys, e.g. "⌘+D" */
   keys: string;
   description: string;
-  onClick?: () => void;
 }
 
 /** Keycaps and what they do */
 export const ShortcutList: React.FC<{ items: readonly ShortcutItem[] }> = ({ items }) => (
   <div className="dbg-shortcuts">
-    {items.map((item, i) => {
-      const parts = (
-        <>
-          <span className="dbg-keycap">{item.keys}</span>
-          <span>{item.description}</span>
-        </>
-      );
-      return item.onClick ? (
-        <button key={`${item.keys}-${i}`} type="button" onClick={item.onClick}>
-          {parts}
-        </button>
-      ) : (
-        <React.Fragment key={`${item.keys}-${i}`}>{parts}</React.Fragment>
-      );
-    })}
+    {items.map((item, i) => (
+      <React.Fragment key={`${item.keys}-${i}`}>
+        <kbd className="dbg-keycap">{item.keys}</kbd>
+        <span>{item.description}</span>
+      </React.Fragment>
+    ))}
   </div>
 );

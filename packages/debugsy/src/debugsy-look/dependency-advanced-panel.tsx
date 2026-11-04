@@ -99,6 +99,7 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
               size="sm"
               lamp={dependencyState.enabled ? "on" : "off"}
               active={dependencyState.enabled}
+              ariaPressed={dependencyState.enabled}
               onClick={handleDependenciesToggle}
               title={dependencyState.enabled ? "Disable dependency tracking" : "Enable dependency tracking"}
             >

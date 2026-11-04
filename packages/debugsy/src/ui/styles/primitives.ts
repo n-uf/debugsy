@@ -86,6 +86,9 @@ button.dbg-notice{cursor:pointer}
 button.dbg-notice:hover{background-color:rgb(var(--dbg-hover))}
 button.dbg-notice:focus-visible{outline:2px solid rgb(var(--dbg-led));outline-offset:-2px}
 .dbg-notice-body{flex:1;min-width:0}
+button.dbg-notice-body{text-align:left;cursor:pointer}
+button.dbg-notice-body:hover{color:rgb(var(--dbg-led))}
+button.dbg-notice-body:focus-visible{outline:2px solid rgb(var(--dbg-led));outline-offset:1px}
 .dbg-notice-actions{display:inline-flex;align-items:center;gap:2px;flex:none}
 .dbg-field{display:block;min-width:0;height:22px;padding:3px 6px;border:0;border-radius:var(--dbg-radius);outline:none;
   font-family:var(--dbg-font);font-size:var(--dbg-fs-chrome);line-height:1.4;letter-spacing:.02em;color:rgb(var(--dbg-text));
