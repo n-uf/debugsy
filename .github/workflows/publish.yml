@@ -5,15 +5,20 @@ name: Publish due pages
 # 00:10 UTC (or on a manual run) apps/web/scripts/publish-due.mjs sets `draft: false` on each draft
 # whose day has come, this job proves the result still builds (the content checks run in the build:
 # a live page that links to a still-draft page fails it), and only then commits
-# `publish: <section>/<slug>[, …]` as github-actions[bot] and pushes it straight to main (which isn't
-# protected). Vercel's Git connection deploys that push. Nothing due means no commit.
+# `publish: <section>/<slug>[, …]` as github-actions[bot] and pushes it straight to main. Vercel's Git
+# connection deploys that push. Nothing due means no commit.
+#
+# The push goes over SSH with the write deploy key "publish-bot (scheduled publishing)" (secret
+# PUBLISH_DEPLOY_KEY): main's ruleset requires CI on every other push, and deploy keys bypass it. This
+# job's own build is the check for the bot's commit.
+#
+# A deploy-key push, unlike a GITHUB_TOKEN push, starts other workflows: release.yml runs on the push to
+# main. It publishes, tags and notifies only when packages/debugsy's version is new, and a publish
+# commit only changes content, so that run checks the package and publishes nothing.
 #
 # A bad flip fails the build step, nothing is pushed, and the job goes red: fix the page (or set
 # `draft: true` on the one that can't go yet) and run this workflow again.
 # Undo: revert the publish commit, or set `draft: true` on the page again.
-#
-# Pushes made with GITHUB_TOKEN don't start other workflows, so the release workflow doesn't run for
-# a publish commit (it only changes content).
 
 on:
   schedule:
@@ -25,8 +30,9 @@ concurrency:
   group: publish
   cancel-in-progress: false
 
+# The push uses the deploy key, not GITHUB_TOKEN, so the token only reads.
 permissions:
-  contents: write
+  contents: read
   packages: read
 
 jobs:
@@ -40,6 +46,9 @@ jobs:
           ref: main
           # Full history, so the push step can rebase on a main that moved during the build.
           fetch-depth: 0
+          # Fetch, rebase and push over SSH as the publish deploy key, which main's ruleset lets
+          # through without the CI checks it requires of everyone else.
+          ssh-key: ${{ secrets.PUBLISH_DEPLOY_KEY }}
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
