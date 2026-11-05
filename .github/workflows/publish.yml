@@ -13,7 +13,8 @@ name: Publish due pages
 # or a git hook):
 #   build  has no secret. It flips the pages and uploads the hand-over (the flip as a patch, and the page
 #          list) as an artifact kept 1 day, before any third-party code runs; then it installs and builds.
-#          Its one output, `ready`, is set by its last step, so the push job runs only after a passing build.
+#          Its outputs (`ready`, and the artifact's name) are set by its last step, so the push job runs
+#          only after a passing build.
 #   push   gets the key (the `publish` environment). It runs git and first-party actions only: no node, no
 #          pnpm. It applies the patch to a fresh checkout of the commit that was built, and
 #          apps/web/scripts/check-flip-patch.sh refuses it unless every change is the front-matter
@@ -53,9 +54,10 @@ on:
         type: boolean
         default: false
 
-# One run at a time, none cancelled: a run that has flipped pages should finish its push.
+# One flip run at a time, none cancelled: a run that has flipped pages should finish its push. A verify-key
+# run has a group of its own, so it neither waits for a flip run nor holds one up.
 concurrency:
-  group: publish
+  group: publish-${{ inputs.verify-key && 'verify' || 'flip' }}
   cancel-in-progress: false
 
 # No job writes with its token; the push goes over SSH with the deploy key.
@@ -78,9 +80,12 @@ jobs:
       packages: read
     # The patch and the page list cross to the push job as an artifact uploaded before any third-party code
     # runs; no commit id crosses (both jobs check out github.sha, the main commit this run started on). The
-    # one output, `ready`, is set by the last step, so it exists only when the build passed.
+    # outputs, `ready` and the artifact's name, are set by the last step, so they exist only when the build
+    # passed. The name carries the attempt: a re-run build uploads afresh, and a re-run of the push job alone
+    # still finds the artifact of the build it follows.
     outputs:
       ready: ${{ steps.ready.outputs.ready }}
+      handoff: ${{ steps.ready.outputs.handoff }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -109,13 +114,14 @@ jobs:
           echo "::notice::Due: $(cat "$RUNNER_TEMP/handoff/pages.txt")"
           echo "due=true" >> "$GITHUB_OUTPUT"
 
-      # Uploaded now, before pnpm, the cache, the install or the build can touch it (artifacts can't be
-      # replaced within a run). The push job still waits for `ready`, which only a passing build sets.
+      # Uploaded now, before pnpm, the cache, the install or the build can touch it, and without `overwrite`,
+      # so a later upload can't silently replace it. That is defence in depth: the push job's guard is the
+      # gate. The push job still waits for `ready`, which only a passing build sets.
       - name: Hand the flip to the push job
         if: steps.flip.outputs.due == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: flip-patch
+          name: flip-patch-${{ github.run_attempt }}
           path: ${{ runner.temp }}/handoff/
           retention-days: 1
           if-no-files-found: error
@@ -149,7 +155,9 @@ jobs:
       - name: Mark the flip ready to push
         id: ready
         if: steps.flip.outputs.due == 'true'
-        run: echo "ready=true" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "handoff=flip-patch-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
   push:
     name: Commit and push to main
@@ -181,18 +189,28 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # The artifact of the build this job follows (its name carries that build's attempt).
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: flip-patch
+          name: ${{ needs.build.outputs.handoff }}
           path: ${{ runner.temp }}/flip
 
       # No key in this step. Apply the patch and refuse anything but the flip itself (bash and git only).
       - name: Apply the flip and check it
         id: check
+        # The C locale, so `a-z` in the page-list check means ASCII letters only.
+        env:
+          LC_ALL: C
         run: |
           git -c core.hooksPath=/dev/null switch -q -c publish-flip
-          # The page list from the hand-over, written before any third-party code ran in the build job.
+          # The page list from the hand-over, written before any third-party code ran in the build job. It
+          # must look like one (`blog/a, use-cases/b`, short); the guard then requires it to name exactly
+          # the pages in the patch.
           slugs=$(cat "$RUNNER_TEMP/flip/pages.txt")
+          if [ "${#slugs}" -gt 4096 ] || [[ ! "$slugs" =~ ^[a-z0-9/,\ -]+$ ]]; then
+            echo "::error::The page list in the hand-over is not a list of pages."
+            exit 1
+          fi
           message=$(bash apps/web/scripts/check-flip-patch.sh "$RUNNER_TEMP/flip/flip.patch" "$slugs")
           if [[ "$message" != "publish: "* || "$message" == *$'\n'* ]]; then
             echo "::error::The flip check printed an unexpected commit message."
@@ -211,7 +229,9 @@ jobs:
           g() { git -c core.hooksPath=/dev/null "$@"; }
           key=$KEY
           unset KEY
-          slugs=$(cat "$RUNNER_TEMP/flip/pages.txt")
+          # The pages from the commit the check step made and judged (subject `publish: <pages>`).
+          slugs=$(g log -1 --format=%s)
+          slugs=${slugs#publish: }
           # The guards, copied out of the work tree (from the github.sha checkout) before a rebase can
           # rewrite it: after each rebase they judge the flip again against the new main.
           guards=$(mktemp -d)
