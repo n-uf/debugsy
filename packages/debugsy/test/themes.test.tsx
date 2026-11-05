@@ -100,6 +100,8 @@ describe("stylesheet", () => {
       ".dbg-root .json-view .jv-chevron",
       ".dbg-root .json-view .jv-chevron:hover,.dbg-root .json-view .jv-size:hover+.jv-chevron",
     ]);
+    // react18-json-view's own stylesheet, if the app loads it, fades the size hint to .4
+    expect(DEBUGSY_CSS).toMatch(/\.dbg-root \.json-view \.jv-size\{[^}]*opacity:1;/);
   });
 
   it("keeps literal shadows and colours in the themes fragment", () => {
