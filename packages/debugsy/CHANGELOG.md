@@ -3,6 +3,17 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
+## Unreleased
+
+- The advanced dependency view (the tray's ADV) is a full-width strip above
+  the tray instead of a column under the Deps words. Level and Changes are
+  direct choices, each with a line on what it logs. Logged counts the
+  dependency logs by kind. Console names only commands that exist:
+  `debugsy.enable("dependencies")`, `debugsy.disable("dependencies")` and
+  `debugsy.status.deps()`. It no longer names `surfaceDebug.deps.*`, which
+  never existed in debugsy, and it drops the status lines that repeated the
+  tray.
+
 ## 26.11.2
 
 - First release on npmjs, public, with provenance: `npm i @n-uf/debugsy`
@@ -74,14 +85,6 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
   has its own (`--dbg-json-key`, `-number`, `-string`, `-literal`).
   `.dbg-root { --dbg-led: … }` still overrides a token in every theme;
   `.dbg-root[data-dbg-theme="light"] { … }` overrides it in one.
-- The advanced dependency view (the tray's ADV) is a full-width strip above
-  the tray instead of a column under the Deps words. Level and Changes are
-  direct choices, each with a line on what it logs. Logged counts the
-  dependency logs by kind. Console names only commands that exist:
-  `debugsy.enable("dependencies")`, `debugsy.disable("dependencies")` and
-  `debugsy.status.deps()`. It no longer names `surfaceDebug.deps.*`, which
-  never existed in debugsy, and it drops the status lines that repeated the
-  tray.
 
 ## 26.11.1
 
