@@ -6,10 +6,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { after, beforeEach, test } from "node:test";
+import { after, beforeEach, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT = fileURLToPath(new URL("./check-flip-patch.sh", import.meta.url));
+const RECHECK = fileURLToPath(new URL("./recheck-rebased-flip.sh", import.meta.url));
 const page = (draft, extra = "", body = "") =>
   `---\ntitle: "A page"\npublished: 2026-11-09\nupdated: 2026-11-09\ndraft: ${draft}\nauthor: n-uf\n---\n\nBody text.${extra}\n${body}`;
 // The fixtures go live on 2026-11-09; the script reads "today" from FLIP_TODAY in the tests.
@@ -118,7 +119,7 @@ test("refuses a change outside the content pages", () => {
     write("apps/web/app/page.tsx", "export default 2;\n");
   }, "blog/a-post");
   assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /files other than/);
+  assert.match(r.stderr, /file other than apps\/web\/content/);
 });
 
 test("refuses a new file, even one that looks like a flip", () => {
@@ -158,6 +159,68 @@ test("accepts a quoted published day and refuses a flip with no published day", 
   );
   assert.notEqual(bad.status, 0);
   assert.match(bad.stderr, /no published day/);
+});
+
+test("judges the patch before writing anything: a patch that creates a file leaves the repo untouched", () => {
+  const r = check(() => {
+    write("apps/web/content/blog/a-post.md", page("false"));
+    write("apps/web/content/blog/new-post.md", page("false"));
+  }, "blog/a-post, blog/new-post");
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /creates, deletes, renames/);
+  assert.equal(git("status", "--porcelain"), "", "nothing applied, nothing staged");
+});
+
+// After a rejected push, the workflow rebases the flip on the main it fetched and rechecks it there.
+describe("recheck after a rebase", () => {
+  /** The flip commit, rebased on a main that gained `upstreamEdit` meanwhile. Returns that main's sha. */
+  const rebasedFlip = (upstreamEdit) => {
+    git("switch", "-q", "-c", "flip");
+    write("apps/web/content/blog/a-post.md", page("false"));
+    git("commit", "-q", "-am", "publish: blog/a-post");
+    git("switch", "-q", "main");
+    upstreamEdit();
+    git("commit", "-q", "-am", "meanwhile on main");
+    const main = git("rev-parse", "HEAD").trim();
+    git("switch", "-q", "flip");
+    git("rebase", "-q", "main");
+    return main;
+  };
+  const recheck = (main, slugs = "blog/a-post") =>
+    spawnSync("bash", [RECHECK, main, slugs, SCRIPT], {
+      cwd: repo,
+      encoding: "utf8",
+      env: { ...process.env, FLIP_TODAY: DUE_DAY },
+    });
+
+  test("passes when main gained an unrelated commit, and leaves the flip as one commit on top", () => {
+    const main = rebasedFlip(() =>
+      write("apps/web/content/blog/live-post.md", page("false", " Edited.", "\n```yaml\ndraft: true\n```\n")),
+    );
+    const r = recheck(main);
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(r.stdout.trim(), "publish: blog/a-post");
+    assert.equal(git("rev-parse", "HEAD~1").trim(), main);
+    assert.equal(git("log", "-1", "--format=%s").trim(), "publish: blog/a-post");
+  });
+
+  test("refuses when a commit meanwhile moved the due page's published day into the future", () => {
+    const main = rebasedFlip(() =>
+      write("apps/web/content/blog/a-post.md", page("true").replace("published: 2026-11-09", "published: 2099-01-01")),
+    );
+    const r = recheck(main);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /isn't due/);
+  });
+
+  test("refuses when the flip isn't exactly one commit on top of main", () => {
+    const main = rebasedFlip(() => write("apps/web/app/page.tsx", "export default 3;\n"));
+    write("apps/web/app/page.tsx", "export default 4;\n");
+    git("commit", "-q", "-am", "a second commit");
+    const r = recheck(main);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /exactly one commit on top of main/);
+  });
 });
 
 test("refuses an empty patch", () => {
