@@ -11,7 +11,8 @@
  * for lamps, while debugsy also reads them as small text (log levels, point
  * labels, the JSON view), so the light themes darken them: every text colour
  * keeps at least 4.5:1 on the surfaces it sits on, dim text included, also
- * on the tinted error and warning rows.
+ * on the tinted rows and on an accent's own wash (an active tag or chip, a
+ * button, a perf badge). `test/themes.test.tsx` lists those surfaces.
  *
  * Every rule here has the specificity of one class, like an app's override
  * `.dbg-root { --dbg-led: … }`, which comes later in the page and so wins in
@@ -116,10 +117,10 @@ export const THEME_TOKENS: Record<NamedTheme, ThemeTokens> = {
     dim: "76 82 94",
     engrave: "0 1px 0 rgb(255 255 255 / .65)",
     hover: "0 0 0 / .055",
-    caution: "190 22 116",
-    led: "0 106 142",
-    ok: "12 112 50",
-    warn: "138 82 0",
+    caution: "179 21 109",
+    led: "0 96 129",
+    ok: "12 110 49",
+    warn: "136 81 0",
     error: "160 18 28",
     onAccent: "255 255 255",
     ledOff: "190 195 204",
@@ -139,10 +140,10 @@ export const THEME_TOKENS: Record<NamedTheme, ThemeTokens> = {
     dim: "80 86 98",
     engrave: "0 1px 0 rgb(255 255 255 / .7)",
     hover: "0 0 0 / .05",
-    caution: "196 24 120",
-    led: "0 114 152",
-    ok: "16 122 56",
-    warn: "150 90 0",
+    caution: "185 23 113",
+    led: "0 101 135",
+    ok: "15 116 53",
+    warn: "142 85 0",
     error: "168 20 30",
     onAccent: "255 255 255",
     ledOff: "196 200 208",
@@ -163,9 +164,9 @@ export const THEME_TOKENS: Record<NamedTheme, ThemeTokens> = {
     engrave: "0 1px 0 rgb(255 252 244 / .7)",
     hover: "60 40 20 / .06",
     caution: "180 28 100",
-    led: "0 104 132",
-    ok: "28 112 48",
-    warn: "140 82 0",
+    led: "0 96 122",
+    ok: "27 109 47",
+    warn: "137 80 0",
     error: "160 26 22",
     onAccent: "255 255 255",
     ledOff: "205 196 178",
@@ -190,7 +191,7 @@ export const THEME_TOKENS: Record<NamedTheme, ThemeTokens> = {
     dim: "45 45 50",
     engrave: "none",
     hover: "0 0 0 / .08",
-    caution: "190 0 100",
+    caution: "179 0 94",
     led: "0 95 130",
     ok: "0 105 40",
     warn: "135 80 0",

@@ -54,45 +54,88 @@ describe("theme tokens", () => {
     }
   });
 
-  it.each(names)("%s: log levels, accents and JSON colours are at least 4.5:1 on the canvas", (name) => {
+  it.each(names)("%s: accent and log-level text is at least 4.5:1 wherever it sits", (name) => {
     const t = THEME_TOKENS[name];
-    const canvas = rgb(t.canvas);
-    const expanded = over(rgb(t.raised), 0.6, canvas);
-    const text = { warn: t.warn, error: t.error, ok: t.ok, led: t.led, caution: t.caution };
-    for (const [role, colour] of Object.entries(text)) {
-      expect(contrast(rgb(colour), canvas), `${role} on canvas`).toBeGreaterThanOrEqual(4.5);
+    const [bg, canvas, raised] = [rgb(t.bg), rgb(t.canvas), rgb(t.raised)];
+    const expanded = over(raised, 0.6, canvas);
+    const diff = over(canvas, 0.6, expanded); // a change view inside an expanded row
+    const hover = (under: Rgb) => over(rgb(t.hover), alphaOf(t.hover), under);
+    // Each accent on the surfaces the stylesheet puts it on, its own wash included
+    const uses: Record<string, (c: Rgb) => Record<string, Rgb>> = {
+      led: (c) => ({
+        canvas, bg, raised, diff,
+        "active tag (own .12 wash on canvas)": over(c, 0.12, canvas),
+        "active chip (own .12 wash on raised)": over(c, 0.12, raised),
+        "button (own .12 wash on bg)": over(c, 0.12, bg),
+        "info notice (own .07 wash)": over(c, 0.07, canvas),
+        "hovered tag": hover(canvas), "hovered chip": hover(raised), "hovered word": hover(bg),
+      }),
+      caution: (c) => ({ canvas, bg, raised, "button (own .12 wash on bg)": over(c, 0.12, bg), "hovered word": hover(bg) }),
+      warn: (c) => ({
+        canvas, bg, raised, "hovered word": hover(bg),
+        "warn row": over(c, 0.06, canvas), "perf badge (own .1 wash)": over(c, 0.1, diff),
+      }),
+      error: (c) => ({
+        canvas, diff, "error row": over(c, 0.08, canvas), "critical row": over(c, 0.16, canvas),
+        "perf badge (own .1 wash)": over(c, 0.1, diff),
+      }),
+      ok: (c) => ({ canvas, bg, raised, diff, "success row": over(c, 0.05, canvas) }),
+    };
+    const colours: Record<string, string> = { led: t.led, caution: t.caution, warn: t.warn, error: t.error, ok: t.ok };
+    for (const [role, surfacesOf] of Object.entries(uses)) {
+      const c = rgb(colours[role]!);
+      for (const [surface, under] of Object.entries(surfacesOf(c))) {
+        expect(contrast(c, under), `${role} on ${surface}`).toBeGreaterThanOrEqual(4.5);
+      }
     }
-    expect(contrast(rgb(t.error), over(rgb(t.error), 0.16, canvas)), "error on a critical row")
-      .toBeGreaterThanOrEqual(4.5);
     const json = { key: t.jsonKey, number: t.jsonNumber, string: t.jsonString, literal: t.jsonLiteral };
     for (const [role, colour] of Object.entries(json)) {
       expect(contrast(rgb(colour), expanded), `JSON ${role}`).toBeGreaterThanOrEqual(4.5);
     }
   });
+
+  it.each(names)("%s: shadows joined into a list are never none", (name) => {
+    const t = THEME_TOKENS[name];
+    for (const token of [t.shadow, t.shadowCompact, t.well]) expect(token).not.toMatch(/^\s*none\s*$/);
+  });
 });
 
 describe("stylesheet", () => {
-  it("has a rule for every named theme, and for system under a light preference", () => {
+  const DEFAULT = ".dbg-root:where(:not(.dbg-root .dbg-root))";
+  const named = (name: string) => `.dbg-root:where([data-dbg-theme="${name}"])`;
+  const SYSTEM = '@media (prefers-color-scheme:light){\n.dbg-root:where([data-dbg-theme="system"])';
+
+  it("orders the rules: default, then each named theme, then system under a light preference", () => {
+    // Equal specificity everywhere, so order decides which theme wins
+    const at = (selector: string) => DEBUGSY_CSS.indexOf(selector);
+    expect(at(DEFAULT)).toBeGreaterThan(-1);
     for (const name of Object.keys(THEME_TOKENS)) {
-      expect(DEBUGSY_CSS).toContain(`.dbg-root:where([data-dbg-theme="${name}"])`);
+      expect(at(named(name)), name).toBeGreaterThan(at(DEFAULT));
+      expect(at(named(name)), name).toBeLessThan(at(SYSTEM));
     }
-    expect(DEBUGSY_CSS).toMatch(
-      /@media \(prefers-color-scheme:light\)\{\s*\.dbg-root:where\(\[data-dbg-theme="system"\]\)/,
-    );
   });
 
-  it("declares every token it uses", () => {
+  it("declares every token it uses, in every theme", () => {
     const used = new Set([...DEBUGSY_CSS.matchAll(/var\((--dbg-[\w-]+)/g)].map((m) => m[1]!));
-    const declared = new Set([...DEBUGSY_CSS.matchAll(/(--dbg-[\w-]+):/g)].map((m) => m[1]!));
     // `--dbg-rows` is set inline by the grid's component, with a fallback
     used.delete("--dbg-rows");
-    expect([...used].filter((token) => !declared.has(token))).toEqual([]);
+    const declaredIn = (css: string) => new Set([...css.matchAll(/(--dbg-[\w-]+):/g)].map((m) => m[1]!));
+    const body = (selector: string) => {
+      const start = DEBUGSY_CSS.indexOf(`${selector}{`);
+      return DEBUGSY_CSS.slice(start, DEBUGSY_CSS.indexOf("}", start));
+    };
+    const base = declaredIn(body(".dbg-root"));
+    for (const selector of [DEFAULT, SYSTEM.split("\n")[1]!, ...Object.keys(THEME_TOKENS).map(named)]) {
+      const declared = declaredIn(body(selector));
+      expect([...used].filter((token) => !base.has(token) && !declared.has(token)), selector).toEqual([]);
+    }
   });
 
   it("fades no text: text colours are tokens at full strength", () => {
-    expect(DEBUGSY_CSS).not.toMatch(/(?<![\w-])color:rgb\(var\(--dbg-[\w-]+\) \//);
+    expect(DEBUGSY_CSS).not.toMatch(/(?<![\w-])color:rgb\(var\(--dbg-[\w-]+\)\s*\//);
+    expect(DEBUGSY_CSS).not.toMatch(/color-mix\(/);
     // Opacity is for icons and disabled controls only
-    const faded = [...DEBUGSY_CSS.matchAll(/([^{}]+)\{[^}]*(?<![\w-])opacity:\.\d/g)]
+    const faded = [...DEBUGSY_CSS.matchAll(/([^{}]+)\{[^}]*(?<![\w-])opacity:\s*(0?\.\d|\d{1,2}%)/g)]
       .map((m) => m[1]!.trim())
       .filter((selector) => !/^(\d+%|from|to)$/.test(selector)); // keyframes
     expect(faded).toEqual([
@@ -107,7 +150,7 @@ describe("stylesheet", () => {
   it("keeps literal shadows and colours in the themes fragment", () => {
     const { themes: _themes, ...rest } = DEBUGSY_CSS_FRAGMENTS;
     for (const [part, css] of Object.entries(rest)) {
-      expect(css, part).not.toMatch(/rgb\(\d/);
+      expect(css, part).not.toMatch(/(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*\d/);
       expect(css, part).not.toMatch(/#[0-9a-f]{3,8}\b/i);
     }
   });
