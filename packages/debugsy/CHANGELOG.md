@@ -32,6 +32,15 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
   amber and red only for log levels. The panel no longer follows the host
   page's harbuz theme variables. An app can retune it by overriding the
   `--dbg-*` tokens on `.dbg-root`.
+- The panel fits a phone-width window. Container queries follow the
+  panel's width, not the viewport's. Below 720px the tray wraps into rows
+  (point list, dependency words, readout) instead of cutting its words
+  short; below 560px the sidebar moves under the logs; log rows drop their
+  tags when the log list is under 440px wide. On a wider panel the tray
+  stays one row; its readout takes a row of its own only when the words
+  beside it would leave it under 240px (a module with many points), where
+  it used to be squeezed. The height cap measures the tray, and the panel
+  no longer grows past the viewport.
 - The action rail shows COPY, PAUSE and HEALTH as words under a depth control;
   the tray's actions are EXPAND/COMPACT, CLEAR and CLOSE.
 - `ModuleNav`'s `theme` prop takes a theme name (see below) for a
