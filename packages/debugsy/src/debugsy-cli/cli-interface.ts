@@ -6,6 +6,10 @@
  */
 
 import {
+  createDepsCommands,
+  type DepsCommands,
+} from "./commands/deps-commands";
+import {
   createEmergencyCommands,
   type EmergencyCommands,
 } from "./commands/emergency-commands";
@@ -23,10 +27,7 @@ export interface DebugsyCLI {
   status: typeof statusCommands;
 
   // === DEPENDENCY CONTROL ===
-  deps: {
-    // Note: Simplified deps commands - complex ones removed for stability
-    reset: () => void;
-  };
+  deps: DepsCommands;
 
   // === EMERGENCY CONTROLS ===
   emergency: EmergencyCommands;
@@ -53,13 +54,8 @@ export function createDebugsyCLI(coreManager: any): DebugsyCLI {
     // Status commands
     status: statusCommands,
 
-    // Simplified dependency commands
-    deps: {
-      reset: () => {
-        console.log("🔄 Dependency tracking reset");
-        // Simple reset functionality
-      },
-    },
+    // Dependency tracking level and filter
+    deps: createDepsCommands(),
 
     // Emergency commands
     emergency: createEmergencyCommands(),

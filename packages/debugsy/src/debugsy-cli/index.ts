@@ -20,14 +20,8 @@
 
 // === COMMAND MODULES ===
 export {
-  enableDepsDebug,
-  enableDepsNormal,
-  enableDepsQuiet,
-  enableDepsVerbose,
-  resetDepsTracking,
-  setDepsFunctionsOnly,
-  setDepsObjectsOnly,
-  setDepsUnstableOnly,
+  createDepsCommands,
+  type DepsCommands,
 } from "./commands/deps-commands";
 
 export {
