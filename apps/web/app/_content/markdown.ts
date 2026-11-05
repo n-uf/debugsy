@@ -26,6 +26,87 @@ export interface Rendered {
   readonly imageAlts: readonly string[];
   /** Words of running text (code blocks excluded), for the reading time. */
   readonly words: number;
+  /** The normalised targets of the `{{live:…}}` blocks, one per block, to check they are pages. */
+  readonly liveTargets: readonly string[];
+  /** Malformed `{{live:…}}` blocks (unclosed, nested, spanning paragraphs): always a mistake. */
+  readonly liveProblems: readonly string[];
+}
+
+const LIVE_TOKEN = /\{\{live:([^}\s]*)\}\}|\{\{\/live\}\}/g;
+const FENCE = /(^|\n)(```|~~~)[^\n]*\n[\s\S]*?(?:\n\2[^\n]*(?=\n|$)|$)/g;
+
+interface LiveBlock {
+  readonly start: number;
+  readonly end: number;
+  readonly target: string;
+  readonly inner: string;
+}
+
+/**
+ * The `{{live:/blog/some-slug}}inline text, with [a link](/blog/some-slug){{/live}}` blocks: a sentence
+ * that links to a page which may not be live yet. It merges with the draft and only shows once the
+ * target is visible. Where `isVisible(target)` is true the markers go and the text stays; where it's
+ * false the whole block goes, with the spacing it leaves. A block stays within one paragraph and
+ * doesn't nest. Fenced code is left as it is.
+ */
+export function resolveLiveBlocks(
+  source: string,
+  isVisible: (path: string) => boolean,
+): { text: string; targets: string[]; problems: string[] } {
+  const targets: string[] = [];
+  const problems: string[] = [];
+
+  const resolveChunk = (chunk: string): string => {
+    const blocks: LiveBlock[] = [];
+    let open: { start: number; end: number; target: string } | undefined;
+    for (const m of chunk.matchAll(LIVE_TOKEN)) {
+      if (m[1] !== undefined) {
+        if (open) problems.push(`{{live:${m[1]}}} opens inside the block for ${open.target}: blocks don't nest`);
+        else open = { start: m.index, end: m.index + m[0].length, target: m[1] };
+      } else if (!open) {
+        problems.push("{{/live}} without an opening {{live:/path}}");
+      } else {
+        const inner = chunk.slice(open.end, m.index);
+        if (/\n[ \t]*\r?\n/.test(inner)) problems.push(`the {{live:${open.target}}} block spans paragraphs`);
+        blocks.push({ ...open, end: m.index + m[0].length, inner });
+        open = undefined;
+      }
+    }
+    if (open) problems.push(`{{live:${open.target}}} is never closed with {{/live}}`);
+
+    let text = chunk;
+    // Back to front, so earlier positions stay valid.
+    for (const b of blocks.reverse()) {
+      const target = normalizeSitePath(b.target);
+      targets.unshift(target);
+      if (isVisible(target)) {
+        text = text.slice(0, b.start) + b.inner + text.slice(b.end);
+        continue;
+      }
+      let s = b.start;
+      let e = b.end;
+      while (text[e] === " " || text[e] === "\t") e += 1;
+      if (e >= text.length || text[e] === "\n" || text[e] === "\r") {
+        while (s > 0 && (text[s - 1] === " " || text[s - 1] === "\t")) s -= 1;
+        // The block was all of its line: take the line break too.
+        if (s === 0 || text[s - 1] === "\n") {
+          if (text[e] === "\r") e += 1;
+          if (text[e] === "\n") e += 1;
+        }
+      }
+      text = text.slice(0, s) + text.slice(e);
+    }
+    return text;
+  };
+
+  let out = "";
+  let last = 0;
+  for (const f of source.matchAll(FENCE)) {
+    out += resolveChunk(source.slice(last, f.index)) + f[0];
+    last = f.index + f[0].length;
+  }
+  out += resolveChunk(source.slice(last));
+  return { text: out, targets, problems };
 }
 
 const escapeHtml = (s: string): string =>
@@ -63,8 +144,17 @@ export function normalizeSitePath(href: string): string {
   return bare.length > 1 ? bare.replace(/\/+$/, "") : bare;
 }
 
-/** Render one page's markdown body. Section numbers continue from `firstNum` (1-based). */
-export function renderMarkdown(source: string, firstNum = 1): Rendered {
+/**
+ * Render one page's markdown body. Section numbers continue from `firstNum` (1-based). `isVisible`
+ * says which site paths a `{{live:…}}` block may link to (default: all, so every block shows).
+ */
+export function renderMarkdown(
+  rawSource: string,
+  firstNum = 1,
+  isVisible: (path: string) => boolean = () => true,
+): Rendered {
+  const live = resolveLiveBlocks(rawSource, isVisible);
+  const source = live.text;
   const headings: Heading[] = [];
   const internalLinks: string[] = [];
   const hashLinks: string[] = [];
@@ -164,5 +254,7 @@ export function renderMarkdown(source: string, firstNum = 1): Rendered {
     h1Count: Math.max(h1Count, rawH1),
     imageAlts,
     words,
+    liveTargets: live.targets,
+    liveProblems: live.problems,
   };
 }
