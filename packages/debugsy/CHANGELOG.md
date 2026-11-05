@@ -3,6 +3,33 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
+## Unreleased
+
+- Quiet logs less than Normal. It keeps only warnings: functions and
+  objects that keep changing (`⚠️ FREQUENT`) and the render and remount
+  warnings of `useRenderTracker`. It leaves out each render's
+  "Dependencies changed" line and the function and object lines that
+  aren't frequent. Frequent changes warn only after start-up, which ends
+  after 5 seconds with no tracked change, so a loop that never pauses
+  shows nothing at Quiet. With the Functions or Objects filter, Quiet
+  logs no changes; the panel says so. Before, Quiet logged exactly what
+  Normal logged. The `silent` level, which only code can set, now logs
+  nothing.
+- `debugsy.deps` has console commands: `on()`, `off()`, `quiet()`,
+  `normal()`, `verbose()`, `all()`, `functionsOnly()`, `objectsOnly()`,
+  `unstableOnly()` and `reset()` (back to normal and all). Each but
+  `off()` turns dependency tracking on, and an open panel follows. Before,
+  `debugsy.deps` had only a `reset()` that did nothing.
+- `debugsy.emergency.activate()` stops all logging until `deactivate()`.
+  Before, it only set a flag nothing read.
+- `debugsy.help()` lists only commands that exist, and the commands' own
+  console text no longer points at missing ones (`debugsy.status()`,
+  `debugsy.deps.initAware()`).
+- The advanced strip's level hints say what each level logs. Its Console
+  group names the `debugsy.deps` commands for the current on/off, level
+  and filter, in place of `debugsy.enable/disable("dependencies")` and
+  `debugsy.status.deps()`.
+
 ## 26.11.3
 
 - The advanced dependency view (the tray's ADV) is a full-width strip above
