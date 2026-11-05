@@ -116,6 +116,16 @@
   color: var(--ct-text);
   font-weight: 600;
 }
+/* A draft, shown on previews and in dev only: its go-live day. */
+.ct-scheduled {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 3px 8px;
+  border: 1px dashed var(--ct-line);
+  border-radius: 3px;
+  font: 600 11px/1.5 var(--ct-mono);
+  color: var(--ct-text);
+}
 .ct-takeaways {
   margin: 0 0 30px;
   padding: 12px 14px;

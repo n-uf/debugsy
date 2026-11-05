@@ -48,7 +48,8 @@ export function SectionIndex({ section }: { readonly section: Section }): React.
           <li key={e.path}>
             <Link className="ct-card" href={e.path}>
               <small>
-                {e.kind.replace("-", " ")} · <time dateTime={e.published}>{e.published}</time>
+                {e.kind.replace("-", " ")} · {e.draft ? "scheduled for " : null}
+                <time dateTime={e.published}>{e.published}</time>
               </small>
               <strong>{e.h1}</strong>
               <span>{e.description}</span>

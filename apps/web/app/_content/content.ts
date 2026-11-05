@@ -6,10 +6,20 @@
  * Front matter (the SEO brief's format):
  *   title (≤ 60), description (120–155), h1, mainKeyword, kind, published, updated (YYYY-MM-DD,
  *   updated ≥ published), author ("n-uf"), takeaways (3–5), faq (4–5 × {q, a}), sources (≥ 1 × {title,
- *   url, checked}), related (1–4 site paths).
+ *   url, checked}), related (1–4 site paths), draft (optional, true or false; default false).
  *
- * Dates are real: `published` is the day the page first reached main, `updated` the last day its text
- * changed in substance. The sitemap and the structured data use them.
+ * Dates are real: `published` is the day the page went live (the day `draft: true` was flipped to
+ * false, by .github/workflows/publish.yml), `updated` the last day its text changed in substance. The
+ * sitemap and the structured data use them. A page that merges before its day carries `draft: true`
+ * with the go-live day as `published` (and `updated` equal to it); only a draft may have a future date.
+ *
+ * Scheduled publishing: one rule decides whether a page is live, `isLive(e)` (draft isn't true). The
+ * pages every other module sees come from `allEntries()` and its siblings: the live pages, plus the
+ * drafts where `showDrafts()` (a dev server or a Vercel preview, never production or a local
+ * `next build`). A live page must not link to a draft: the link checks run against the production view
+ * whatever `showDrafts()` says, so a preview fails the way production would. A sentence that links to
+ * a draft goes in a `{{live:/path}}…{{/live}}` block (see markdown.ts), which only shows once the
+ * target is live; `related:` entries that are drafts are dropped from live pages.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -78,6 +88,8 @@ export interface Entry {
   readonly takeaways: readonly string[];
   readonly faq: readonly Faq[];
   readonly sources: readonly Source[];
+  /** Not live yet: `published` is the go-live day. Only present on pages `showDrafts()` lets through. */
+  readonly draft: boolean;
   readonly related: readonly string[];
   readonly html: string;
   readonly headings: readonly Heading[];
@@ -159,10 +171,30 @@ function build(): readonly Entry[] {
   const raws = [...readSection("use-cases", problems), ...readSection("blog", problems)];
 
   const pagePaths = new Set<string>(STATIC_PATHS);
-  for (const r of raws) pagePaths.add(`${SECTIONS[r.section].path}/${r.slug}`);
-  for (const s of Object.values(SECTIONS)) {
-    if (raws.some((r) => r.section === s.section)) pagePaths.add(s.path);
+  const contentPaths = new Set<string>();
+  const draftPaths = new Set<string>();
+  for (const r of raws) {
+    const p = `${SECTIONS[r.section].path}/${r.slug}`;
+    pagePaths.add(p);
+    contentPaths.add(p);
+    if (r.data.draft === true) draftPaths.add(p);
   }
+  const sectionPaths = new Set<string>();
+  for (const s of Object.values(SECTIONS)) {
+    if (raws.some((r) => r.section === s.section)) {
+      pagePaths.add(s.path);
+      sectionPaths.add(s.path);
+    }
+  }
+  /**
+   * Not on the production site yet: a draft, or a section index with no live page. The link checks
+   * and the `{{live:}}` blocks use this whatever `showDrafts()` says.
+   */
+  const hiddenInProduction = (p: string): boolean =>
+    draftPaths.has(p) ||
+    (sectionPaths.has(p) &&
+      !raws.some((r) => SECTIONS[r.section].path === p && r.data.draft !== true));
+  const drafts = showDrafts();
 
   const entries: Entry[] = [];
   const keywordOwner = new Map<string, string>();
@@ -190,13 +222,24 @@ function build(): readonly Entry[] {
     if (!SECTIONS[r.section].kinds.includes(kind)) {
       p(`kind "${kind}" isn't one of ${SECTIONS[r.section].kinds.join(", ")}`);
     }
+    if (d.draft !== undefined && typeof d.draft !== "boolean") p(`draft is "${String(d.draft)}" (true or false)`);
+    const draft = d.draft === true;
     if (!isDay(published)) p(`published "${published}" isn't a real YYYY-MM-DD day`);
     if (!isDay(updated)) p(`updated "${updated}" isn't a real YYYY-MM-DD day`);
-    if (isDay(published) && isDay(updated) && updated < published) {
-      p(`updated (${updated}) is before published (${published})`);
-    }
-    for (const [name, d] of [["published", published], ["updated", updated]] as const) {
-      if (isDay(d) && d > today) p(`${name} ${d} is in the future (dates are the real days)`);
+    if (draft) {
+      // A draft's `published` is the day it goes live; there's nothing to have updated yet.
+      if (isDay(published) && isDay(updated) && updated !== published) {
+        p(`a draft's updated (${updated}) must equal published (${published}), its go-live day`);
+      }
+    } else {
+      if (isDay(published) && isDay(updated) && updated < published) {
+        p(`updated (${updated}) is before published (${published})`);
+      }
+      for (const [name, day] of [["published", published], ["updated", updated]] as const) {
+        if (isDay(day) && day > today) {
+          p(`${name} ${day} is in the future; only a page with draft: true may have a future date`);
+        }
+      }
     }
     if (author !== "n-uf") p(`author is "${author}" (the byline is n-uf)`);
 
@@ -236,7 +279,26 @@ function build(): readonly Entry[] {
     const self = `${SECTIONS[r.section].path}/${r.slug}`;
     if (related.includes(self)) p("related: lists the page itself");
 
+    // Two renderings: `rendered` with every `{{live:}}` block shown (what the page will be once its
+    // targets are live: the structure and link checks run on it), and `production` as the live site
+    // shows it today (no block whose target is hidden), which the draft-link check runs on.
     const rendered = renderMarkdown(r.body);
+    const production = renderMarkdown(r.body, 1, (t) => !hiddenInProduction(t));
+    for (const lp of rendered.liveProblems) p(lp);
+    for (const t of new Set(rendered.liveTargets)) {
+      if (!contentPaths.has(t)) p(`{{live:${t}}}: ${t} isn't a blog or use-case page on this site`);
+      else if (t === self) p(`{{live:${t}}}: the block is on that page itself`);
+    }
+    if (!draft) {
+      for (const l of new Set(production.internalLinks)) {
+        if (!hiddenInProduction(l)) continue;
+        p(
+          draftPaths.has(l)
+            ? `links to ${l}, which is a draft (not live yet): wrap the sentence in {{live:${l}}}…{{/live}} so it only shows once ${l} is live`
+            : `links to ${l}, which has no live page yet: wrap the sentence in {{live:<first page's path>}}…{{/live}}`,
+        );
+      }
+    }
     if (rendered.h1Count > 0) {
       p(`the body has ${rendered.h1Count} h1 (#, ===== or <h1>); the page's only h1 comes from front matter`);
     }
@@ -254,6 +316,9 @@ function build(): readonly Entry[] {
       if (!alt || alt.length > 60) p(`image alt "${alt}" is ${alt.length} characters (1–60)`);
     }
 
+    // What the site renders: with drafts shown (dev, previews) everything; in production a live page
+    // loses the blocks and `related` cards that point at drafts.
+    const shown = drafts ? rendered : production;
     entries.push({
       section: r.section,
       slug: r.slug,
@@ -269,10 +334,11 @@ function build(): readonly Entry[] {
       takeaways,
       faq,
       sources,
-      related,
-      html: rendered.html,
-      headings: rendered.headings,
-      minutes: Math.max(1, Math.round(rendered.words / 230)),
+      draft,
+      related: drafts ? related : related.filter((rel) => !hiddenInProduction(rel)),
+      html: shown.html,
+      headings: shown.headings,
+      minutes: Math.max(1, Math.round(shown.words / 230)),
     });
   }
 
@@ -298,12 +364,33 @@ function signature(): string {
   return parts.sort().join("|");
 }
 
-/** Every content page, newest first. Throws (failing the build) when any page breaks a rule. */
-export function allEntries(): readonly Entry[] {
+/** The one rule for "live": a page is live unless its front matter says `draft: true`. */
+export const isLive = (e: Pick<Entry, "draft">): boolean => !e.draft;
+
+/**
+ * Whether drafts are visible (with a "Scheduled for" badge and noindex): a dev server and Vercel
+ * previews. Vercel production and a local `next build` hide them (a draft has no page there).
+ */
+export function showDrafts(): boolean {
+  return process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview";
+}
+
+/** Every page, drafts included, newest first. Throws (failing the build) when any page breaks a rule. */
+function everyEntry(): readonly Entry[] {
   // Read once, and again only when a file changed (so a dev server shows edits without a restart).
   const sig = signature();
   if (cache?.sig !== sig) cache = { sig, entries: [...build()].sort(newestFirst) };
   return cache.entries;
+}
+
+/**
+ * The pages the site shows, newest first: the live ones, plus the drafts where `showDrafts()`. Every
+ * list, route, sitemap, nav and link goes through this (or `entriesOf`, `getEntry`, `findByPath`,
+ * which use it), so a draft appears nowhere in production.
+ */
+export function allEntries(): readonly Entry[] {
+  const all = everyEntry();
+  return showDrafts() ? all : all.filter(isLive);
 }
 
 export function entriesOf(section: Section): readonly Entry[] {
@@ -332,7 +419,7 @@ export function entryToc(e: Entry): readonly TocLink[] {
   ];
 }
 
-/** The sections that have at least one page (an empty section has no index page and no nav link). */
+/** The sections that have at least one visible page (an empty section has no index page and no nav link). */
 export function liveSections(): readonly SectionInfo[] {
   return (["use-cases", "blog"] as const).filter((s) => entriesOf(s).length > 0).map((s) => SECTIONS[s]);
 }
