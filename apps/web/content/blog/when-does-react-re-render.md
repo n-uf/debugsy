@@ -6,6 +6,7 @@ mainKeyword: "when does react re render"
 kind: what-is
 published: 2026-11-09
 updated: 2026-11-09
+draft: true
 author: n-uf
 takeaways:
   - "A React component renders again when its own state is updated, when an ancestor renders, when a context it reads gets a new value, or when an external store it subscribes to changes."
@@ -240,7 +241,7 @@ const onPick = useCallback(() => select(id), [id, select]);
 
 `useCallback` returns the same function until a dependency changes, again judged by `Object.is`. [React compares an effect's dependencies](/blog/useeffect-dependency-array) the same way.
 
-`memo` has limits. The page calls it a performance optimization, not a guarantee, so React may still render a memoized component. And it only watches props: a memoized component still re-renders for its own state or a context it uses. For a child that renders more often than it should, the fixes, from moving state down to `memo`, are in the guide to [preventing re-renders in React](/blog/prevent-re-renders-react).
+`memo` has limits. The page calls it a performance optimization, not a guarantee, so React may still render a memoized component. And it only watches props: a memoized component still re-renders for its own state or a context it uses. {{live:/blog/prevent-re-renders-react}}For a child that renders more often than it should, the fixes, from moving state down to `memo`, are in the guide to [preventing re-renders in React](/blog/prevent-re-renders-react).{{/live}}
 
 ### Pass JSX as children
 
@@ -277,7 +278,7 @@ return (
 );
 ```
 
-The page's fix is to wrap `login` in `useCallback` and the object in `useMemo`, so the value changes only when `currentUser` does. It also says that in smaller apps these extra renders aren't a problem. To re-render only for part of a context, the `memo` page suggests splitting the component: read the context in an outer component and pass the part you need to a memoized child as a prop. The [React context re-render](/blog/react-context-re-render) guide covers why a new provider value renders every reader, and the other ways to limit it.
+The page's fix is to wrap `login` in `useCallback` and the object in `useMemo`, so the value changes only when `currentUser` does. It also says that in smaller apps these extra renders aren't a problem. To re-render only for part of a context, the `memo` page suggests splitting the component: read the context in an outer component and pass the part you need to a memoized child as a prop. {{live:/blog/react-context-re-render}}The [React context re-render](/blog/react-context-re-render) guide covers why a new provider value renders every reader, and the other ways to limit it.{{/live}}
 
 ## How does React re-render? Render, then commit
 

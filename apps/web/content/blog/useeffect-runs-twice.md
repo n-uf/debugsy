@@ -6,6 +6,7 @@ mainKeyword: "useeffect runs twice"
 kind: what-is
 published: 2026-11-19
 updated: 2026-11-19
+draft: true
 author: n-uf
 takeaways:
   - "In development, Strict Mode makes React run one extra setup and cleanup cycle for every effect after mount, so a mount logs setup, cleanup, setup. A production build runs the effect once."

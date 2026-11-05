@@ -6,6 +6,7 @@ mainKeyword: "react context re render"
 kind: what-is
 published: 2026-11-26
 updated: 2026-11-26
+draft: true
 author: n-uf
 takeaways:
   - "When a provider gets a value that is different under Object.is, React re-renders every component that reads that context with useContext. Components that don't read it aren't re-rendered by the change."

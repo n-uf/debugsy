@@ -6,6 +6,7 @@ mainKeyword: "react logging library"
 kind: comparison
 published: 2026-11-16
 updated: 2026-11-16
+draft: true
 author: n-uf
 takeaways:
   - "Plain console has levels, groups, tables and timers, but no namespaces and no level you can set from your own code."
@@ -305,7 +306,7 @@ Log from event handlers and effects, not from the render body. React's StrictMod
 
 A few habits that hold up:
 
-- **Log the value that changed, in an effect.** An effect that depends on `[total]` logs when `total` changes, not on every render, as in the `CartTotal` example. To log the previous and next value along with the action that changed it, see how to [debug state changes in React](/use-cases/react-debug-state-changes).
+- **Log the value that changed, in an effect.** An effect that depends on `[total]` logs when `total` changes, not on every render, as in the `CartTotal` example. {{live:/use-cases/react-debug-state-changes}}To log the previous and next value along with the action that changed it, see how to [debug state changes in React](/use-cases/react-debug-state-changes).{{/live}}
 - **Keep secrets out.** An address or a token in a log line sits in the console, and in debugsy's in-memory log, for anyone with the page open.
 - **Count renders with a counter, not a log line.** [React render count](/use-cases/react-render-count) covers counting. To find the value that made a component render, see how to [find what causes a re-render in React](/use-cases/why-did-this-component-render).
 

@@ -6,6 +6,7 @@ mainKeyword: "react hook useeffect has a missing dependency"
 kind: how-to
 published: 2026-11-23
 updated: 2026-11-23
+draft: true
 author: n-uf
 takeaways:
   - "The warning comes from the react-hooks/exhaustive-deps rule, which both recommended presets of eslint-plugin-react-hooks set to warn. It means the effect reads a reactive value (a prop, state, or anything declared in the component) that is missing from its dependency array."
