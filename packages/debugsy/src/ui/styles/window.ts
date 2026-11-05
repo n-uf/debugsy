@@ -4,6 +4,11 @@
  * body (logs, the action rail, the sidebar) and the control tray below.
  * Hairlines, not borders; the sidebar is the raised surface, the logs sit
  * on the canvas.
+ *
+ * The window is the `dbg-panel` query container: the narrow layout follows
+ * the panel's width, not the viewport's. Below 560px the sidebar moves under
+ * the logs, at most 40% of the body and scrolling, so the log list keeps a
+ * readable width; the action rail keeps the body's full height beside both.
  */
 
 export const WINDOW_CSS = `
@@ -44,4 +49,11 @@ export const WINDOW_CSS = `
   line-height:1.2;color:rgb(var(--dbg-dim))}
 .dbg-presets{display:flex;flex-wrap:wrap;gap:2px}
 .dbg-control{position:relative;flex:none}
+
+.dbg-window{container:dbg-panel / inline-size}
+@container dbg-panel (width < 560px){
+  .dbg-body{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr) fit-content(40%)}
+  .dbg-rail{grid-column:2;grid-row:1 / -1}
+  .dbg-sidebar{grid-column:1;grid-row:2;width:auto;height:auto;border-left:0;border-top:1px solid rgb(var(--dbg-line))}
+}
 `;
