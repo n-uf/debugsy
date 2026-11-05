@@ -10,9 +10,10 @@
  * the logs, at most 40% of the body and scrolling, so the log list keeps a
  * readable width; the action rail keeps the body's full height beside both.
  *
- * The window never grows past the viewport. The panel caps its height for a
- * one-row tray; on a narrow panel the tray wraps into rows, so the body
- * gives up the difference and the resize edge stays on screen.
+ * The window never grows past the viewport. The panel caps its height by the
+ * edge and tray it measures; when the tray grows after that (a module whose
+ * words wrap into more rows), the body gives up the difference here, so the
+ * resize edge stays on screen.
  */
 
 export const WINDOW_CSS = `
