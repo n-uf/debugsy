@@ -157,6 +157,9 @@ function createDebugsySpace(): DebugsySpace {
     level: LogLevel = "info",
     tags?: string[]
   ): void => {
+    // debugsy.emergency.activate(): nothing is logged until deactivate()
+    if (globalThis.__DEBUGSY_EMERGENCY_STOP?.active) return;
+
     const globalState = getGlobalDebugState();
 
     if (!globalState.enabled.has(point)) {
@@ -397,28 +400,26 @@ export function initializeDebugsySpace(): void {
   // Register superjson custom serializers for React Fiber and DOM elements
   registerSuperjsonCustomSerializers();
 
-  // Initialize emergency stop
+  // Emergency stop: while active, the core log call drops every log
   if (!globalThis.__DEBUGSY_EMERGENCY_STOP) {
     globalThis.__DEBUGSY_EMERGENCY_STOP = {
       active: false,
       activate: () => {
-        console.error(
-          "🚨 EMERGENCY STOP ACTIVATED - All Surface debug logging disabled"
-        );
         globalThis.__DEBUGSY_EMERGENCY_STOP.active = true;
+        console.warn(
+          "🛑 [debugsy] Emergency stop on: nothing is logged until debugsy.emergency.deactivate()."
+        );
       },
       deactivate: () => {
-        console.log("✅ Emergency stop deactivated - Debug logging restored");
         globalThis.__DEBUGSY_EMERGENCY_STOP.active = false;
+        console.log("✅ [debugsy] Emergency stop off: logging again.");
       },
       status: () => {
-        const depState = globalThis.debugsy?.getDepsSettings?.() || {};
-        console.log("🔍 Surface Debug Status:", {
-          emergencyActive: globalThis.__DEBUGSY_EMERGENCY_STOP.active,
-          dependencyTracking: depState.enabled,
-          level: depState.level,
-          filter: depState.filter,
-        });
+        console.log(
+          globalThis.__DEBUGSY_EMERGENCY_STOP.active
+            ? "🛑 [debugsy] Emergency stop on: nothing is logged."
+            : "✅ [debugsy] Emergency stop off."
+        );
       },
     };
   }
