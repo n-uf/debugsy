@@ -1,0 +1,109 @@
+name: Publish due pages
+
+# Scheduled publishing for debugsy.n-uf.com. A finished page merges to main early with `draft: true`
+# and its go-live day (UTC) as `published`; production builds render no page for a draft. Every day at
+# 00:10 UTC (or on a manual run) apps/web/scripts/publish-due.mjs sets `draft: false` on each draft
+# whose day has come, this job proves the result still builds (the content checks run in the build:
+# a live page that links to a still-draft page fails it), and only then commits
+# `publish: <section>/<slug>[, …]` as github-actions[bot] and pushes it straight to main (which isn't
+# protected). Vercel's Git connection deploys that push. Nothing due means no commit.
+#
+# A bad flip fails the build step, nothing is pushed, and the job goes red: fix the page (or set
+# `draft: true` on the one that can't go yet) and run this workflow again.
+# Undo: revert the publish commit, or set `draft: true` on the page again.
+#
+# Pushes made with GITHUB_TOKEN don't start other workflows, so the release workflow doesn't run for
+# a publish commit (it only changes content).
+
+on:
+  schedule:
+    - cron: '10 0 * * *'
+  workflow_dispatch:
+
+# One run at a time, none cancelled: a run that has flipped pages should finish its push.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  publish:
+    name: Flip due drafts, build, push
+    if: github.repository == 'n-uf/debugsy'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          # Full history, so the push step can rebase on a main that moved during the build.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          # Writes a user-level .npmrc with the registry token: pnpm ignores
+          # ${ENV} tokens from the project .npmrc.
+          registry-url: https://npm.pkg.github.com
+          scope: "@n-uf"
+
+      # Prints the commit message (`publish: blog/a, use-cases/b`), or nothing when no page is due.
+      - name: Flip the drafts that are due
+        id: flip
+        run: |
+          message=$(node apps/web/scripts/publish-due.mjs --message)
+          echo "message=$message" >> "$GITHUB_OUTPUT"
+          if [ -z "$message" ]; then
+            echo "::notice::No draft is due today (UTC), so nothing is committed."
+          else
+            echo "::notice::$message"
+            git diff --stat -- apps/web/content
+          fi
+
+      - name: Install
+        if: steps.flip.outputs.message != ''
+        run: pnpm install --frozen-lockfile
+        env:
+          # @n-uf/harbuz comes from GitHub Packages (see ci.yml).
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The content checks run in the build: a page that can't go live yet fails here, before the push.
+      - name: Build the site with the pages live
+        if: steps.flip.outputs.message != ''
+        run: pnpm --dir apps/web build
+
+      # Install and build take minutes, and main may move meanwhile: a rejected push rebases the publish
+      # commit on main and tries again, up to 3 pushes. The flip only touches `draft:` lines, so a
+      # rebase conflict means someone edited a page that was due: abort and go red. No rebuild after
+      # the rebase; Vercel's build of the combined commit is the gate (a red build leaves the old site up).
+      - name: Commit and push to main
+        if: steps.flip.outputs.message != ''
+        env:
+          MESSAGE: ${{ steps.flip.outputs.message }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/content
+          git commit -m "$MESSAGE"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "::notice::Pushed: $MESSAGE"
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              break
+            fi
+            echo "::warning::Push rejected (try $attempt of 3): main moved, rebasing the publish commit on it"
+            if ! git pull --rebase origin main; then
+              git rebase --abort || true
+              echo "::error::Rebasing the publish commit on main conflicted: a page that was due changed on main. Nothing was pushed."
+              exit 1
+            fi
+          done
+          echo "::error::The publish commit could not be pushed after 3 tries. Nothing was pushed; run this workflow again."
+          exit 1

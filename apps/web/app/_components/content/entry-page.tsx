@@ -26,6 +26,9 @@ export function entryMetadata(e: Entry): Metadata {
       authors: ["https://n-uf.com"],
     },
     twitter: { card: "summary_large_image", title: e.title, description: e.description },
+    // A draft only exists on previews and in dev (content.ts). Setting `robots` replaces the layout's
+    // whole value (metadata merges per top-level key), so the page still has one robots meta tag.
+    ...(e.draft ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -68,12 +71,18 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
           <li aria-current="page">{e.h1}</li>
         </ol>
         <h1>{e.h1}</h1>
+        {e.draft ? (
+          <p className="ct-scheduled">
+            Scheduled for <time dateTime={e.published}>{day(e.published)}</time>
+          </p>
+        ) : null}
         <p className="ct-byline">
           <span>
             by <b>n-uf</b>
           </span>
           <span>
-            published <time dateTime={e.published}>{day(e.published)}</time>
+            {e.draft ? "goes live" : "published"}{" "}
+            <time dateTime={e.published}>{day(e.published)}</time>
           </span>
           {e.updated !== e.published ? (
             <span>
@@ -141,19 +150,21 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
               </li>
             ))}
           </ol>
-          <ul className="ct-cards" aria-label="related pages">
-            {e.related.map((p) => {
-              const c = relatedCard(p);
-              return (
-                <li key={p}>
-                  <Link className="ct-card" href={p}>
-                    <small>{c.label}</small>
-                    <strong>{c.title}</strong>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          {e.related.length > 0 ? (
+            <ul className="ct-cards" aria-label="related pages">
+              {e.related.map((p) => {
+                const c = relatedCard(p);
+                return (
+                  <li key={p}>
+                    <Link className="ct-card" href={p}>
+                      <small>{c.label}</small>
+                      <strong>{c.title}</strong>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </section>
       </article>
     </div>
