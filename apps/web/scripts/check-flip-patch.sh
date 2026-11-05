@@ -18,6 +18,20 @@ g() { git -c core.hooksPath=/dev/null "$@"; }
 fail() { echo "check-flip-patch: $1" >&2; exit 1; }
 
 [ "$(wc -c < "$patch")" -lt 65536 ] || fail "the patch is too large to be a flip"
+
+# First judge the patch itself, before anything is written: it must apply, create, delete, rename or
+# re-mode nothing, and change exactly one line in each file, every file a content page.
+g apply --check "$patch" >&2 || fail "the patch does not apply to this commit"
+[ -z "$(g apply --summary "$patch")" ] || fail "the patch creates, deletes, renames or changes the mode of a file"
+stats=$(g apply --numstat "$patch")
+[ -n "$stats" ] || fail "the patch changes nothing"
+while IFS=$'\t' read -r plus minus name; do
+  [ "$plus" = 1 ] && [ "$minus" = 1 ] || fail "every file must change exactly one line ($name)"
+  [[ "$name" =~ ^apps/web/content/(blog|use-cases)/[a-z0-9]+(-[a-z0-9]+)*\.md$ ]] ||
+    fail "the patch touches a file other than apps/web/content/<blog|use-cases>/<slug>.md: $name"
+done <<<"$stats"
+
+# Then apply it to the index and judge the result, line by line.
 g apply --index "$patch" >&2 || fail "the patch does not apply to this commit"
 
 files=$(g diff --cached --name-only)
