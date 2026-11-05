@@ -31,9 +31,11 @@ name: Publish due pages
 # publishes, tags and notifies only when packages/debugsy's version is new, a publish commit publishes nothing.
 #
 # A push refused because main moved during the run (non-fast-forward) runs `git pull --rebase` and tries
-# again, 3 pushes at most; a rebase conflict, or any other refusal, fails the run at once. There is no rebuild
-# after the rebase: the commits pulled in came through main's protection, and Vercel's build of the pushed
-# commit is the last check (if it fails, the previous version stays live).
+# again, 3 pushes at most; a rebase conflict, or any other refusal, fails the run at once. After each rebase
+# apps/web/scripts/recheck-rebased-flip.sh requires the flip to be one commit on top of the fetched main and
+# runs the guard on it again there (a commit that landed meanwhile may have moved a due page's date). There
+# is no rebuild after the rebase: the commits pulled in came through main's protection, and Vercel's build of
+# the pushed commit is the last check (if it fails, the previous version stays live).
 #
 # GitHub can run a schedule up to about an hour late, and switches schedules off in a repo with no activity
 # for 60 days: re-enable it from the Actions tab if that happens. Run it by hand with "Run workflow".
@@ -191,10 +193,15 @@ jobs:
       - name: Push to main
         env:
           KEY: ${{ secrets.PUBLISH_DEPLOY_KEY }}
+          SLUGS: ${{ needs.build.outputs.slugs }}
         run: |
           g() { git -c core.hooksPath=/dev/null "$@"; }
           key=$KEY
           unset KEY
+          # The guards, copied out of the work tree (from the github.sha checkout) before a rebase can
+          # rewrite it: after each rebase they judge the flip again against the new main.
+          guards=$(mktemp -d)
+          cp apps/web/scripts/check-flip-patch.sh apps/web/scripts/recheck-rebased-flip.sh "$guards/"
           keydir=$(mktemp -d)
           trap 'rm -rf "$keydir"' EXIT
           # GitHub's SSH host key, pinned (https://api.github.com/meta, "ssh_keys";
@@ -239,6 +246,12 @@ jobs:
             if ! with_key g pull --rebase origin main; then
               g rebase --abort || true
               echo "::error::git pull --rebase failed (a conflict on a due page, or the fetch failed). Nothing was pushed."
+              exit 1
+            fi
+            # The flip must be one commit on top of the main just fetched, and still pass the guard there
+            # (a commit that landed meanwhile may have moved a due page's date into the future).
+            if ! bash "$guards/recheck-rebased-flip.sh" "$(g rev-parse FETCH_HEAD)" "$SLUGS" "$guards/check-flip-patch.sh"; then
+              echo "::error::After the rebase the flip no longer passes the guard on the new main. Nothing was pushed."
               exit 1
             fi
           done
