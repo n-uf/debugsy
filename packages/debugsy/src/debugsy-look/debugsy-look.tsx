@@ -35,6 +35,7 @@ import {
   WindowSidebar,
   Word,
   Z_INDEX,
+  type DebugsyTheme,
   type DisplayAction,
 } from "../ui";
 import React, {
@@ -79,6 +80,15 @@ export interface DebugsyLookProps {
    * (full body + sidebar + tray).
    */
   initialIsCompact?: boolean;
+  /**
+   * The panel's colours. Default `"dark"`. `"light"` is a light instrument
+   * panel; `"system"` is dark or light, following the OS
+   * (`prefers-color-scheme`). `"surface"` (cool grey), `"paper"` (warm,
+   * for long reading) and `"contrast"` (black on white) are kavun's other
+   * looks. An app can still retune any theme by overriding the `--dbg-*`
+   * tokens on `.dbg-root`.
+   */
+  theme?: DebugsyTheme;
 }
 
 /** Copy state 0 / 1 / 2 as a progress value */
@@ -92,6 +102,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   closeOnClickOutside = false,
   initialVisible = false,
   initialIsCompact = true,
+  theme = "dark",
 }) => {
   // Enhanced tracking
   useRenderTracker("DebugsyLook", {
@@ -518,6 +529,7 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     <div
       ref={containerRef}
       className="dbg-root"
+      data-dbg-theme={theme}
       style={{
         position: "fixed",
         bottom: 0,
