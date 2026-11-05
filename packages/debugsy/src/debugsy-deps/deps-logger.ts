@@ -11,6 +11,7 @@ import {
   type LogLevel,
 } from "../debugsy-space/debugsy-constants";
 import { initializeDebugsySpace } from "../debugsy-space/debugsy-space";
+import { shouldLogLevel } from "./deps-filters";
 
 class DependencyLogger {
   private ensureDebugsy() {
@@ -26,6 +27,8 @@ class DependencyLogger {
     level: LogLevel = "info",
     tags?: string[]
   ): void {
+    // The deps level decides which severities reach the log (Quiet: warnings)
+    if (!shouldLogLevel(level)) return;
     const debugsy = this.ensureDebugsy();
     debugsy.log("dependencies", message, data, level, tags);
   }

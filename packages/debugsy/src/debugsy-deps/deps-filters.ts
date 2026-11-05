@@ -12,6 +12,7 @@
  * - No React dependencies for testability
  */
 
+import type { LogLevel } from "../debugsy-space/debugsy-constants";
 import { getDepsSettings } from "./deps-settings";
 
 /**
@@ -41,22 +42,24 @@ export function shouldTrackHook(hookName: string): boolean {
 }
 
 /**
- * Check if a specific log level should be logged
+ * Whether a dependency log line of this severity is logged at the current
+ * level. Every line the deps logger writes passes through here.
+ * - silent: nothing
+ * - quiet: warnings and errors only (frequent changes, render and remount
+ *   warnings)
+ * - normal, verbose, debug: everything. Verbose and debug add lines and data
+ *   of their own (see logPropChange).
  */
-export function shouldLogLevel(severity: "info" | "warn" | "error"): boolean {
+export function shouldLogLevel(severity: LogLevel): boolean {
   const depsState = getDepsSettings();
 
   switch (depsState.level) {
     case "silent":
       return false;
     case "quiet":
-      return severity === "error";
-    case "normal":
-      return severity === "warn" || severity === "error";
-    case "verbose":
-      return true;
-    case "debug":
-      return true;
+      return (
+        severity === "warn" || severity === "error" || severity === "critical"
+      );
     default:
       return true;
   }
