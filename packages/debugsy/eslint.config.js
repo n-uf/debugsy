@@ -4,6 +4,11 @@ import { config } from "@workspace/eslint-config/react-internal";
 export default [
   ...config,
   {
+    // tsup bundles its config into a temporary file next to it while it
+    // builds; turbo runs lint and build in parallel, so never read it
+    ignores: ["tsup.config.bundled_*"],
+  },
+  {
     // Release scripts run in Node
     files: ["scripts/**/*.mjs"],
     languageOptions: { globals: { process: "readonly", console: "readonly" } },
