@@ -83,9 +83,9 @@ export interface DebugsyLookProps {
   /**
    * The panel's colours. Default `"dark"`. `"light"` is a light instrument
    * panel; `"system"` is dark or light, following the OS
-   * (`prefers-color-scheme`). `"surface"` (cool grey), `"paper"` (warm,
-   * for long reading) and `"contrast"` (black on white) are kavun's other
-   * looks. An app can still retune any theme by overriding the `--dbg-*`
+   * (`prefers-color-scheme`). Three more light looks: `"surface"` (cool
+   * grey), `"paper"` (warm, for long reading) and `"contrast"` (black on
+   * white). An app can still retune any theme by overriding the `--dbg-*`
    * tokens on `.dbg-root`.
    */
   theme?: DebugsyTheme;

@@ -34,7 +34,9 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
   `--dbg-*` tokens on `.dbg-root`.
 - The action rail shows COPY, PAUSE and HEALTH as words under a depth control;
   the tray's actions are EXPAND/COMPACT, CLEAR and CLOSE.
-- `ModuleNav`'s `theme` prop is ignored (kept so existing calls compile).
+- `ModuleNav`'s `theme` prop takes a theme name (see below) for a
+  `ModuleNav` used on its own; inside the panel it follows the panel. Any
+  other value is ignored, so existing calls still compile.
 - debugsy no longer depends on `@n-uf/harbuz`. The parts of the panel that
   came from it (terminal window, log rows, tray display, action toolbar,
   virtualized list and small hooks) are debugsy's own code. The tray display
@@ -47,12 +49,16 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
   component while rendering a different component" error.
 - Light mode and themes: `<DebugsyLook theme="light" />`. `theme` is
   `"dark"` (default, the look above), `"light"`, `"system"` (dark or light,
-  following the OS's `prefers-color-scheme`), or one of kavun's other looks:
-  `"surface"` (cool grey), `"paper"` (warm) and `"contrast"` (black on
-  white). The `DebugsyTheme` type is exported. In the light themes the
-  log-level, accent and JSON colours are darker than kavun's lamps, so
-  every text colour, dim text included, keeps at least 4.5:1 on its
-  surface. Shadows are tokens now too (`--dbg-shadow`,
+  following the OS's `prefers-color-scheme`), or one of three more light
+  looks: `"surface"` (cool grey), `"paper"` (warm) and `"contrast"` (black
+  on white). The `DebugsyTheme` type is exported. Every text colour, dim
+  text included, keeps at least 4.5:1 on what it sits on, tinted rows and
+  an accent's own wash (an active tag, a button) included; in the light
+  themes that makes the accents darker than kavun's lamps. Five texts that
+  were faded (point labels, the JSON view's item counts, placeholders,
+  word counts, the DEPTH label) now use full colour, in dark too. The
+  panel sets `color-scheme`, so its scrollbars and native controls follow
+  its theme rather than the page's. Shadows are tokens now too (`--dbg-shadow`,
   `--dbg-shadow-compact`, `--dbg-recess`, `--dbg-well`), and the JSON view
   has its own (`--dbg-json-key`, `-number`, `-string`, `-literal`).
   `.dbg-root { --dbg-led: … }` still overrides a token in every theme;
