@@ -40,8 +40,11 @@ export interface DepsCommands {
 /** One line with what is set now */
 function printDepsSettings(): void {
   const on = depsSettingsControls.getEnabled();
+  const stopped = globalThis.__DEBUGSY_EMERGENCY_STOP?.active
+    ? " · emergency stop on: nothing is logged"
+    : "";
   console.log(
-    `[debugsy] Dependency tracking ${on ? "on" : "off"} · level ${depsSettingsControls.getLevel()} · filter ${depsSettingsControls.getFilter()}`
+    `[debugsy] Dependency tracking ${on ? "on" : "off"} · level ${depsSettingsControls.getLevel()} · filter ${depsSettingsControls.getFilter()}${stopped}`
   );
 }
 
