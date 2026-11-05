@@ -179,9 +179,11 @@ export const THEME_TOKENS: Record<NamedTheme, ThemeTokens> = {
     jsonLiteral: "170 26 94",
     scheme: "light",
   },
+  // Kavun's contrast reads its pages on white; here the pages are the logs,
+  // so the canvas is white and the chrome a light grey
   contrast: {
-    bg: "255 255 255",
-    canvas: "228 230 234",
+    bg: "232 234 238",
+    canvas: "255 255 255",
     raised: "255 255 255",
     line: "0 0 0 / .4",
     text: "0 0 0",
