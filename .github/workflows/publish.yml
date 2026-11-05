@@ -138,7 +138,8 @@ jobs:
   push:
     name: Commit and push to main
     needs: build
-    if: github.repository == 'n-uf/debugsy' && needs.build.outputs.slugs != ''
+    # main only (the `publish` environment's branch policy enforces it too)
+    if: github.repository == 'n-uf/debugsy' && github.ref == 'refs/heads/main' && needs.build.outputs.slugs != ''
     # Holds PUBLISH_DEPLOY_KEY; only runs on main may use it (see the header).
     environment: publish
     runs-on: ubuntu-latest
