@@ -3,7 +3,7 @@
  * Provides testing functionality for the debugsy browser console interface
  */
 
-import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
+import { depsSettingsControls } from "../../debugsy-space/debugsy-space-settings";
 
 export interface TestCommands {
   testDependencyTracking: () => boolean;
@@ -29,8 +29,7 @@ export function createTestCommands(): TestCommands {
    
 💡 TROUBLESHOOTING:
    • Try refreshing the page
-   • Check if useDebugsy() is used in any React component
-   • Use initDebugsyManually() to force initialization
+   • Check that the app imports @n-uf/debugsy
 `);
         return false;
       }
@@ -58,9 +57,8 @@ export function createTestCommands(): TestCommands {
 
       // Test enabling dependency tracking
       console.log("🔄 Testing dependency tracking toggle...");
-      // Enable deps tracking for test
-      const state = getGlobalDebugState();
-      state.enabled.add("dependencies");
+      // Turn tracking on the way debugsy.deps.on() does: saved, panel follows
+      depsSettingsControls.setEnabled(true);
       const newStatus = globalThis.debugsy.getDepsSettings();
 
       console.log(`
@@ -95,8 +93,7 @@ export function createTestCommands(): TestCommands {
    
 💡 TROUBLESHOOTING:
    • Refresh the page
-   • Ensure React components use debugsy hooks
-   • Try initDebugsyManually() to force initialization
+   • Check that the app imports @n-uf/debugsy
 `);
         return false;
       }
@@ -117,8 +114,11 @@ export function createTestCommands(): TestCommands {
       globalThis.__DEBUGSY_EMERGENCY_STOP.activate();
       console.log("   ✅ Emergency stop activated");
 
-      globalThis.__DEBUGSY_EMERGENCY_STOP.deactivate();
-      console.log("   ✅ Emergency stop deactivated");
+      // Leave the stop as it was found
+      if (!wasEmergencyActive) {
+        globalThis.__DEBUGSY_EMERGENCY_STOP.deactivate();
+        console.log("   ✅ Emergency stop deactivated");
+      }
 
       // Test dependency status
       const depState = globalThis.debugsy?.getDepsSettings?.();
@@ -148,7 +148,7 @@ export function createTestCommands(): TestCommands {
    ✓ All core systems operational
 
 💡 TO TEST WITH REAL COMPONENTS:
-   • Add useDebugsy('component-name') to React components
+   • Call useDebugsy() in React components
    • Use useWhyDidYouUpdate('ComponentName', props) for dependency tracking
    • Monitor console output for debug logs
 `);

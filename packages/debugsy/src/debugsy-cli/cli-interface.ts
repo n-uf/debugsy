@@ -71,52 +71,49 @@ export function createDebugsyCLI(coreManager: any): DebugsyCLI {
 }
 
 /**
- * CLI Command Help System
+ * What debugsy.help() prints. Every command named here exists on
+ * globalThis.debugsy (test/cli-commands.test.ts checks it), and the level
+ * lines match the panel's advanced strip (dependency-advanced-panel.tsx).
  */
-export function printCLIHelp(): void {
-  console.log(`
-🚀 Debugsy Browser CLI - Available Commands
+export const CLI_HELP = `
+🔍 Debugsy console commands
 
-📊 STATUS COMMANDS:
-  debugsy.status()                 - Show overall system status
-  debugsy.status.full()            - Detailed status with all settings
-  debugsy.status.deps()            - Dependency tracking status only
-  debugsy.status.emergency()       - Emergency system status
+📊 Status
+  debugsy.status.status()                Debug points, console, dependency settings, stored logs
+  debugsy.status.list()                  Debug points that are on
+  debugsy.status.deps()                  Dependency tracking settings
+  debugsy.status.logs(10)                The last 10 logs
 
-🎛️ DEPENDENCY CONTROL:
-  debugsy.deps.off()              - Disable dependency logs
-  debugsy.deps.on()               - Enable dependency logs
-  debugsy.deps.quiet()            - Only critical changes
-  debugsy.deps.initAware()        - 🌟 RECOMMENDED: Smart init filtering
-  debugsy.deps.normal()           - Standard dependency tracking
-  debugsy.deps.verbose()          - Detailed dependency tracking
-  debugsy.deps.debug()            - Maximum detail for debugging
-  debugsy.deps.functionsOnly()    - Only function changes
-  debugsy.deps.objectsOnly()      - Only object changes
-  debugsy.deps.unstableOnly()     - Only changing dependencies
+🔧 Dependency tracking (every command but off() turns it on)
+  debugsy.deps.on()                      Turn tracking on
+  debugsy.deps.off()                     Turn tracking off
+  debugsy.deps.quiet()                   Warnings only: functions and objects that keep changing once the app has settled, render and remount warnings
+  debugsy.deps.normal()                  Quiet, plus each render's changed dependencies and every recreated function and object
+  debugsy.deps.verbose()                 Normal, plus each changed primitive value with its old and new value
+  debugsy.deps.all()                     Every kind of change
+  debugsy.deps.functionsOnly()           Recreated functions; ones that keep changing count as unstable
+  debugsy.deps.objectsOnly()             Recreated objects and arrays; ones that keep changing count as unstable
+  debugsy.deps.unstableOnly()            Dependencies that keep changing
+  debugsy.deps.reset()                   Back to normal and all
 
-🚨 EMERGENCY CONTROLS:
-  debugsy.emergency.activate()    - Stop ALL logging immediately
-  debugsy.emergency.deactivate()  - Restore normal operation
-  debugsy.emergency.status()      - Check emergency status
+🛑 Emergency
+  debugsy.emergency.activate()           Stop all logging
+  debugsy.emergency.deactivate()         Log again
+  debugsy.emergency.status()             Whether the stop is on
 
-🧪 TESTING UTILITIES:
-  debugsy.testDependencyTracking() - Verify functionality
-  debugsy.testMockComponent()      - Test mock scenarios
+🧪 Self-checks
+  debugsy.test.testDependencyTracking()  Turn dependency tracking on and print its settings
+  debugsy.test.testMockComponent()       Try the emergency stop and print the dependency settings
 
-💊 HEALTH MONITORING:
-  debugsy.captureHealthSnapshot()  - Capture current system health
-
-🆘 HELP:
-  debugsy.help()                   - Show this help message
-
-🎯 Quick Start:
-  1. debugsy.status()              - Check current status
-  2. debugsy.deps.initAware()      - Enable smart dependency tracking
-  3. Watch console for dependency change logs as you interact with the app
-  4. Use debugsy.deps.verbose() for more detail if needed
-`);
-}
+📋 Core
+  debugsy.log(point, message, data)      Log to a debug point
+  debugsy.enable(point)                  Turn a debug point on
+  debugsy.disable(point)                 Turn a debug point off
+  debugsy.getLogs()                      Every stored log
+  debugsy.clearLogs()                    Clear the stored logs
+  debugsy.captureHealthSnapshot()        Log and return a health snapshot
+  debugsy.help()                         This list
+`;
 
 /**
  * Creates the full CLI interface with help functionality
@@ -127,36 +124,7 @@ export function createFullDebugsyCLI(coreManager: any): DebugsyCLIWithHelp {
   return {
     ...baseCLI,
     help: () => {
-      console.log(`
-🔍 Debugsy CLI Help
-
-📊 STATUS COMMANDS:
-  debugsy.status.status()    - Show system status
-  debugsy.status.list()      - List debug points
-  debugsy.status.deps()      - Dependency tracking status
-  debugsy.status.logs(10)    - Show recent logs
-
-🔧 DEPENDENCY COMMANDS:
-  debugsy.deps.reset()       - Reset dependency tracking
-
-🚨 EMERGENCY COMMANDS:
-  debugsy.emergency.activate()   - Emergency stop
-  debugsy.emergency.deactivate() - Restore normal operation
-  debugsy.emergency.status()     - Emergency system status
-
-🧪 TEST COMMANDS:
-  debugsy.test.testDependencyTracking() - Test dependency system
-  debugsy.test.testMockComponent()      - Test mock component
-
-📋 CORE METHODS:
-  debugsy.log(point, message, data)     - Log message
-  debugsy.enable(point)                 - Enable debug point
-  debugsy.disable(point)                - Disable debug point
-  debugsy.getLogs()                     - Get all logs
-  debugsy.clearLogs()                   - Clear logs
-
-💡 TIP: All commands are accessible via browser console
-      `);
+      console.log(CLI_HELP);
     },
   };
 }
