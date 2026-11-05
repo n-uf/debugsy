@@ -11,15 +11,18 @@ name: Publish due pages
 # Two jobs, so the deploy key never meets third-party code (steps of one job aren't isolated from each other:
 # an install or build script could read a later step's secret, or hijack it through $GITHUB_ENV, $GITHUB_PATH
 # or a git hook):
-#   build  has no secret. It flips the pages, saves the flip as a patch before any third-party code runs,
-#          installs and builds, and only then hands the patch over (an artifact kept 1 day).
+#   build  has no secret. It flips the pages and uploads the hand-over (the flip as a patch, and the page
+#          list) as an artifact kept 1 day, before any third-party code runs; then it installs and builds.
+#          Its one output, `ready`, is set by its last step, so the push job runs only after a passing build.
 #   push   gets the key (the `publish` environment). It runs git and first-party actions only: no node, no
 #          pnpm. It applies the patch to a fresh checkout of the commit that was built, and
 #          apps/web/scripts/check-flip-patch.sh refuses it unless every change is the front-matter
 #          `draft: true` -> `draft: false` line of an existing content page that is due (published on or
 #          before today, UTC). Then it commits and pushes over SSH, every git command with hooks off
-#          (core.hooksPath=/dev/null). Only the page list and the patch cross from build to push; both jobs
-#          check out github.sha, so the build can't choose the commit or the guard script the push uses.
+#          (core.hooksPath=/dev/null), never with --force. Only the hand-over crosses from build to push;
+#          both jobs check out github.sha, so the build can't choose the commit or the guard script.
+#   verify-key  runs instead of the two on a manual run with "verify-key" ticked: it only checks that the
+#          key reaches a job on main and opens the repo over the pinned SSH host key.
 #
 # main is protected by ruleset 26622833 (required checks "lint / check-types / build" and "Vercel", no
 # force-push, no deletion), which only deploy keys bypass. The push uses the write deploy key "publish-bot
@@ -44,6 +47,11 @@ on:
   schedule:
     - cron: '10 0 * * *'
   workflow_dispatch:
+    inputs:
+      verify-key:
+        description: "Only check that the deploy key reaches the job and opens main over SSH (no flip, no push)"
+        type: boolean
+        default: false
 
 # One run at a time, none cancelled: a run that has flipped pages should finish its push.
 concurrency:
@@ -62,17 +70,17 @@ defaults:
 jobs:
   build:
     name: Flip due drafts and build
-    if: github.repository == 'n-uf/debugsy'
+    if: github.repository == 'n-uf/debugsy' && (github.event_name != 'workflow_dispatch' || !inputs.verify-key)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
       packages: read
-    # Only the page list crosses to the push job (with the patch); no commit id does. Both jobs check out
-    # github.sha, the main commit this run was started on, so the build can't steer what the push job checks
-    # out or which guard script it runs.
+    # The patch and the page list cross to the push job as an artifact uploaded before any third-party code
+    # runs; no commit id crosses (both jobs check out github.sha, the main commit this run started on). The
+    # one output, `ready`, is set by the last step, so it exists only when the build passed.
     outputs:
-      slugs: ${{ steps.flip.outputs.slugs }}
+      ready: ${{ steps.ready.outputs.ready }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -84,30 +92,40 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # Prints the due pages, `blog/a, use-cases/b`, or nothing (first-party script, Node built-ins only).
+      # Flips the due pages (first-party script, Node built-ins only) and writes the hand-over: the flip as a
+      # patch and the page list (`blog/a, use-cases/b`), before any third-party code runs.
       - name: Flip the drafts that are due
         id: flip
         run: |
           due=$(node apps/web/scripts/publish-due.mjs)
-          slugs=$(printf '%s\n' "$due" | paste -sd, - | sed 's/,/, /g')
-          echo "slugs=$slugs" >> "$GITHUB_OUTPUT"
-          if [ -z "$slugs" ]; then
+          if [ -z "$due" ]; then
             echo "::notice::No draft is due today (UTC), so nothing is committed."
-          else
-            echo "::notice::Due: $slugs"
+            echo "due=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          mkdir -p "$RUNNER_TEMP/handoff"
+          printf '%s\n' "$due" | paste -sd, - | sed 's/,/, /g' > "$RUNNER_TEMP/handoff/pages.txt"
+          git diff --binary -- apps/web/content > "$RUNNER_TEMP/handoff/flip.patch"
+          echo "::notice::Due: $(cat "$RUNNER_TEMP/handoff/pages.txt")"
+          echo "due=true" >> "$GITHUB_OUTPUT"
 
-      # Taken right after the flip, before any third-party code runs.
-      - name: Save the flip as a patch
-        if: steps.flip.outputs.slugs != ''
-        run: git diff --binary -- apps/web/content > "$RUNNER_TEMP/flip.patch"
+      # Uploaded now, before pnpm, the cache, the install or the build can touch it (artifacts can't be
+      # replaced within a run). The push job still waits for `ready`, which only a passing build sets.
+      - name: Hand the flip to the push job
+        if: steps.flip.outputs.due == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: flip-patch
+          path: ${{ runner.temp }}/handoff/
+          retention-days: 1
+          if-no-files-found: error
 
       # Third-party code from here on: pnpm, the dependency cache, the install and the build.
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-        if: steps.flip.outputs.slugs != ''
+        if: steps.flip.outputs.due == 'true'
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        if: steps.flip.outputs.slugs != ''
+        if: steps.flip.outputs.due == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -117,31 +135,27 @@ jobs:
           scope: "@n-uf"
 
       - name: Install
-        if: steps.flip.outputs.slugs != ''
+        if: steps.flip.outputs.due == 'true'
         run: pnpm install --frozen-lockfile
         env:
           # @n-uf/harbuz comes from GitHub Packages (see ci.yml).
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Production mode, the build Vercel runs. A red build fails the job: no patch is handed over.
+      # Production mode, the build Vercel runs. A red build fails the job, and `ready` is never set.
       - name: Build the site with the pages live
-        if: steps.flip.outputs.slugs != ''
+        if: steps.flip.outputs.due == 'true'
         run: pnpm --dir apps/web build
 
-      - name: Hand the flip to the push job
-        if: steps.flip.outputs.slugs != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: flip-patch
-          path: ${{ runner.temp }}/flip.patch
-          retention-days: 1
-          if-no-files-found: error
+      - name: Mark the flip ready to push
+        id: ready
+        if: steps.flip.outputs.due == 'true'
+        run: echo "ready=true" >> "$GITHUB_OUTPUT"
 
   push:
     name: Commit and push to main
     needs: build
     # main only (the `publish` environment's branch policy enforces it too)
-    if: github.repository == 'n-uf/debugsy' && github.ref == 'refs/heads/main' && needs.build.outputs.slugs != ''
+    if: github.repository == 'n-uf/debugsy' && github.ref == 'refs/heads/main' && needs.build.outputs.ready == 'true'
     # Holds PUBLISH_DEPLOY_KEY; only runs on main may use it (see the header).
     environment: publish
     runs-on: ubuntu-latest
@@ -175,11 +189,11 @@ jobs:
       # No key in this step. Apply the patch and refuse anything but the flip itself (bash and git only).
       - name: Apply the flip and check it
         id: check
-        env:
-          SLUGS: ${{ needs.build.outputs.slugs }}
         run: |
           git -c core.hooksPath=/dev/null switch -q -c publish-flip
-          message=$(bash apps/web/scripts/check-flip-patch.sh "$RUNNER_TEMP/flip/flip.patch" "$SLUGS")
+          # The page list from the hand-over, written before any third-party code ran in the build job.
+          slugs=$(cat "$RUNNER_TEMP/flip/pages.txt")
+          message=$(bash apps/web/scripts/check-flip-patch.sh "$RUNNER_TEMP/flip/flip.patch" "$slugs")
           if [[ "$message" != "publish: "* || "$message" == *$'\n'* ]]; then
             echo "::error::The flip check printed an unexpected commit message."
             exit 1
@@ -193,11 +207,11 @@ jobs:
       - name: Push to main
         env:
           KEY: ${{ secrets.PUBLISH_DEPLOY_KEY }}
-          SLUGS: ${{ needs.build.outputs.slugs }}
         run: |
           g() { git -c core.hooksPath=/dev/null "$@"; }
           key=$KEY
           unset KEY
+          slugs=$(cat "$RUNNER_TEMP/flip/pages.txt")
           # The guards, copied out of the work tree (from the github.sha checkout) before a rebase can
           # rewrite it: after each rebase they judge the flip again against the new main.
           guards=$(mktemp -d)
@@ -228,6 +242,8 @@ jobs:
           # Only "main moved" is worth a rebase and another try (up to 3 pushes); a refusal by the
           # ruleset or the key fails at once. The commit only touches `draft:` lines, so the rebase is
           # clean unless someone edited the same line (then it is aborted and the run fails).
+          # Never --force: the ruleset's bypass lifts its force-push and deletion rules for this key too,
+          # so a plain fast-forward push is the only thing that keeps the bot from rewriting main.
           for attempt in 1 2 3; do
             if with_key g push origin HEAD:main 2> "$RUNNER_TEMP/push.err"; then
               cat "$RUNNER_TEMP/push.err"
@@ -250,10 +266,45 @@ jobs:
             fi
             # The flip must be one commit on top of the main just fetched, and still pass the guard there
             # (a commit that landed meanwhile may have moved a due page's date into the future).
-            if ! bash "$guards/recheck-rebased-flip.sh" "$(g rev-parse FETCH_HEAD)" "$SLUGS" "$guards/check-flip-patch.sh"; then
+            rc=0
+            bash "$guards/recheck-rebased-flip.sh" "$(g rev-parse FETCH_HEAD)" "$slugs" "$guards/check-flip-patch.sh" || rc=$?
+            if [ "$rc" -eq 3 ]; then
+              echo "::notice::main already has this flip (the rebase dropped it): nothing to push."
+              exit 0
+            elif [ "$rc" -ne 0 ]; then
               echo "::error::After the rebase the flip no longer passes the guard on the new main. Nothing was pushed."
               exit 1
             fi
           done
           echo "::error::The push to main was rejected 3 times; run the workflow again."
           exit 1
+
+  # A manual run with "verify-key" ticked does only this: proves the publish environment's key reaches a
+  # job on main and authenticates to github.com over the pinned SSH host key (`git ls-remote` of main; it
+  # can't show the key is still writable, which the first real push does). No checkout, no flip, no push.
+  verify-key:
+    name: Verify the deploy key (manual)
+    if: github.repository == 'n-uf/debugsy' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.verify-key
+    environment: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Open main over SSH with the key
+        env:
+          KEY: ${{ secrets.PUBLISH_DEPLOY_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::PUBLISH_DEPLOY_KEY is not set in the publish environment."
+            exit 1
+          fi
+          key=$KEY
+          unset KEY
+          keydir=$(mktemp -d)
+          trap 'rm -rf "$keydir"' EXIT
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > "$keydir/known_hosts"
+          (umask 077 && printf '%s\n' "$key" > "$keydir/key")
+          GIT_SSH_COMMAND="/usr/bin/ssh -F /dev/null -i '$keydir/key' -o IdentitiesOnly=yes -o IdentityAgent=none -o ProxyCommand=none -o BatchMode=yes -o StrictHostKeyChecking=yes -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile='$keydir/known_hosts'" \
+            git ls-remote git@github.com:n-uf/debugsy.git refs/heads/main
+          echo "::notice::The deploy key reached the job and opened n-uf/debugsy over SSH."
