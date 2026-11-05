@@ -12,8 +12,10 @@ set -euo pipefail
 
 patch=${1:?usage: check-flip-patch.sh <patch> <slugs>}
 slugs=${2:?usage: check-flip-patch.sh <patch> <slugs>}
-# Today in UTC; FLIP_TODAY only for the tests (the workflow never sets it).
-today=${FLIP_TODAY:-$(date -u +%F)}
+# Today in UTC. The tests set FLIP_TEST=1 and FLIP_TODAY; FLIP_TODAY alone is ignored, so a stray variable
+# can't move "today" and let a page through early.
+today=$(date -u +%F)
+if [ "${FLIP_TEST:-}" = 1 ] && [ -n "${FLIP_TODAY:-}" ]; then today=$FLIP_TODAY; fi
 g() { git -c core.hooksPath=/dev/null "$@"; }
 fail() { echo "check-flip-patch: $1" >&2; exit 1; }
 
