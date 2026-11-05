@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { DebugsyLook } from "../src/debugsy-look";
+import { DebugsyLook, ModuleNav } from "../src/debugsy-look";
 import { DEBUGSY_CSS, DEBUGSY_CSS_FRAGMENTS } from "../src/ui/styles/sheet";
 import { THEME_TOKENS } from "../src/ui/styles/themes";
 
@@ -187,5 +187,14 @@ describe("DebugsyLook's theme prop", () => {
     const nested = container.querySelectorAll<HTMLElement>(".dbg-root .dbg-root");
     expect(nested.length).toBeGreaterThan(0);
     for (const el of nested) expect(el.dataset.dbgTheme).toBeUndefined();
+  });
+
+  it("themes a ModuleNav used on its own, and ignores an old harbuz theme", () => {
+    act(() => root.render(<ModuleNav theme="paper" />));
+    expect(panelRoot()?.dataset.dbgTheme).toBe("paper");
+    act(() => root.render(<ModuleNav theme={{ name: "ocean" }} />));
+    expect(panelRoot()?.dataset.dbgTheme).toBeUndefined();
+    act(() => root.render(<ModuleNav theme="toString" />));
+    expect(panelRoot()?.dataset.dbgTheme).toBeUndefined();
   });
 });

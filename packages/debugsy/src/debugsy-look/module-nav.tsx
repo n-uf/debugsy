@@ -1,6 +1,6 @@
 "use client";
 
-import { DebugsyStyles, Word, WordDivider, type LampState } from "../ui";
+import { DebugsyStyles, isDebugsyTheme, Word, WordDivider, type LampState } from "../ui";
 import React, { useCallback, useMemo, useReducer, useRef, useState } from "react";
 
 import {
@@ -32,7 +32,12 @@ const LAMP_TEXT: Record<ModuleLedState, string> = {
 export const SYSTEM_MODULE_KEY = "system";
 
 interface ModuleNavProps {
-  /** @deprecated Ignored since the panel styles itself; kept so existing calls compile */
+  /**
+   * The colours of a ModuleNav used on its own: a `DebugsyTheme` name, dark
+   * when unset. Inside the panel it follows the panel's `theme`; leave it
+   * unset there. Any other value (an old harbuz theme) is ignored, so
+   * existing calls still compile.
+   */
   theme?: unknown;
   onDisplayMessage?: (message: string) => void;
   /** Called when the selected module changes (null = root level) */
@@ -46,6 +51,7 @@ interface ModuleNavProps {
  * its points). Level 2: a word per point, with a way back.
  */
 export const ModuleNav: React.FC<ModuleNavProps> = ({
+  theme,
   onDisplayMessage,
   onModuleSelect,
 }) => {
@@ -193,7 +199,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
   };
 
   const wrap = (content: React.ReactNode): React.ReactElement => (
-    <div className="dbg-root dbg-contents">
+    <div className="dbg-root dbg-contents" data-dbg-theme={isDebugsyTheme(theme) ? theme : undefined}>
       <DebugsyStyles />
       <div className="dbg-nav">{content}</div>
     </div>

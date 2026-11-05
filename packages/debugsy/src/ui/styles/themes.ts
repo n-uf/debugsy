@@ -210,6 +210,14 @@ export const THEME_TOKENS: Record<NamedTheme, ThemeTokens> = {
   },
 };
 
+/** Whether a value names a theme */
+export function isDebugsyTheme(value: unknown): value is DebugsyTheme {
+  return (
+    value === "system" ||
+    (typeof value === "string" && Object.prototype.hasOwnProperty.call(THEME_TOKENS, value))
+  );
+}
+
 /** A theme's declarations, for a rule body */
 function declarations(t: ThemeTokens): string {
   return [
