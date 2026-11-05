@@ -12,10 +12,13 @@ set -euo pipefail
 
 patch=${1:?usage: check-flip-patch.sh <patch> <slugs>}
 slugs=${2:?usage: check-flip-patch.sh <patch> <slugs>}
+# Today in UTC; FLIP_TODAY only for the tests (the workflow never sets it).
+today=${FLIP_TODAY:-$(date -u +%F)}
 g() { git -c core.hooksPath=/dev/null "$@"; }
 fail() { echo "check-flip-patch: $1" >&2; exit 1; }
 
-g apply --index "$patch" || fail "the patch does not apply to this commit"
+[ "$(wc -c < "$patch")" -lt 65536 ] || fail "the patch is too large to be a flip"
+g apply --index "$patch" >&2 || fail "the patch does not apply to this commit"
 
 files=$(g diff --cached --name-only)
 [ -n "$files" ] || fail "the patch changes nothing"
@@ -39,6 +42,20 @@ drafts=$(printf '%s\n' "$removed" | grep -c -E '^-draft:[[:space:]]*true([[:spac
 # Each added line is its removed line with true turned to false, nothing else.
 [ "$(printf '%s\n' "$removed" | sed -E 's/^-(draft:[[:space:]]*)true/+\1false/')" = "$added" ] ||
   fail "the added lines are not the removed draft lines turned to draft: false"
+
+# Each flipped line is the page's own `draft:` line, inside its front matter (not a `draft: true` in the
+# body, a code sample say), and the page is due: its `published` day (UTC) is today or earlier.
+while IFS= read -r f; do
+  changed=$(g diff --cached -U0 --no-color -- "$f" | sed -n -E 's/^@@ -([0-9]+).*/\1/p' | head -n 1)
+  front_end=$(g show "HEAD:$f" | awk 'NR == 1 { if ($0 !~ /^---[[:space:]]*$/) exit } NR > 1 && /^---[[:space:]]*$/ { print NR; exit }')
+  [ -n "$front_end" ] || fail "$f has no front matter"
+  [ -n "$changed" ] && [ "$changed" -gt 1 ] && [ "$changed" -lt "$front_end" ] ||
+    fail "$f: the flipped line ($changed) is outside the front matter (lines 2-$((front_end - 1)))"
+  published=$(g show "HEAD:$f" | awk -v end="$front_end" 'NR > 1 && NR < end' |
+    sed -n -E "s/^published:[[:space:]]*[\"']?([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/p" | head -n 1)
+  [ -n "$published" ] || fail "$f has no published day"
+  [[ ! "$published" > "$today" ]] || fail "$f isn't due: published $published is after today, $today (UTC)"
+done <<<"$files"
 
 # The commit message names exactly the staged pages, and they must be the pages the build reported.
 derived=$(printf '%s\n' "$files" | sed -E 's#^apps/web/content/([a-z-]+/[a-z0-9-]+)\.md$#\1#' | paste -sd, - | sed 's/,/, /g')
