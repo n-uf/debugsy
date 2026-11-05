@@ -35,6 +35,18 @@ if (!existsSync(jsPath)) {
     else if (spec.startsWith("@n-uf/")) problems.push(`index.js: imports ${spec}`);
     else if (!ALLOWED.test(spec)) problems.push(`index.js: imports ${spec}, not an allowed dependency`);
   }
+  // The shipped code must take react18-json-view's component from `.default`
+  // when Node hands over the CommonJS module object (json-view.ts), and use
+  // only that shim: a direct default import would crash under Node's loader.
+  const jsonViewImports = [...code.matchAll(/import\s+(\w+)\s+from\s*["']react18-json-view["']/g)].map((m) => m[1]);
+  if (jsonViewImports.length !== 1) {
+    problems.push(`index.js: expected one react18-json-view import (the json-view.ts shim), found ${jsonViewImports.length}`);
+  } else {
+    const name = jsonViewImports[0];
+    if (!code.includes(`${name}.default ?? ${name}`)) {
+      problems.push("index.js: the react18-json-view import is used without the .default interop");
+    }
+  }
 }
 
 const dtsPath = join(dist, "index.d.ts");
