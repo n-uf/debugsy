@@ -9,17 +9,24 @@ const debugsy = getDebugsy();
 const settle = () => new Promise((resolve) => setTimeout(resolve, 40));
 
 let logSpy: ReturnType<typeof vi.spyOn>;
+let warnSpy: ReturnType<typeof vi.spyOn>;
+let errorSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   debugsy.disable("dependencies");
 });
 
+// Restored here, not at the end of a test, so a failing test leaks nothing
 afterEach(() => {
+  globalThis.__DEBUGSY_EMERGENCY_STOP.active = false;
+  debugsy.setConsoleEnabled(true);
   depsSettingsControls.setLevel("normal");
   depsSettingsControls.setFilter("all");
   debugsy.disable("dependencies");
-  logSpy.mockRestore();
+  vi.restoreAllMocks();
 });
 
 /** `debugsy.a.b(` in some text → ["a.b", …] */
@@ -58,9 +65,7 @@ describe("debugsy.help()", () => {
   it("runs every command it names, and they name only commands that exist", () => {
     const printed: string[] = [];
     const keep = (...args: unknown[]) => void printed.push(args.join(" "));
-    logSpy.mockImplementation(keep);
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(keep);
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(keep);
+    for (const spy of [logSpy, warnSpy, errorSpy]) spy.mockImplementation(keep);
 
     // Arguments for the commands that take some
     const args: Record<string, unknown[]> = {
@@ -85,15 +90,11 @@ describe("debugsy.help()", () => {
     );
     expect(unknown).toEqual([]);
     expect(globalThis.__DEBUGSY_EMERGENCY_STOP.active).toBe(false);
-
-    warnSpy.mockRestore();
-    errorSpy.mockRestore();
   });
 });
 
 describe("debugsy.emergency", () => {
   it("activate() stops all logging until deactivate()", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     debugsy.setConsoleEnabled(false);
     debugsy.enable("dependencies");
     const count = () => debugsy.getDebugState().logs.length;
@@ -107,9 +108,15 @@ describe("debugsy.emergency", () => {
     debugsy.emergency.deactivate();
     debugsy.log("dependencies", "kept");
     expect(count()).toBe(before + 1);
+  });
 
-    debugsy.setConsoleEnabled(true);
-    warnSpy.mockRestore();
+  it("deps commands say when the stop is on", () => {
+    debugsy.emergency.activate();
+    debugsy.deps.on();
+
+    expect(logSpy).toHaveBeenLastCalledWith(
+      "[debugsy] Dependency tracking on · level normal · filter all · emergency stop on: nothing is logged"
+    );
   });
 });
 
