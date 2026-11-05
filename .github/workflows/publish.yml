@@ -38,6 +38,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
+          # Full history, so the push step can rebase on a main that moved during the build.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
@@ -75,6 +77,10 @@ jobs:
         if: steps.flip.outputs.message != ''
         run: pnpm --dir apps/web build
 
+      # Install and build take minutes, and main may move meanwhile: a rejected push rebases the publish
+      # commit on main and tries again, up to 3 pushes. The flip only touches `draft:` lines, so a
+      # rebase conflict means someone edited a page that was due: abort and go red. No rebuild after
+      # the rebase; Vercel's build of the combined commit is the gate (a red build leaves the old site up).
       - name: Commit and push to main
         if: steps.flip.outputs.message != ''
         env:
@@ -84,4 +90,20 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/web/content
           git commit -m "$MESSAGE"
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "::notice::Pushed: $MESSAGE"
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              break
+            fi
+            echo "::warning::Push rejected (try $attempt of 3): main moved, rebasing the publish commit on it"
+            if ! git pull --rebase origin main; then
+              git rebase --abort || true
+              echo "::error::Rebasing the publish commit on main conflicted: a page that was due changed on main. Nothing was pushed."
+              exit 1
+            fi
+          done
+          echo "::error::The publish commit could not be pushed after 3 tries. Nothing was pushed; run this workflow again."
+          exit 1
