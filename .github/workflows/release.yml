@@ -159,6 +159,9 @@ jobs:
         if: steps.version.outputs.npm == 'true'
         env:
           TARBALL: ${{ steps.pack.outputs.tarball }}
+          # npm logs a failed OIDC exchange only at verbose level; without it a
+          # refused trusted publish shows a bare ENEEDAUTH
+          NPM_CONFIG_LOGLEVEL: verbose
         run: |
           npm publish "$TARBALL" --userconfig /dev/null --access public \
             --registry "$NPMJS" --@n-uf:registry="$NPMJS"
@@ -168,6 +171,8 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARBALL: ${{ steps.pack.outputs.tarball }}
+          # npm 11 tries OIDC on every publish; GitHub Packages uses the token
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
         run: |
           npm publish "$TARBALL" --registry "$GHPKG" --@n-uf:registry="$GHPKG"
 
