@@ -9,6 +9,10 @@
  * the panel's width, not the viewport's. Below 560px the sidebar moves under
  * the logs, at most 40% of the body and scrolling, so the log list keeps a
  * readable width; the action rail keeps the body's full height beside both.
+ *
+ * The window never grows past the viewport. The panel caps its height for a
+ * one-row tray; on a narrow panel the tray wraps into rows, so the body
+ * gives up the difference and the resize edge stays on screen.
  */
 
 export const WINDOW_CSS = `
@@ -50,7 +54,8 @@ export const WINDOW_CSS = `
 .dbg-presets{display:flex;flex-wrap:wrap;gap:2px}
 .dbg-control{position:relative;flex:none}
 
-.dbg-window{container:dbg-panel / inline-size}
+.dbg-window{container:dbg-panel / inline-size;max-height:100vh;max-height:100dvh}
+.dbg-body{flex-shrink:1}
 @container dbg-panel (width < 560px){
   .dbg-body{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr) fit-content(40%)}
   .dbg-rail{grid-column:2;grid-row:1 / -1}
