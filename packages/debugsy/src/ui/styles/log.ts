@@ -146,7 +146,7 @@ export const LOG_CSS = `
 .dbg-root .json-view .jv-chevron{display:inline-block;vertical-align:-20%;width:1em;height:1em;cursor:pointer;opacity:.4;
   color:rgb(var(--dbg-dim))}
 .dbg-root .json-view .jv-chevron:hover,.dbg-root .json-view .jv-size:hover+.jv-chevron{opacity:.9;color:rgb(var(--dbg-led))}
-.dbg-root .json-view .jv-size{margin-left:.5em;cursor:pointer;font-size:.875em;font-style:normal;line-height:1;
+.dbg-root .json-view .jv-size{margin-left:.5em;cursor:pointer;opacity:1;font-size:.875em;font-style:normal;line-height:1;
   vertical-align:-5%;color:rgb(var(--dbg-dim));font-variant-numeric:tabular-nums}
 .dbg-root .json-view :is(.json-view--copy,.json-view--edit),.dbg-root .json-view .json-view--link svg{display:none;width:1em;height:1em;
   margin-left:.25em;cursor:pointer;color:rgb(var(--dbg-dim));vertical-align:-10%}
