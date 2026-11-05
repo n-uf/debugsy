@@ -94,7 +94,8 @@ Calendar versions, `YY.M.R`, the same scheme as `@n-uf/hypr-tiling`:
   `packages/debugsy/CHANGELOG.md`. Merging it to `main` publishes that version
   to npmjs (public, with provenance) and to GitHub Packages, and tags it
   `v<version>` (`.github/workflows/release.yml`); merges without a bump
-  publish nothing. npmjs needs the `NPM_TOKEN` repo secret.
+  publish nothing. npmjs uses trusted publishing (no stored token): the
+  package's Trusted Publisher on npmjs.com names this repo and `release.yml`.
 - Never reuse a version number that was published and then removed; record it
   in `BURNED_VERSIONS` in `packages/debugsy/scripts/calendar-version-bump.mjs`.
 
