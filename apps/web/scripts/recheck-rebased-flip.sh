@@ -18,6 +18,12 @@ g() { git -c core.hooksPath=/dev/null "$@"; }
 fail() { echo "recheck-rebased-flip: $1" >&2; exit 1; }
 
 main=$(g rev-parse --verify "$upstream^{commit}") || fail "$upstream is not a commit"
+# The rebase dropped the flip because main already has it (the same pages went live meanwhile): exit 3,
+# which the workflow reports as "nothing to push" rather than an error.
+if [ "$(g rev-parse HEAD)" = "$main" ]; then
+  echo "recheck-rebased-flip: main already has the flip; nothing to push" >&2
+  exit 3
+fi
 [ "$(g rev-list --count "$main..HEAD")" = 1 ] || fail "the flip is not exactly one commit on top of main"
 [ "$(g rev-parse HEAD~1)" = "$main" ] || fail "the flip's parent is not main"
 

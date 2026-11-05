@@ -36,7 +36,7 @@ const check = (edit, slugs, today = DUE_DAY) => {
   return spawnSync("bash", [SCRIPT, patch, slugs], {
     cwd: repo,
     encoding: "utf8",
-    env: { ...process.env, FLIP_TODAY: today },
+    env: { ...process.env, FLIP_TEST: "1", FLIP_TODAY: today },
   });
 };
 
@@ -190,7 +190,7 @@ describe("recheck after a rebase", () => {
     spawnSync("bash", [RECHECK, main, slugs, SCRIPT], {
       cwd: repo,
       encoding: "utf8",
-      env: { ...process.env, FLIP_TODAY: DUE_DAY },
+      env: { ...process.env, FLIP_TEST: "1", FLIP_TODAY: DUE_DAY },
     });
 
   test("passes when main gained an unrelated commit, and leaves the flip as one commit on top", () => {
@@ -221,6 +221,31 @@ describe("recheck after a rebase", () => {
     assert.notEqual(r.status, 0);
     assert.match(r.stderr, /exactly one commit on top of main/);
   });
+
+  test("exits 3 (nothing to push) when main already has the same flip", () => {
+    const main = rebasedFlip(() => write("apps/web/content/blog/a-post.md", page("false")));
+    assert.equal(git("rev-parse", "HEAD").trim(), main, "the rebase dropped the flip");
+    const r = recheck(main);
+    assert.equal(r.status, 3, r.stderr);
+    assert.match(r.stderr, /already has the flip/);
+  });
+});
+
+test("ignores FLIP_TODAY unless FLIP_TEST=1 is set too (a stray variable can't make a page due)", () => {
+  const future = (draft) => page(draft).replace(/2026-11-09/g, "2099-01-01");
+  write("apps/web/content/blog/a-post.md", future("true"));
+  git("commit", "-q", "-am", "a page going live in 2099");
+  write("apps/web/content/blog/a-post.md", future("false"));
+  const patch = path.join(repo, "..", "future.patch");
+  spawnSync("sh", ["-c", `git diff --binary -- . > "${patch}"`], { cwd: repo });
+  git("reset", "-q", "--hard");
+  const r = spawnSync("bash", [SCRIPT, patch, "blog/a-post"], {
+    cwd: repo,
+    encoding: "utf8",
+    env: { ...process.env, FLIP_TEST: "", FLIP_TODAY: "2099-01-01" },
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /isn't due/);
 });
 
 test("refuses an empty patch", () => {
