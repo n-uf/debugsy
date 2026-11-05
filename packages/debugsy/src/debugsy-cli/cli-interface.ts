@@ -87,17 +87,17 @@ export const CLI_HELP = `
 🔧 Dependency tracking (every command but off() turns it on)
   debugsy.deps.on()                      Turn tracking on
   debugsy.deps.off()                     Turn tracking off
-  debugsy.deps.quiet()                   Warnings only: functions and objects that keep changing once the app has settled, render and remount warnings
+  debugsy.deps.quiet()                   Warnings only: functions and objects that keep changing after start-up (ends after 5 s with no change), render and remount warnings
   debugsy.deps.normal()                  Quiet, plus each render's changed dependencies and every recreated function and object
   debugsy.deps.verbose()                 Normal, plus each changed primitive value with its old and new value
   debugsy.deps.all()                     Every kind of change
-  debugsy.deps.functionsOnly()           Recreated functions; ones that keep changing count as unstable
-  debugsy.deps.objectsOnly()             Recreated objects and arrays; ones that keep changing count as unstable
+  debugsy.deps.functionsOnly()           Recreated functions; ones that keep changing count as unstable, so Quiet logs none
+  debugsy.deps.objectsOnly()             Recreated objects and arrays; ones that keep changing count as unstable, so Quiet logs none
   debugsy.deps.unstableOnly()            Dependencies that keep changing
   debugsy.deps.reset()                   Back to normal and all
 
 🛑 Emergency
-  debugsy.emergency.activate()           Stop all logging
+  debugsy.emergency.activate()           Log nothing until deactivate()
   debugsy.emergency.deactivate()         Log again
   debugsy.emergency.status()             Whether the stop is on
 

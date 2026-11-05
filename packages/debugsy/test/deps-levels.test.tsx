@@ -1,6 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -10,6 +11,7 @@ import {
   vi,
 } from "vitest";
 import { shouldLogLevel } from "../src/debugsy-deps/deps-filters";
+import { DependencyAdvancedPanel } from "../src/debugsy-look/dependency-advanced-panel";
 import { initializationPhase } from "../src/debugsy-deps/logic/change-tracking";
 import {
   useRenderTracker,
@@ -57,8 +59,10 @@ function advanceClock(ms: number) {
 
 /**
  * One component whose function, object and primitive props change on each
- * of three renders, 200 ms apart, after the app's initialization phase. The
- * second and third changes come fast enough to count as frequent.
+ * of three renders, 200 ms apart. The second and third changes come fast
+ * enough to count as frequent: 200 ms is under the runtime thresholds in
+ * DEPS_CONFIG_DEFAULTS (1 s for functions, 2 s for objects), so the counts
+ * below change if those do.
  */
 function runChangingProps(level: DepsLogLevel): DebugLogEntry[] {
   depsSettingsControls.setLevel(level);
@@ -79,6 +83,10 @@ beforeAll(() => {
   getDebugsy().setConsoleEnabled(false);
 });
 
+afterAll(() => {
+  getDebugsy().setConsoleEnabled(true);
+});
+
 beforeEach(() => {
   getDebugsy().enable("dependencies");
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -94,6 +102,7 @@ afterEach(() => {
   }
   initializationPhase.isActive = true;
   depsSettingsControls.setLevel("normal");
+  depsSettingsControls.setFilter("all");
   getDebugsy().disable("dependencies");
   getGlobalDebugState().logs = [];
   vi.useRealTimers();
@@ -154,6 +163,64 @@ describe("dependency changes per level", () => {
     );
 
     expect(counts).toEqual([0, 4, 9, 12]);
+  });
+
+  it("Quiet logs nothing during start-up: frequent changes are INIT, not warnings", () => {
+    initializationPhase.isActive = true;
+
+    expect(runChangingProps("quiet")).toHaveLength(0);
+
+    const normal = runChangingProps("normal");
+    expect(normal).toHaveLength(9);
+    expect(normal.some((l) => l.message.includes("📋 INIT"))).toBe(true);
+    expect(normal.every((l) => l.level === "info")).toBe(true);
+  });
+
+  it("Quiet with the Functions or Objects filter logs no changes", () => {
+    // Frequent changes count as "unstable", which these filters drop
+    depsSettingsControls.setFilter("functions-only");
+    expect(runChangingProps("quiet")).toHaveLength(0);
+
+    depsSettingsControls.setFilter("objects-only");
+    expect(runChangingProps("quiet")).toHaveLength(0);
+
+    depsSettingsControls.setFilter("unstable-only");
+    expect(runChangingProps("quiet")).toHaveLength(4);
+  });
+});
+
+describe("advanced strip copy", () => {
+  function stripHints(): string[] {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    act(() =>
+      root.render(<DependencyAdvancedPanel showToggle={false} isVisible />)
+    );
+    const hints = [...container.querySelectorAll(".dbg-advanced-hint")].map(
+      (p) => p.textContent ?? ""
+    );
+    act(() => root.unmount());
+    return hints;
+  }
+
+  it("says Quiet with Functions or Objects logs no changes", () => {
+    depsSettingsControls.setLevel("quiet");
+    depsSettingsControls.setFilter("functions-only");
+    const [levelHint, filterHint] = stripHints();
+
+    expect(levelHint).toMatch(/^Warnings only/);
+    expect(filterHint).toBe(
+      "Recreated functions. Ones that keep changing show under Unstable instead. Quiet logs only those, so pick All or Unstable."
+    );
+  });
+
+  it("leaves the note out at Normal and with the Unstable filter", () => {
+    depsSettingsControls.setFilter("functions-only");
+    expect(stripHints()[1]).not.toContain("Quiet logs only those");
+
+    depsSettingsControls.setLevel("quiet");
+    depsSettingsControls.setFilter("unstable-only");
+    expect(stripHints()[1]).not.toContain("Quiet logs only those");
   });
 });
 

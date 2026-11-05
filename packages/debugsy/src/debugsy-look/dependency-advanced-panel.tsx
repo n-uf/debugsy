@@ -27,15 +27,17 @@ interface LevelChoice {
 }
 
 // What each level logs (deps-filters.ts shouldLogLevel, logic/change-utils.ts
-// logPropChange). Quiet keeps the warnings: changes flagged frequent once the
-// initialization phase is over, and useRenderTracker's render and remount
-// warnings. The console help (cli-interface.ts CLI_HELP) says the same.
+// logPropChange). Quiet keeps the warnings: changes flagged frequent after the
+// initialization phase (logic/change-tracking.ts: it ends 5 s after the last
+// tracked change, so a loop that never pauses never leaves it), and
+// useRenderTracker's render and remount warnings. The console help
+// (cli-interface.ts CLI_HELP) says the same.
 const LEVELS: readonly LevelChoice[] = [
   {
     value: "quiet",
     label: "Quiet",
     title: "Warnings only",
-    hint: "Warnings only: functions and objects that keep changing once the app has settled, plus render and remount warnings.",
+    hint: "Warnings only: functions and objects that keep changing after start-up (ends after 5 s with no change), plus render and remount warnings.",
   },
   {
     value: "normal",
@@ -83,6 +85,10 @@ const FILTERS: readonly FilterChoice[] = [
     command: "unstableOnly",
   },
 ];
+
+// analyzeChanges counts a change that keeps changing as "unstable", which these
+// filters drop; Quiet logs nothing else, so the pair logs no changes at all.
+const QUIET_LEAVES_NONE: ReadonlySet<DepsFilter> = new Set(["functions-only", "objects-only"]);
 
 // Dependency log tags counted in the summary; the rest only count in the total.
 const TALLY: ReadonlyArray<{ tags: readonly string[]; one: string; many: string }> = [
@@ -201,7 +207,12 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
                   </Word>
                 ))}
               </div>
-              <p className="dbg-advanced-hint">{filter?.hint ?? setElsewhere(deps.filter)}</p>
+              <p className="dbg-advanced-hint">
+                {filter ? filter.hint : setElsewhere(deps.filter)}
+                {filter && level?.value === "quiet" && QUIET_LEAVES_NONE.has(filter.value)
+                  ? " Quiet logs only those, so pick All or Unstable."
+                  : null}
+              </p>
             </div>
 
             <div className="dbg-advanced-group">
