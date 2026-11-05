@@ -15,7 +15,7 @@ export const TRAY_CSS = `
 .dbg-tray-section[data-separator="true"]{padding-left:10px;border-left:1px solid rgb(var(--dbg-line))}
 .dbg-tray-display{flex:1 1 0;min-width:0}
 .dbg-readout{display:flex;align-items:stretch;flex:1 1 0;min-width:0;height:48px;overflow:hidden;border-radius:var(--dbg-radius);
-  background:rgb(var(--dbg-canvas));box-shadow:inset 0 0 0 1px rgb(var(--dbg-line)),inset 0 1px 3px rgb(0 0 0 / .45)}
+  background:rgb(var(--dbg-canvas));box-shadow:inset 0 0 0 1px rgb(var(--dbg-line)),var(--dbg-well)}
 .dbg-readout-screen{position:relative;display:flex;flex-direction:column;justify-content:center;flex:1 1 0;min-width:0;min-height:0;overflow:hidden;
   padding:0 8px;font-family:var(--dbg-mono);font-size:var(--dbg-fs-small);line-height:1.2;color:rgb(var(--dbg-text))}
 .dbg-readout-rows{display:flex;flex-direction:column;justify-content:center;min-width:0;min-height:0;height:100%}

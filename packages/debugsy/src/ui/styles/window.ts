@@ -8,8 +8,8 @@
 
 export const WINDOW_CSS = `
 .dbg-window{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:stretch;
-  background:rgb(var(--dbg-bg));box-shadow:0 -1px 0 rgb(var(--dbg-line)),0 -14px 36px rgb(0 0 0 / .45)}
-.dbg-window[data-compact="true"]{box-shadow:0 -1px 0 rgb(var(--dbg-line)),0 -4px 14px rgb(0 0 0 / .22)}
+  background:rgb(var(--dbg-bg));box-shadow:0 -1px 0 rgb(var(--dbg-line)),var(--dbg-shadow)}
+.dbg-window[data-compact="true"]{box-shadow:0 -1px 0 rgb(var(--dbg-line)),var(--dbg-shadow-compact)}
 .dbg-edge{position:relative;display:block;width:100%;height:9px;flex:none;cursor:ns-resize;touch-action:none;outline:none;
   background:rgb(var(--dbg-bg));border-bottom:1px solid rgb(var(--dbg-line))}
 .dbg-edge::after{content:"";position:absolute;left:50%;top:3px;width:40px;height:3px;margin-left:-20px;border-radius:2px;
