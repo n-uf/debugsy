@@ -151,10 +151,12 @@ function LeftRail(): React.ReactElement {
 // =============================================================================
 
 function MainStage(): React.ReactElement {
+  // No bottom padding on desktop: the code cards clip themselves, so padding
+  // left a blank band between the last visible card and the panel's top edge.
   return (
     <section
       aria-label="debugsy"
-      className="flex min-h-0 flex-col gap-3 px-5 py-4 lg:overflow-hidden lg:px-8 lg:py-5 xl:px-12 xl:pt-6"
+      className="flex min-h-0 flex-col gap-3 px-5 py-4 lg:overflow-hidden lg:px-8 lg:pt-5 lg:pb-0 xl:px-12 xl:pt-6"
     >
       {/* ── Intro: spec block ────────────────────────────────────── */}
       <header className="flex flex-col gap-1 font-mono">
