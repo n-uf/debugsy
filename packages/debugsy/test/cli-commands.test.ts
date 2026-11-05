@@ -22,6 +22,28 @@ afterEach(() => {
   logSpy.mockRestore();
 });
 
+describe("debugsy.emergency", () => {
+  it("activate() stops all logging until deactivate()", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    debugsy.setConsoleEnabled(false);
+    debugsy.enable("dependencies");
+    const count = () => debugsy.getDebugState().logs.length;
+    const before = count();
+
+    debugsy.emergency.activate();
+    debugsy.log("dependencies", "dropped");
+    debugsy.warn("dependencies", "dropped too");
+    expect(count()).toBe(before);
+
+    debugsy.emergency.deactivate();
+    debugsy.log("dependencies", "kept");
+    expect(count()).toBe(before + 1);
+
+    debugsy.setConsoleEnabled(true);
+    warnSpy.mockRestore();
+  });
+});
+
 describe("debugsy.deps", () => {
   it.each([
     ["quiet", "quiet"],
