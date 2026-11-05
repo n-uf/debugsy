@@ -45,6 +45,18 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
   `@radix-ui/react-slot`).
 - Fixed: opening a module in the tray no longer logs React's "Cannot update a
   component while rendering a different component" error.
+- Light mode and themes: `<DebugsyLook theme="light" />`. `theme` is
+  `"dark"` (default, the look above), `"light"`, `"system"` (dark or light,
+  following the OS's `prefers-color-scheme`), or one of kavun's other looks:
+  `"surface"` (cool grey), `"paper"` (warm) and `"contrast"` (black on
+  white). The `DebugsyTheme` type is exported. In the light themes the
+  log-level, accent and JSON colours are darker than kavun's lamps, so
+  every text colour, dim text included, keeps at least 4.5:1 on its
+  surface. Shadows are tokens now too (`--dbg-shadow`,
+  `--dbg-shadow-compact`, `--dbg-recess`, `--dbg-well`), and the JSON view
+  has its own (`--dbg-json-key`, `-number`, `-string`, `-literal`).
+  `.dbg-root { --dbg-led: … }` still overrides a token in every theme;
+  `.dbg-root[data-dbg-theme="light"] { … }` overrides it in one.
 
 ## 26.11.1
 
