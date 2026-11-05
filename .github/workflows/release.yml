@@ -11,9 +11,11 @@ name: Release
 # Two jobs: `verify` is read-only; `publish` has write access and only runs
 # after `verify` passed. `publish` packs one tarball with pnpm (which applies
 # publishConfig: the published exports point at dist/) and publishes that
-# same file to both registries. GitHub Packages, the tag and the pdf-n-uf
-# notice come first and npmjs last, so a broken npm token can't hold back
-# pdf-n-uf's releases; a re-run then publishes only to npmjs.
+# same file to both registries. The npmjs token is checked first, before
+# anything is published: a missing or broken token stops the run with nothing
+# published. Then GitHub Packages, the tag and the pdf-n-uf notice, and npmjs
+# last, so a later npmjs failure can't hold back pdf-n-uf; a re-run then
+# publishes only to npmjs.
 #
 # Tokens, each exposed only to the steps that need it:
 # - NPM_TOKEN (repo secret): a granular npmjs token with read and write access
@@ -133,6 +135,27 @@ jobs:
             echo "tagged=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Before anything irreversible: when npmjs needs this version, its token
+      # must be set and must sign in, so GitHub Packages and npmjs can't end up
+      # with different builds under one version.
+      - name: Check the npmjs token
+        if: steps.version.outputs.npm == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "$HAS_NPM_TOKEN" != "true" ]; then
+            echo "::error::The NPM_TOKEN secret is not set, so the version can't go to npmjs. Nothing was published."
+            exit 1
+          fi
+          # A config of its own, so the npmjs token never sits in the shared one
+          rc="$RUNNER_TEMP/npmjs.npmrc"
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$rc"
+          if ! user=$(npm whoami --userconfig "$rc" --registry "$NPMJS" 2>&1); then
+            echo "::error::NPM_TOKEN doesn't sign in to npmjs ($user). Nothing was published."
+            exit 1
+          fi
+          echo "::notice::The npmjs token signs in as $user."
+
       - name: Pack
         id: pack
         if: steps.version.outputs.npm == 'true' || steps.version.outputs.github == 'true'
@@ -161,9 +184,11 @@ jobs:
           git tag "v$VERSION"
           git push origin "v$VERSION"
 
-      # Once per version: when this run creates its tag
+      # Once per version: when this run creates its tag. A failed notice
+      # doesn't stop the npmjs publish (send it by hand if it fails).
       - name: Notify pdf-n-uf (lib-released)
         if: steps.version.outputs.tagged == 'false'
+        continue-on-error: true
         env:
           VERSION: ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
@@ -176,20 +201,14 @@ jobs:
             '{event_type: "lib-released", client_payload: {source: "n-uf/debugsy", sha: $sha, packages: [{name: "@n-uf/debugsy", version: $v}]}}' \
             | gh api repos/finfactory/pdf-n-uf/dispatches --method POST --input -
 
-      # Last, so a broken npm token can't hold back GitHub Packages, the tag or
-      # pdf-n-uf; a re-run then publishes here only.
+      # Last, so a failure here (provenance, a registry hiccup) can't hold back
+      # GitHub Packages, the tag or pdf-n-uf; a re-run then publishes here only.
+      # The token was already checked before anything was published.
       - name: Publish to npmjs
         if: steps.version.outputs.npm == 'true'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           TARBALL: ${{ steps.pack.outputs.tarball }}
         run: |
-          if [ "$HAS_NPM_TOKEN" != "true" ]; then
-            echo "::error::The NPM_TOKEN secret is not set, so the version can't be published to npmjs."
-            exit 1
-          fi
-          # A config of its own, so the npmjs token never sits in the shared one
-          rc="$RUNNER_TEMP/npmjs.npmrc"
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$rc"
-          npm publish "$TARBALL" --userconfig "$rc" --access public --provenance \
+          npm publish "$TARBALL" --userconfig "$RUNNER_TEMP/npmjs.npmrc" --access public --provenance \
             --registry "$NPMJS" --@n-uf:registry="$NPMJS"
