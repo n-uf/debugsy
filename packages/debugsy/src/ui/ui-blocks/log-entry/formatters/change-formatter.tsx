@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo } from "react";
-import JsonView from "react18-json-view";
+import { JsonView } from "./json-view";
 import superjson from "superjson";
 import { calculateDelta, formatDelta } from "../../../utils/delta-utils";
 import { createObjectDiff, getDiffSummary } from "../../../utils/diff-utils";

@@ -5,6 +5,22 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 
 ## Unreleased
 
+- Install is `npm i @n-uf/debugsy` and mounting `<DebugsyLook />` from a
+  client component. The package now ships one built ES module with type
+  definitions and a `"use client"` directive, so Next.js needs no
+  `transpilePackages` entry. `react18-json-view` is a dependency now, not a
+  peer you install yourself.
+- Works in Vite apps: reading `NEXT_PUBLIC_SURFACE_DEBUG` no longer assumes
+  a `process` object in the browser. The JSON view also renders where Node
+  loads `react18-json-view` itself (server rendering without a bundler,
+  tests with external dependencies).
+- The "Debugsy System initialized" console line only appears in
+  development.
+- HEALTH works: it prints a health report to the console, and logs it when
+  the `health`, `performance` and `dependencies` points are on. It looked for
+  a `surfaceDebug` global that no longer exists, and the snapshot itself
+  read dependency settings from a field that had moved. Its runtime metrics
+  now log to the built-in `health` point, not an unregistered one.
 - The panel styles itself: no Tailwind, no stylesheet import, no
   `transpilePackages` entry for styles. Its CSS is a scoped `dbg-` stylesheet
   that `<DebugsyLook />` renders as a React 19 hoisted style, so it looks the

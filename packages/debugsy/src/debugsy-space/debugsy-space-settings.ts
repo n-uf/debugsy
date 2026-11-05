@@ -91,14 +91,21 @@ export function initializeDebugSettings(): void {
     });
   }
 
-  // Check environment variables (for development)
-  if (process.env.NODE_ENV === "development") {
+  // Check environment variables (for development). Bundlers like Vite
+  // provide no `process` in the browser, hence the guard.
+  let devDebug: string | undefined;
+  try {
+    devDebug =
+      process.env.NODE_ENV === "development"
+        ? process.env.NEXT_PUBLIC_SURFACE_DEBUG
+        : undefined;
+  } catch {
+    devDebug = undefined;
+  }
+  if (devDebug) {
     // Auto-enable basic debugging in development
-    const devDebug = process.env.NEXT_PUBLIC_SURFACE_DEBUG;
-    if (devDebug) {
-      const points = devDebug.split(",").map((p) => p.trim()) as DebugPoint[];
-      points.forEach((point) => globalDebugState.enabled.add(point));
-    }
+    const points = devDebug.split(",").map((p) => p.trim()) as DebugPoint[];
+    points.forEach((point) => globalDebugState.enabled.add(point));
   }
 }
 

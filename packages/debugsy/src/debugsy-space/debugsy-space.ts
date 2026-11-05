@@ -435,7 +435,7 @@ export function initializeDebugsySpace(): void {
     ...cliInterface,
   } as DebugsySpaceWithCLI;
 
-  if (!isReinit) {
+  if (!isReinit && IS_DEVELOPMENT) {
     console.log("✅ Debugsy System initialized");
   }
 }

@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo } from "react";
-import JsonView from "react18-json-view";
+import { JsonView } from "./json-view";
 import superjson from "superjson";
 import type { LogEntryData } from "../log-entry";
 import type {

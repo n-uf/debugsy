@@ -4,15 +4,15 @@ In-process React debugging panel: structured logs, render and dependency
 tracking, module LEDs and a virtualised log view. https://debugsy.n-uf.com
 
 ```sh
-# .npmrc
-@n-uf:registry=https://npm.pkg.github.com
+npm i @n-uf/debugsy
 ```
 
-```sh
-pnpm add @n-uf/debugsy
-```
+Mount `<DebugsyLook />` from a client component. That's the whole setup: no
+CSS import, no Tailwind, no bundler config.
 
 ```tsx
+"use client";
+
 import { DebugsyLook, dsy, registerModule } from "@n-uf/debugsy";
 
 registerModule("auth", {
@@ -31,36 +31,28 @@ registerModule("auth", {
 // Point keys are bare and shared by all modules: "session", not "auth.session".
 dsy.warn("session", "Session expired", { ttlSeconds: 0 });
 
-export function Root() {
+export function DebugPanel() {
   return <DebugsyLook />;
 }
 ```
+
+Press ⌘+D (Ctrl+D) to show the panel and again to expand it; Esc closes it.
 
 A point logs nothing until it's on: its LED in the panel, `?debug=session` in
 the URL, or `dsy.enable("session")`. In development, a call that names a point
 no module registered warns once in the console.
 
-The package exports only its root. Peer dependencies: `react`, `react-dom` 19
-and `react18-json-view`.
+- **React 19** (`react` and `react-dom` are peer dependencies). Works in the
+  Next.js App Router, Vite and other React 19 apps.
+- **Client only.** The package is marked `"use client"`: import it from client
+  components. Keep it out of production builds by loading it only in
+  development.
+- **Styles itself.** The panel renders its own scoped stylesheet, so it looks
+  the same in a Tailwind app and a plain one, and the app's CSS doesn't leak
+  into it. To retune colours, override the `--dbg-*` tokens on `.dbg-root`.
+- **An ES module** with type definitions, for bundlers (Node 22.12+ can also
+  `require()` it). The package exports only its root (`@n-uf/debugsy/styles`
+  is an empty file kept for older setups).
 
-It ships TypeScript source, and so does its dependency `@n-uf/harbuz`. Next.js
-apps transpile both:
-
-```js
-// next.config.mjs
-const nextConfig = {
-  transpilePackages: ["@n-uf/debugsy", "@n-uf/harbuz"],
-};
-```
-
-The panel is styled with Tailwind v4 classes; no compiled CSS ships. The app
-needs Tailwind v4, with both style entries imported after Tailwind in its
-global stylesheet:
-
-```css
-@import "tailwindcss";
-@import "@n-uf/harbuz/styles"; /* theme variables and utilities */
-@import "@n-uf/debugsy/styles"; /* lets Tailwind see debugsy's classes */
-```
-
-Licence: PolyForm Perimeter 1.0.1.
+Licence: PolyForm Perimeter 1.0.1 (source-available). Third-party notices:
+THIRD_PARTY_NOTICES.md.
