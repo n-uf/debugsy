@@ -45,6 +45,17 @@ jobs:
     environment: publish
     runs-on: ubuntu-latest
     steps:
+      # Without the key, checkout would fall back to the read-only token and only the push would fail,
+      # after the build: stop here instead.
+      - name: Check the deploy key is there
+        env:
+          KEY: ${{ secrets.PUBLISH_DEPLOY_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::PUBLISH_DEPLOY_KEY is not set in the publish environment."
+            exit 1
+          fi
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
@@ -110,8 +121,8 @@ jobs:
               exit 0
             fi
             echo "$out"
-            # Refused by a rule (not because main moved): retrying won't help.
-            if echo "$out" | grep -qiE 'rule violation|protected branch|permission denied|denied to deploy key'; then
+            # Refused by a rule or the key's access (not because main moved): retrying won't help.
+            if grep -qiE 'GH013|rule violations found|declined due to repository rule|protected branch|permission denied|denied to|marked as read only|error: 403' <<<"$out"; then
               echo "::error::The push was refused by a repository rule or the key's access, not a moved main. Nothing was pushed; check the publish deploy key and main's ruleset bypass."
               exit 1
             fi
