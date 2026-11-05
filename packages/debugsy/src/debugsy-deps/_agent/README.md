@@ -35,8 +35,8 @@ useWhyDidYouUpdate('ComponentName', props);
 
 ```javascript
 // 3. ENABLE: Turn on console monitoring
-surfaceDebug.deps.on();
-surfaceDebug.deps.verbose();
+debugsy.deps.on();
+debugsy.deps.verbose();
 
 // 4. LOOK FOR: ⚠️ FREQUENT warnings - these are your culprits!
 ```
@@ -62,7 +62,7 @@ The `⚠️ FREQUENT` warning identifies dependencies that change rapidly - thes
 | `useWhyDidYouUpdate`       | Track prop/dependency changes | `useWhyDidYouUpdate('Component', props)`                           |
 | `useCircuitBreakerTracker` | Emergency render protection   | `useCircuitBreakerTracker('Component', props, { maxRenders: 10 })` |
 | `useRenderTracker`         | Monitor render frequency      | `useRenderTracker('Component', props)`                             |
-| `surfaceDebug.deps.*`      | Console debugging commands    | `surfaceDebug.deps.verbose()`                                      |
+| `debugsy.deps.*`           | Console debugging commands    | `debugsy.deps.verbose()`                                           |
 
 ## 🎯 **Success Metrics**
 

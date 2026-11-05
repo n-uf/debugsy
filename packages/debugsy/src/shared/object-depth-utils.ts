@@ -375,7 +375,8 @@ export function getDepthSettingDescription(setting: DepthSetting): string {
 
 /**
  * Test function to verify string mode handles circular references
- * Can be called from browser console: surfaceDebug.testStringMode()
+ * Exported from the package root (not on the debugsy global): call it from
+ * code, `import { testStringMode } from "@n-uf/debugsy"`
  */
 export function testStringMode(): void {
   console.group("🧪 Testing String Mode with Circular References");
