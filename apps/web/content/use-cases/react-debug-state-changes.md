@@ -6,6 +6,7 @@ mainKeyword: "react debug state change"
 kind: use-case
 published: 2026-11-23
 updated: 2026-11-23
+draft: true
 author: n-uf
 takeaways:
   - "To debug a state change you need three things: when the value changed, what it changed to, and which action caused it."

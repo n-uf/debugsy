@@ -6,6 +6,7 @@ mainKeyword: "useeffect dependency array"
 kind: what-is
 published: 2026-11-09
 updated: 2026-11-09
+draft: true
 author: n-uf
 takeaways:
   - "With no dependency array an effect runs after every commit. With [] it runs after the initial commit only. With [a, b] it runs after the initial commit and after commits where a or b changed."
@@ -97,7 +98,7 @@ useEffect(() => {
 }, [count]);
 ```
 
-In development, Strict Mode re-runs every effect one extra time to find missing cleanup. That extra run doesn't mean your array is wrong. A separate article on [Strict Mode's extra effect run](/blog/useeffect-runs-twice) covers what it checks and how to write a cleanup that passes it.
+In development, Strict Mode re-runs every effect one extra time to find missing cleanup. That extra run doesn't mean your array is wrong. {{live:/blog/useeffect-runs-twice}}A separate article on [Strict Mode's extra effect run](/blog/useeffect-runs-twice) covers what it checks and how to write a cleanup that passes it.{{/live}}
 
 ## Does useEffect need a dependency array?
 
@@ -259,7 +260,7 @@ The Removing Effect Dependencies page shows the message like this:
 React Hook useEffect has a missing dependency: 'roomId'
 ```
 
-React's docs say that by suppressing the rule you "lie" to React about what the effect depends on, and recommend treating the lint error as a compilation error. They add that there's always a better solution than ignoring the linter. When it asks for a dependency that makes the effect run too often, use one of the fixes above. The full message, and the fix when the missing value is a function, `dispatch` or a router's `navigate`, are in [React Hook useEffect has a missing dependency](/blog/useeffect-missing-dependency).
+React's docs say that by suppressing the rule you "lie" to React about what the effect depends on, and recommend treating the lint error as a compilation error. They add that there's always a better solution than ignoring the linter. When it asks for a dependency that makes the effect run too often, use one of the fixes above. {{live:/blog/useeffect-missing-dependency}}The full message, and the fix when the missing value is a function, `dispatch` or a router's `navigate`, are in [React Hook useEffect has a missing dependency](/blog/useeffect-missing-dependency).{{/live}}
 
 ## useEffect dependency array best practices
 

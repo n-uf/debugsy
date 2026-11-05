@@ -6,6 +6,7 @@ mainKeyword: "too many re-renders react"
 kind: how-to
 published: 2026-11-19
 updated: 2026-11-19
+draft: true
 author: n-uf
 takeaways:
   - "React throws \"Too many re-renders. React limits the number of renders to prevent an infinite loop.\" when a component keeps setting state while it renders. A production build shows it as Minified React error #301."

@@ -6,6 +6,7 @@ mainKeyword: "how to use react devtools"
 kind: how-to
 published: 2026-11-30
 updated: 2026-11-30
+draft: true
 author: n-uf
 takeaways:
   - "React's own page says the React Developer Tools browser extension (Chrome, Firefox, Edge) is the easiest way to debug a site built with React, and that you then see Components and Profiler panels."

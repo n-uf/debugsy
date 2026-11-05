@@ -6,6 +6,7 @@ mainKeyword: "debug react in vscode"
 kind: how-to
 published: 2026-12-03
 updated: 2026-12-03
+draft: true
 author: n-uf
 takeaways:
   - "VS Code's page says it includes a built-in debugger for Edge and Chrome. Every launch configuration has a type, request and name; for a browser, url is the address to open and webRoot is used to resolve source maps."

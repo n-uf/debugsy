@@ -5,7 +5,7 @@ h1: "Fix the \"Maximum update depth exceeded\" error in React"
 mainKeyword: "maximum update depth exceeded react"
 kind: how-to
 published: 2026-11-03
-updated: 2026-11-19
+updated: 2026-11-05
 author: n-uf
 takeaways:
   - "React counts nested state updates. In its v19.3.1 source the limit is 50: past it, React throws (Minified React error #185 in production) or, for useEffect in development, logs a console error and lets the loop run on."
@@ -127,13 +127,13 @@ return <button onClick={handleClick()}>Click me</button>
 return <button onClick={handleClick}>Click me</button>
 ```
 
-`onClick={setOpen(true)}` has the same problem: it runs while rendering. The guide to [Too many re-renders in React](/blog/too-many-re-renders) covers the other causes, such as a set call in the component body or inside `map`, and where React's limit of 25 extra passes comes from.
+`onClick={setOpen(true)}` has the same problem: it runs while rendering. {{live:/blog/too-many-re-renders}}The guide to [Too many re-renders in React](/blog/too-many-re-renders) covers the other causes, such as a set call in the component body or inside `map`, and where React's limit of 25 extra passes comes from.{{/live}}
 
 ## How to debug Maximum update depth exceeded in React
 
 Start with the development build. It prints the full message, and when React can name the component it adds a line like `An error occurred in the <Results> component.` (or `The above error occurred in the <Results> component.` if an error boundary caught it), followed by the component stack. In production you get only the error object: the minified message and a JavaScript stack.
 
-Then open the stack. For "Too many re-renders", react.dev's `useState` page tells you to expand the error in the console and look through the JavaScript stack for the `set` call responsible. That works here too. React runs its nested-update check inside the call that schedules the update, so your `set` call is usually in the stack. The same routine of reproducing, reading the stack, pausing and logging works for other bugs too, and there's a guide to [debugging a React app step by step](/blog/how-to-debug-react-app).
+Then open the stack. For "Too many re-renders", react.dev's `useState` page tells you to expand the error in the console and look through the JavaScript stack for the `set` call responsible. That works here too. React runs its nested-update check inside the call that schedules the update, so your `set` call is usually in the stack. {{live:/blog/how-to-debug-react-app}}The same routine of reproducing, reading the stack, pausing and logging works for other bugs too, and there's a guide to [debugging a React app step by step](/blog/how-to-debug-react-app).{{/live}}
 
 If the page still responds, add `console.count("Results effect ran")` to the suspect effect. A count that climbs while nobody touches the page means that effect is in the loop. React Developer Tools helps as well: it adds Components and Profiler panels, and react.dev says it lets you inspect components and edit their props and state.
 
@@ -227,7 +227,7 @@ Or keep the object outside and memoize it, so it changes only when its inputs do
 const filters = useMemo(() => ({ query, limit: 20 }), [query]);
 ```
 
-The `useMemo` page says moving the value inside the effect is even better than memoizing it. Both pages also say to rely on `useMemo` and `useCallback` only as performance optimizations: if the code breaks without them, find the underlying problem first. The article on the [useEffect dependency array](/blog/useeffect-dependency-array) covers how React compares dependencies and the other ways to remove one.
+The `useMemo` page says moving the value inside the effect is even better than memoizing it. Both pages also say to rely on `useMemo` and `useCallback` only as performance optimizations: if the code breaks without them, find the underlying problem first. {{live:/blog/useeffect-dependency-array}}The article on the [useEffect dependency array](/blog/useeffect-dependency-array) covers how React compares dependencies and the other ways to remove one.{{/live}}
 
 ### State copied from props or other state through an effect
 
@@ -378,7 +378,7 @@ It counts renders, not time. A healthy component reaches 20 too, only slowly, so
 
 debugsy warns. It doesn't stop the loop or block a render or a state update. In `onExcessiveRenders` you can log the info or set a flag in a ref, but the code still has to change. React itself throws only on the `componentDidUpdate` and `useLayoutEffect` paths; a loop through `useEffect`, like this one, gets the development warning and keeps going. debugsy also sees only the components where you call its hooks, and only the values you pass in.
 
-One more limit comes from how the hooks work. They log from effects, which run after a commit, so they see loops that go through effects. "Too many re-renders" is thrown while React is still rendering the component (the check is in `renderWithHooksAgain` in React's source), before that render is committed. For that error, go by the component React names in its development log, not by the panel; there's a guide to [finding the call behind that error](/blog/too-many-re-renders).
+One more limit comes from how the hooks work. They log from effects, which run after a commit, so they see loops that go through effects. "Too many re-renders" is thrown while React is still rendering the component (the check is in `renderWithHooksAgain` in React's source), before that render is committed. For that error, go by the component React names in its development log, not by the panel.{{live:/blog/too-many-re-renders}} There's a guide to [finding the call behind that error](/blog/too-many-re-renders).{{/live}}
 
 debugsy is independent and not affiliated with Meta or the React team. It doesn't remove itself from production builds, so guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`. If the loop turns out to be a plain extra render and not an infinite one, the sibling guide on how to [find what causes a re-render in React](/use-cases/why-did-this-component-render/) covers that case.
 

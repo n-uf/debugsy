@@ -6,6 +6,7 @@ mainKeyword: "react js debugging tools"
 kind: best-tools
 published: 2026-11-12
 updated: 2026-11-12
+draft: true
 author: n-uf
 takeaways:
   - "No one tool covers every debugging job in a React app: React Developer Tools shows components, props and state, Chrome DevTools or VS Code handle breakpoints, and render tools like React Scan report re-renders."
@@ -129,7 +130,7 @@ This is React Developer Tools' job. react.dev says to use it to inspect componen
 
 For Safari and other browsers, react.dev has you install the `react-devtools` package, run `react-devtools` in a terminal and add `<script src="http://localhost:8097"></script>` at the start of your page's `<head>`. The package's README says to remove that line before you deploy to production. In React Native, react.dev points to React Native DevTools, the built-in debugger that integrates React Developer Tools.
 
-For a walk through the Components tab, the Profiler and the settings worth turning on, see the guide on [how to use React DevTools](/blog/how-to-use-react-devtools).
+{{live:/blog/how-to-use-react-devtools}}For a walk through the Components tab, the Profiler and the settings worth turning on, see the guide on [how to use React DevTools](/blog/how-to-use-react-devtools).{{/live}}
 
 ## See which components render, and why
 
@@ -176,7 +177,7 @@ Put your dev server's port in `url`, and replace `msedge` with `chrome` to debug
 
 A breakpoint shows one moment. "This renders more than I expect" needs something that records over time.
 
-[A walkthrough of debugging a React app](/blog/how-to-debug-react-app) shows where breakpoints fit alongside reading the error, React DevTools, logging and production builds.
+{{live:/blog/how-to-debug-react-app}}[A walkthrough of debugging a React app](/blog/how-to-debug-react-app) shows where breakpoints fit alongside reading the error, React DevTools, logging and production builds.{{/live}}
 
 ## Watch network requests and app state
 
@@ -186,7 +187,7 @@ Reactotron is a different shape: a desktop app (macOS, Linux and Windows builds 
 
 ## Log what happened
 
-Chrome's Console panel shows messages and runs JavaScript. Reactotron has `Reactotron.log`. To pick a logger for the browser, our [React logging library](/blog/react-logging-library) comparison covers `debug`, `loglevel`, `pino`, `consola` and debugsy. debugsy has named debug points, next.
+Chrome's Console panel shows messages and runs JavaScript. Reactotron has `Reactotron.log`. {{live:/blog/react-logging-library}}To pick a logger for the browser, our [React logging library](/blog/react-logging-library) comparison covers `debug`, `loglevel`, `pino`, `consola` and debugsy.{{/live}} debugsy has named debug points, next.
 
 ## Where debugsy fits, and what it doesn't do
 
@@ -235,7 +236,7 @@ Next.js has its own debugging guide (v16.4.5 on the page we read, last updated A
 
 For VS Code, the guide gives a `.vscode/launch.json` with configurations named "Next.js: debug server-side" (it runs `npm run dev -- --inspect`), "Next.js: debug client-side" and "Next.js: debug full stack". For client code in Chrome, open the Sources tab; when you search, your files have paths starting with `webpack://_N_E/./`. For server code, start the dev server with `--inspect`, open `chrome://inspect` and pick your app under Remote Target. On a server error, the error overlay shows a Node.js icon; clicking it copies a DevTools URL you can open to inspect the server.
 
-For React-specific inspection, the guide points to the React Developer Tools extension. The render tools above work in a Next.js app too: React Scan's README has App Router and Pages Router examples, and debugsy renders from a Client Component. Our walkthrough on how to [debug a Next.js app](/blog/debug-next-js-app) covers the server, browser and VS Code routes from that guide, and where logs show up.
+For React-specific inspection, the guide points to the React Developer Tools extension. The render tools above work in a Next.js app too: React Scan's README has App Router and Pages Router examples, and debugsy renders from a Client Component. {{live:/blog/debug-next-js-app}}Our walkthrough on how to [debug a Next.js app](/blog/debug-next-js-app) covers the server, browser and VS Code routes from that guide, and where logs show up.{{/live}}
 
 ## React DevTools alternatives
 

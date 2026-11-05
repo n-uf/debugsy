@@ -102,7 +102,7 @@ Count the entries and you have the React DevTools render count for that componen
 
 The Profiler covers only the session you record, and you read the number by eye, so a test can't check it. Tick "Record why each component rendered while profiling" in the Profiler settings first, and the same session also says [why a component rendered](/use-cases/why-did-this-component-render).
 
-For the rest of the tab (the commits, the Flamegraph and Ranked views, the settings), see this walkthrough of the [React DevTools Profiler](/blog/how-to-use-react-devtools).
+{{live:/blog/how-to-use-react-devtools}}For the rest of the tab (the commits, the Flamegraph and Ranked views, the settings), see this walkthrough of the [React DevTools Profiler](/blog/how-to-use-react-devtools).{{/live}}
 
 ## A useRef counter you paste in
 
@@ -168,7 +168,7 @@ Every keystroke sets `query`, so `SearchPage` renders, and by default every row 
 | Rows wrapped in `memo`, `onSelect` still an inline function | 6 |
 | Rows wrapped in `memo`, `onSelect` wrapped in `useCallback` | 1 |
 
-The middle row is the one that teaches something. The `memo` page says it compares props with `Object.is` and is useless when you pass a plain function defined during rendering, since every render makes a new one. [`useCallback`](https://react.dev/reference/react/useCallback) gives you the same function until its dependencies change, and then `memo` can skip the rows. Moving state down and passing `children` bring the number down too; the guide on how to [prevent re-renders in React](/blog/prevent-re-renders-react) takes them in order.
+The middle row is the one that teaches something. The `memo` page says it compares props with `Object.is` and is useless when you pass a plain function defined during rendering, since every render makes a new one. [`useCallback`](https://react.dev/reference/react/useCallback) gives you the same function until its dependencies change, and then `memo` can skip the rows. {{live:/blog/prevent-re-renders-react}}Moving state down and passing `children` bring the number down too; the guide on how to [prevent re-renders in React](/blog/prevent-re-renders-react) takes them in order.{{/live}}
 
 ## React's Profiler component counts commits in code
 
@@ -251,7 +251,7 @@ Some details from the code:
 How many is too many depends on the interaction. Five renders of the component that holds the input, for five characters, is expected. Five renders of a row that doesn't show the query is worth a look.
 
 - Run the same interaction each time, from a fresh load. Write the number down, change one thing, run it again, as in the table above.
-- Don't chase every number. The Render and Commit page says rendering everything nested inside an updated component isn't optimal for performance when that component is high in the tree, and also tells you not to optimize prematurely. To tell an expected render from a surplus one, check the rules for [what makes React render again](/blog/when-does-react-re-render).
+- Don't chase every number. The Render and Commit page says rendering everything nested inside an updated component isn't optimal for performance when that component is high in the tree, and also tells you not to optimize prematurely. {{live:/blog/when-does-react-re-render}}To tell an expected render from a surplus one, check the rules for [what makes React render again](/blog/when-does-react-re-render).{{/live}}
 - A count that keeps climbing while nobody touches the page is a loop.
 
 A count tells you where to look, not why. To see which prop, state or context did it, read how to [find what causes a re-render in React](/use-cases/why-did-this-component-render).
@@ -272,7 +272,7 @@ Two other tools look at the whole tree without a hook in each component:
 - React Render Tracker. Its README describes a tool for finding performance issues related to unintended re-renders, showing the component tree over time with each component's number of updates (re-renders). It supports React 16.9 and later: fully functional on a development build, missing some data on profiling and production builds. It calls itself a complement to React DevTools, not a replacement.
 - React Scan. Its README says it detects performance issues with no code changes and puts a toolbar on the page. Its `log` option, off by default, logs renders to the console. You start it with `npx -y react-scan@latest init` or a script tag. The README also says you can still use React Scan, but recommends React Doctor.
 
-Both tools, and the rest of the toolbox from breakpoints to network panels, are sorted by job in [this overview of debugging tools](/blog/react-debugging-tools).
+{{live:/blog/react-debugging-tools}}Both tools, and the rest of the toolbox from breakpoints to network panels, are sorted by job in [this overview of debugging tools](/blog/react-debugging-tools).{{/live}}
 
 They make more sense when you don't know yet which component to count, or don't want to edit components. A ref counter or debugsy makes more sense once you know which components matter and want the number in your own code or log.
 

@@ -6,6 +6,7 @@ mainKeyword: "prevent re render react"
 kind: how-to
 published: 2026-11-26
 updated: 2026-11-26
+draft: true
 author: n-uf
 takeaways:
   - "Check that a re-render costs something before you fix it. React's memo page says memoizing pays off only when a component re-renders often with the same props and its rendering is expensive."
