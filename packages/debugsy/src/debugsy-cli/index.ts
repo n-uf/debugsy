@@ -14,7 +14,7 @@
  *
  * Usage:
  *   debugsy.help()           - Show all available commands
- *   debugsy.status()         - Quick status check
+ *   debugsy.status.status()  - Quick status check
  *   debugsy.deps.verbose()   - Enable detailed dependency tracking
  */
 
