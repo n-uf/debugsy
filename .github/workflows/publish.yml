@@ -15,9 +15,11 @@ name: Publish due pages
 #          installs and builds, and only then hands the patch over (an artifact kept 1 day).
 #   push   gets the key (the `publish` environment). It runs git and first-party actions only: no node, no
 #          pnpm. It applies the patch to a fresh checkout of the commit that was built, and
-#          apps/web/scripts/check-flip-patch.sh refuses it unless every change is a `draft: true` ->
-#          `draft: false` line in an existing content page. Then it commits and pushes over SSH, every git
-#          command with hooks off (core.hooksPath=/dev/null).
+#          apps/web/scripts/check-flip-patch.sh refuses it unless every change is the front-matter
+#          `draft: true` -> `draft: false` line of an existing content page that is due (published on or
+#          before today, UTC). Then it commits and pushes over SSH, every git command with hooks off
+#          (core.hooksPath=/dev/null). Only the page list and the patch cross from build to push; both jobs
+#          check out github.sha, so the build can't choose the commit or the guard script the push uses.
 #
 # main is protected by ruleset 26622833 (required checks "lint / check-types / build" and "Vercel", no
 # force-push, no deletion), which only deploy keys bypass. The push uses the write deploy key "publish-bot
@@ -50,6 +52,11 @@ concurrency:
 permissions:
   contents: read
 
+# bash -eo pipefail for every step: a failing command in a pipe fails the step.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Flip due drafts and build
@@ -59,35 +66,28 @@ jobs:
     permissions:
       contents: read
       packages: read
+    # Only the page list crosses to the push job (with the patch); no commit id does. Both jobs check out
+    # github.sha, the main commit this run was started on, so the build can't steer what the push job checks
+    # out or which guard script it runs.
     outputs:
       slugs: ${{ steps.flip.outputs.slugs }}
-      base: ${{ steps.base.outputs.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Remember the commit that is built
-        id: base
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-
+      # Node only for the first-party flip script; no cache restored yet.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
-          # Writes a user-level .npmrc with the registry token: pnpm ignores
-          # ${ENV} tokens from the project .npmrc.
-          registry-url: https://npm.pkg.github.com
-          scope: "@n-uf"
 
       # Prints the due pages, `blog/a, use-cases/b`, or nothing (first-party script, Node built-ins only).
       - name: Flip the drafts that are due
         id: flip
         run: |
-          slugs=$(node apps/web/scripts/publish-due.mjs | paste -sd, - | sed 's/,/, /g')
+          due=$(node apps/web/scripts/publish-due.mjs)
+          slugs=$(printf '%s\n' "$due" | paste -sd, - | sed 's/,/, /g')
           echo "slugs=$slugs" >> "$GITHUB_OUTPUT"
           if [ -z "$slugs" ]; then
             echo "::notice::No draft is due today (UTC), so nothing is committed."
@@ -99,6 +99,20 @@ jobs:
       - name: Save the flip as a patch
         if: steps.flip.outputs.slugs != ''
         run: git diff --binary -- apps/web/content > "$RUNNER_TEMP/flip.patch"
+
+      # Third-party code from here on: pnpm, the dependency cache, the install and the build.
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.flip.outputs.slugs != ''
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.flip.outputs.slugs != ''
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          # Writes a user-level .npmrc with the registry token: pnpm ignores
+          # ${ENV} tokens from the project .npmrc.
+          registry-url: https://npm.pkg.github.com
+          scope: "@n-uf"
 
       - name: Install
         if: steps.flip.outputs.slugs != ''
@@ -142,11 +156,11 @@ jobs:
             exit 1
           fi
 
-      # The commit the build job built, with the read-only token and no stored credentials; full history
-      # for the rebase.
+      # The main commit this run started on (the one the build job built), with the read-only token and
+      # no stored credentials; full history for the rebase. The guard script comes from this checkout.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ needs.build.outputs.base }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -163,6 +177,10 @@ jobs:
         run: |
           git -c core.hooksPath=/dev/null switch -q -c publish-flip
           message=$(bash apps/web/scripts/check-flip-patch.sh "$RUNNER_TEMP/flip/flip.patch" "$SLUGS")
+          if [[ "$message" != "publish: "* || "$message" == *$'\n'* ]]; then
+            echo "::error::The flip check printed an unexpected commit message."
+            exit 1
+          fi
           git -c core.hooksPath=/dev/null -c user.name="github-actions[bot]" \
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "$message"
           git -c core.hooksPath=/dev/null log --stat -1
@@ -190,7 +208,8 @@ jobs:
             printf '%s\n' "$key" > "$keydir/key"
             chmod 600 "$keydir/key"
             umask "$old_umask"
-            GIT_SSH_COMMAND="/usr/bin/ssh -i $keydir/key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$keydir/known_hosts" \
+            # -F /dev/null and the rest: no ~/.ssh/config, agent, proxy or system known_hosts.
+            GIT_SSH_COMMAND="/usr/bin/ssh -F /dev/null -i '$keydir/key' -o IdentitiesOnly=yes -o IdentityAgent=none -o ProxyCommand=none -o BatchMode=yes -o StrictHostKeyChecking=yes -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile='$keydir/known_hosts'" \
               "$@" || rc=$?
             rm -f "$keydir/key"
             return "$rc"
