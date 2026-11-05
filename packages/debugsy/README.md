@@ -50,6 +50,9 @@ no module registered warns once in the console.
 - **Styles itself.** The panel renders its own scoped stylesheet, so it looks
   the same in a Tailwind app and a plain one, and the app's CSS doesn't leak
   into it. To retune colours, override the `--dbg-*` tokens on `.dbg-root`.
+- **Light or dark.** `<DebugsyLook theme="light" />`: `"dark"` (default),
+  `"light"`, `"system"` (follows the OS), `"surface"` (cool grey), `"paper"`
+  (warm) or `"contrast"` (black on white).
 - **An ES module** with type definitions, for bundlers (Node 22.12+ can also
   `require()` it). The package exports only its root (`@n-uf/debugsy/styles`
   is an empty file kept for older setups).
