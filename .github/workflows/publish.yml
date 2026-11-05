@@ -10,7 +10,9 @@ name: Publish due pages
 #
 # The push goes over SSH with the write deploy key "publish-bot (scheduled publishing)" (secret
 # PUBLISH_DEPLOY_KEY): main's ruleset requires CI on every other push, and deploy keys bypass it. This
-# job's own build is the check for the bot's commit.
+# job's own build is the check for the bot's commit. The key can write the whole repo, so its secret
+# lives only in the `publish` environment, whose deployment branches are limited to main: a run from
+# any other branch (a workflow_dispatch of an edited copy of this file) gets no key.
 #
 # A deploy-key push, unlike a GITHUB_TOKEN push, starts other workflows: release.yml runs on the push to
 # main. It publishes, tags and notifies only when packages/debugsy's version is new, and a publish
@@ -39,6 +41,8 @@ jobs:
   publish:
     name: Flip due drafts, build, push
     if: github.repository == 'n-uf/debugsy'
+    # Holds PUBLISH_DEPLOY_KEY; only runs on main may use it (see the header).
+    environment: publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -100,9 +104,16 @@ jobs:
           git add apps/web/content
           git commit -m "$MESSAGE"
           for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
+            if out=$(git push origin HEAD:main 2>&1); then
+              echo "$out"
               echo "::notice::Pushed: $MESSAGE"
               exit 0
+            fi
+            echo "$out"
+            # Refused by a rule (not because main moved): retrying won't help.
+            if echo "$out" | grep -qiE 'rule violation|protected branch|permission denied|denied to deploy key'; then
+              echo "::error::The push was refused by a repository rule or the key's access, not a moved main. Nothing was pushed; check the publish deploy key and main's ruleset bypass."
+              exit 1
             fi
             if [ "$attempt" -eq 3 ]; then
               break
