@@ -94,6 +94,9 @@ export interface DebugsyLookProps {
 /** Copy state 0 / 1 / 2 as a progress value */
 const COPY_PROGRESS = [0, 50, 100] as const;
 
+/** The least room the height cap leaves for the chrome: the resize edge (~10px) and a one-row tray (~60px) */
+const SHELL_CHROME_PX = 80;
+
 /**
  * DebugsyLookInternal - Core implementation
  * (Wrapped by DisplayQueueProvider in the exported component)
@@ -264,28 +267,41 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
   //
   // `bodyHeight` (= `panelHeight`) is the height of the LOG VIEWPORT inside
   // the window — the window adds its resize edge above the body and the
-  // control tray below it, both with intrinsic heights summing to about
-  // `SHELL_CHROME_PX`. To keep the WHOLE panel within the visible window
-  // (so the resize edge stays reachable at the top), we cap `panelHeight` at
-  // `window.innerHeight - SHELL_CHROME_PX`.
+  // control tray below it: the chrome. To keep the WHOLE panel within the
+  // visible window (so the resize edge stays reachable at the top), we cap
+  // `panelHeight` at `window.innerHeight` minus the chrome: the chrome the
+  // window measures, and never less than `SHELL_CHROME_PX`. On a narrow
+  // panel the tray wraps into rows and the chrome grows past it.
   //
   // Tracking `window.innerHeight` via a `resize` listener (rather than
   // calling it in render and capturing a stale snapshot) lets the cap follow
   // browser-window resizes.
-  const SHELL_CHROME_PX = 80; // resize edge (~10) + control tray (~60)
-  const [maxPanelHeight, setMaxPanelHeight] = useState<number>(() =>
-    typeof window !== "undefined"
-      ? Math.max(0, window.innerHeight - SHELL_CHROME_PX)
-      : 800,
+  const [viewportHeight, setViewportHeight] = useState<number>(() =>
+    typeof window !== "undefined" ? window.innerHeight : 800 + SHELL_CHROME_PX,
   );
+  const [chromeHeight, setChromeHeight] = useState(SHELL_CHROME_PX);
+  const maxPanelHeight = Math.max(0, viewportHeight - chromeHeight);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const update = (): void =>
-      setMaxPanelHeight(Math.max(0, window.innerHeight - SHELL_CHROME_PX));
+    const update = (): void => setViewportHeight(window.innerHeight);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+  useEffect(() => {
+    const shell = containerRef.current?.querySelector<HTMLElement>(".dbg-window");
+    if (!shell) return;
+    const measure = (): void => {
+      const body = shell.querySelector<HTMLElement>(".dbg-body");
+      // Compact mode has no body: keep the last measure
+      if (!body) return;
+      setChromeHeight(Math.max(SHELL_CHROME_PX, shell.offsetHeight - body.offsetHeight));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(shell);
+    return () => ro.disconnect();
+  }, [isVisible]);
 
   const {
     height: panelHeight,
@@ -297,6 +313,15 @@ const DebugsyLookInternal: React.FC<DebugsyLookProps> = ({
     minHeight: 0,
     maxHeight: maxPanelHeight,
   });
+
+  // A tray that grew past one row after the height was chosen (a module whose
+  // words wrap into more rows) lowers the cap: bring the height down with it.
+  // With a one-row tray the cap is today's, and a height above it is kept.
+  useEffect(() => {
+    if (chromeHeight > SHELL_CHROME_PX && panelHeight > maxPanelHeight) {
+      setPanelHeight(maxPanelHeight);
+    }
+  }, [chromeHeight, panelHeight, maxPanelHeight, setPanelHeight]);
 
   // Publish the panel's *rendered* height as `--debugsy-panel-h` on
   // `documentElement` so the host page can reserve the matching footprint:
