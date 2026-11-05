@@ -47,7 +47,7 @@ export const LOG_CSS = `
 .dbg-log-row:hover .dbg-log-chev{color:rgb(var(--dbg-led))}
 .dbg-log-time{flex:none;min-width:62px;font-size:var(--dbg-fs-chrome);letter-spacing:.02em;color:rgb(var(--dbg-dim));
   font-variant-numeric:tabular-nums}
-.dbg-log-point{flex:none;display:flex;align-items:center;gap:3px;min-width:0;max-width:120px;color:rgb(var(--dbg-led) / .85)}
+.dbg-log-point{flex:none;display:flex;align-items:center;gap:3px;min-width:0;max-width:120px;color:rgb(var(--dbg-led))}
 .dbg-log-point>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .dbg-log-tags{flex:none;display:flex;align-items:center;gap:3px;max-width:140px;overflow:hidden}
 .dbg-log-tag{flex:none;display:inline-flex;align-items:center;height:15px;padding:0 4px;border-radius:var(--dbg-radius);
@@ -146,7 +146,7 @@ export const LOG_CSS = `
 .dbg-root .json-view .jv-chevron{display:inline-block;vertical-align:-20%;width:1em;height:1em;cursor:pointer;opacity:.4;
   color:rgb(var(--dbg-dim))}
 .dbg-root .json-view .jv-chevron:hover,.dbg-root .json-view .jv-size:hover+.jv-chevron{opacity:.9;color:rgb(var(--dbg-led))}
-.dbg-root .json-view .jv-size{margin-left:.5em;cursor:pointer;opacity:.55;font-size:.875em;font-style:normal;line-height:1;
+.dbg-root .json-view .jv-size{margin-left:.5em;cursor:pointer;font-size:.875em;font-style:normal;line-height:1;
   vertical-align:-5%;color:rgb(var(--dbg-dim));font-variant-numeric:tabular-nums}
 .dbg-root .json-view :is(.json-view--copy,.json-view--edit),.dbg-root .json-view .json-view--link svg{display:none;width:1em;height:1em;
   margin-left:.25em;cursor:pointer;color:rgb(var(--dbg-dim));vertical-align:-10%}

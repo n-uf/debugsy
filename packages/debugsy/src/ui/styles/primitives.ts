@@ -42,7 +42,7 @@ export const PRIMITIVES_CSS = `
 .dbg-fill{position:absolute;left:0;bottom:0;height:2px;background:rgb(var(--dbg-led));box-shadow:0 0 5px rgb(var(--dbg-led) / .8);
   transition:width .3s ease;pointer-events:none}
 .dbg-word[data-tone="caution"] .dbg-fill{background:rgb(var(--dbg-caution));box-shadow:0 0 5px rgb(var(--dbg-caution) / .8)}
-.dbg-count{font-size:calc(var(--dbg-fs-chrome) - .5px);letter-spacing:.02em;font-variant-numeric:tabular-nums;opacity:.85}
+.dbg-count{font-size:calc(var(--dbg-fs-chrome) - .5px);letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .dbg-signal{width:6px;height:6px;border-radius:50%;flex:none;background:rgb(var(--dbg-led));box-shadow:0 0 6px rgb(var(--dbg-led));
   animation:dbg-k-signal 1.4s ease-in-out infinite}
 .dbg-lamp{display:inline-block;width:7px;height:7px;border-radius:50%;flex:none;background:rgb(var(--dbg-led-off));

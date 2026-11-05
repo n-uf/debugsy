@@ -24,7 +24,7 @@ export const WINDOW_CSS = `
 .dbg-actions{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:64px;height:100%;padding:6px 4px}
 .dbg-depth{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:0 0 6px;margin:0 0 3px;border-bottom:1px solid rgb(var(--dbg-line))}
 .dbg-depth-label{font-family:var(--dbg-font);font-size:9px;text-transform:uppercase;letter-spacing:.08em;text-align:center;
-  color:rgb(var(--dbg-dim));text-shadow:var(--dbg-engrave);opacity:.8}
+  color:rgb(var(--dbg-dim));text-shadow:var(--dbg-engrave)}
 .dbg-word.dbg-depth-word{flex-direction:column;gap:4px;height:auto;padding:4px 2px}
 .dbg-sidebar{flex:none;width:220px;height:100%;display:flex;flex-direction:column;align-items:stretch;overflow-x:hidden;overflow-y:auto;
   background:rgb(var(--dbg-raised));border-left:1px solid rgb(var(--dbg-line))}

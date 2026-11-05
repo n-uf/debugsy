@@ -42,6 +42,6 @@ export const BASE_CSS = `
 .dbg-root :where(pre,code,kbd,samp){font-family:var(--dbg-mono);font-size:1em;background:transparent}
 .dbg-root :where(b,strong){font-weight:bolder}
 .dbg-root :where(a){color:inherit;text-decoration:inherit}
-.dbg-root ::placeholder{color:rgb(var(--dbg-dim) / .75);opacity:1}
+.dbg-root ::placeholder{color:rgb(var(--dbg-dim));opacity:1}
 @media (prefers-reduced-motion:reduce){.dbg-root *,.dbg-root ::before,.dbg-root ::after{animation:none!important;transition:none!important}}
 `;

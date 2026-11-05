@@ -89,6 +89,19 @@ describe("stylesheet", () => {
     expect([...used].filter((token) => !declared.has(token))).toEqual([]);
   });
 
+  it("fades no text: text colours are tokens at full strength", () => {
+    expect(DEBUGSY_CSS).not.toMatch(/(?<![\w-])color:rgb\(var\(--dbg-[\w-]+\) \//);
+    // Opacity is for icons and disabled controls only
+    const faded = [...DEBUGSY_CSS.matchAll(/([^{}]+)\{[^}]*(?<![\w-])opacity:\.\d/g)]
+      .map((m) => m[1]!.trim())
+      .filter((selector) => !/^(\d+%|from|to)$/.test(selector)); // keyframes
+    expect(faded).toEqual([
+      ".dbg-word:disabled",
+      ".dbg-root .json-view .jv-chevron",
+      ".dbg-root .json-view .jv-chevron:hover,.dbg-root .json-view .jv-size:hover+.jv-chevron",
+    ]);
+  });
+
   it("keeps literal shadows and colours in the themes fragment", () => {
     const { themes: _themes, ...rest } = DEBUGSY_CSS_FRAGMENTS;
     for (const [part, css] of Object.entries(rest)) {
