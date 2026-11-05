@@ -119,7 +119,11 @@ export function getChangeIndicators(
 }
 
 /**
- * Log a single prop change with appropriate formatting and severity
+ * Log a single prop change with appropriate formatting and severity.
+ * Functions and objects log as warnings when they change often at runtime
+ * (shouldWarn), as info otherwise; the logger drops info at Quiet
+ * (shouldLogLevel). Verbose and Debug add primitive changes; Debug adds the
+ * object values.
  */
 export function logPropChange(name: string, propChange: PropChange): void {
   const { key, change, type, isStable, trackingInfo } = propChange;
@@ -164,7 +168,8 @@ export function logPropChange(name: string, propChange: PropChange): void {
 }
 
 /**
- * Log all dependency changes with summary and detailed logs
+ * Log all dependency changes with summary and detailed logs. The summary is
+ * info, so Quiet leaves it out (shouldLogLevel).
  */
 export function logDependencyChanges(
   name: string,
