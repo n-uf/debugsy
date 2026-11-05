@@ -162,4 +162,12 @@ export const LOG_CSS = `
 .dbg-root .json-view .cursor-pointer{cursor:pointer}
 .dbg-root .json-view svg{vertical-align:-10%}
 .dbg-root .json-view .jv-size-chevron~svg{vertical-align:-16%}
+
+/* A narrow log list (the list is its own dbg-logs container): rows drop their tags, which the sidebar's
+   tag filter still lists, so the message keeps room beside the time and the point */
+.dbg-log-scroll{container:dbg-logs / inline-size}
+@container dbg-logs (width < 440px){
+  .dbg-log-tags{display:none}
+  .dbg-log-point{max-width:88px}
+}
 `;
