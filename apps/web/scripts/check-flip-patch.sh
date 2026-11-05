@@ -45,14 +45,21 @@ drafts=$(printf '%s\n' "$removed" | grep -c -E '^-draft:[[:space:]]*true([[:spac
 
 # Each flipped line is the page's own `draft:` line, inside its front matter (not a `draft: true` in the
 # body, a code sample say), and the page is due: its `published` day (UTC) is today or earlier.
+# Every reader below consumes its whole input (no early `exit`, `q` or `head`): under pipefail, a reader
+# that quits early kills `git show` with SIGPIPE on a page larger than the pipe buffer.
 while IFS= read -r f; do
-  changed=$(g diff --cached -U0 --no-color -- "$f" | sed -n -E 's/^@@ -([0-9]+).*/\1/p' | head -n 1)
-  front_end=$(g show "HEAD:$f" | awk 'NR == 1 { if ($0 !~ /^---[[:space:]]*$/) exit } NR > 1 && /^---[[:space:]]*$/ { print NR; exit }')
+  changed=$(g diff --cached -U0 --no-color -- "$f" | awk '!n && match($0, /^@@ -[0-9]+/) { n = substr($0, 5, RLENGTH - 4) } END { print n }')
+  # Plain POSIX awk (GitHub's runners use mawk): no character classes, no escapes beyond \t and \r.
+  front_end=$(g show "HEAD:$f" | awk 'NR == 1 && $0 !~ /^---[ \t\r]*$/ { bad = 1 } NR > 1 && !bad && !end && /^---[ \t\r]*$/ { end = NR } END { if (end) print end }')
   [ -n "$front_end" ] || fail "$f has no front matter"
   [ -n "$changed" ] && [ "$changed" -gt 1 ] && [ "$changed" -lt "$front_end" ] ||
     fail "$f: the flipped line ($changed) is outside the front matter (lines 2-$((front_end - 1)))"
-  published=$(g show "HEAD:$f" | awk -v end="$front_end" 'NR > 1 && NR < end' |
-    sed -n -E "s/^published:[[:space:]]*[\"']?([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/p" | head -n 1)
+  published=$(g show "HEAD:$f" | awk -v end="$front_end" -v q="'" '
+    NR > 1 && NR < end && !p && /^published:/ {
+      s = $0; sub(/^published:[ \t]*/, "", s); gsub(/"/, "", s); gsub(q, "", s); s = substr(s, 1, 10)
+      if (s ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) p = s
+    }
+    END { print p }')
   [ -n "$published" ] || fail "$f has no published day"
   [[ ! "$published" > "$today" ]] || fail "$f isn't due: published $published is after today, $today (UTC)"
 done <<<"$files"

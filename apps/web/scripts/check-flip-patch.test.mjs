@@ -132,6 +132,33 @@ test("refuses pages other than the ones the build reported", () => {
   assert.match(r.stderr, /not the pages the build job reported/);
 });
 
+test("accepts a flip on a page larger than the pipe buffer (no SIGPIPE under pipefail)", () => {
+  const long = `\n${"A long paragraph of text that makes the page big. ".repeat(3000)}\n`;
+  write("apps/web/content/blog/a-post.md", page("true", "", long));
+  git("commit", "-q", "-am", "long page");
+  const r = check(() => write("apps/web/content/blog/a-post.md", page("false", "", long)), "blog/a-post");
+  assert.ok(fs.statSync(path.join(repo, "apps/web/content/blog/a-post.md")).size > 100_000);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.trim(), "publish: blog/a-post");
+});
+
+test("accepts a quoted published day and refuses a flip with no published day", () => {
+  write("apps/web/content/blog/a-post.md", page("true").replace("published: 2026-11-09", 'published: "2026-11-09"'));
+  write("apps/web/content/use-cases/b-case.md", page("true").replace("published: 2026-11-09\n", ""));
+  git("commit", "-q", "-am", "quoted and missing dates");
+  const ok = check(
+    () => write("apps/web/content/blog/a-post.md", page("false").replace("published: 2026-11-09", 'published: "2026-11-09"')),
+    "blog/a-post",
+  );
+  assert.equal(ok.status, 0, ok.stderr);
+  const bad = check(
+    () => write("apps/web/content/use-cases/b-case.md", page("false").replace("published: 2026-11-09\n", "")),
+    "use-cases/b-case",
+  );
+  assert.notEqual(bad.status, 0);
+  assert.match(bad.stderr, /no published day/);
+});
+
 test("refuses an empty patch", () => {
   const r = check(() => {}, "blog/a-post");
   assert.notEqual(r.status, 0);
