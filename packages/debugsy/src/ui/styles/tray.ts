@@ -6,14 +6,22 @@
  * frame, monospace rows. A row's tone (ok, warn, caution, led) is a
  * `data-tone` attribute that tints its message; lamps and meters take the
  * tone themselves.
+ *
+ * The row wraps: the readout keeps at least 240px and drops to a row of its
+ * own when less is left. On a narrow panel (the `dbg-panel` container below
+ * 720px, where a module's point list can be wider than the panel) the first
+ * section (the point list) takes the first row, with a
+ * hairline under it in place of the separators, and its words wrap; the
+ * dependency words run on one line, or two where one doesn't fit, and the
+ * readout shares their row or takes the next.
  */
 
 export const TRAY_CSS = `
 .dbg-tray{flex:none;min-width:0;background:rgb(var(--dbg-bg));border-top:1px solid rgb(var(--dbg-line))}
-.dbg-tray-row{display:flex;align-items:stretch;gap:10px;min-width:0;padding:6px 10px}
+.dbg-tray-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px 10px;min-width:0;padding:6px 10px}
 .dbg-tray-section{display:flex;align-items:stretch;min-width:0}
 .dbg-tray-section[data-separator="true"]{padding-left:10px;border-left:1px solid rgb(var(--dbg-line))}
-.dbg-tray-display{flex:1 1 0;min-width:0}
+.dbg-tray-display{flex:1 1 240px;min-width:0}
 .dbg-readout{display:flex;align-items:stretch;flex:1 1 0;min-width:0;height:48px;overflow:hidden;border-radius:var(--dbg-radius);
   background:rgb(var(--dbg-canvas));box-shadow:inset 0 0 0 1px rgb(var(--dbg-line)),var(--dbg-well)}
 .dbg-readout-screen{position:relative;display:flex;flex-direction:column;justify-content:center;flex:1 1 0;min-width:0;min-height:0;overflow:hidden;
@@ -40,4 +48,14 @@ export const TRAY_CSS = `
 .dbg-readout-actions{display:grid;grid-template-rows:repeat(2,auto);grid-auto-flow:column;grid-auto-columns:max-content;align-content:center;
   column-gap:2px;flex:none;padding:0 4px;border-left:1px solid rgb(var(--dbg-line))}
 @keyframes dbg-k-tray-in{from{opacity:0}to{opacity:1}}
+
+@container dbg-panel (width < 720px){
+  .dbg-tray-section:first-child{flex:1 1 100%;padding-bottom:6px;border-bottom:1px solid rgb(var(--dbg-line))}
+  .dbg-tray-section[data-separator="true"]{padding-left:0;border-left:0}
+  .dbg-tray-section.dbg-tray-display{flex:1 1 240px}
+  .dbg-tray .dbg-nav{flex:1 1 auto}
+  .dbg-tray .dbg-nav>.dbg-grid:last-child{display:flex;flex-wrap:wrap;align-content:flex-start;gap:1px 2px;flex:1 1 0;min-width:0}
+  .dbg-tray .dbg-nav>.dbg-grid:last-child>.dbg-word{flex:1 0 auto;width:auto}
+  .dbg-tray .dbg-deps .dbg-rows{flex-direction:row;flex-wrap:wrap;gap:1px 2px}
+}
 `;
