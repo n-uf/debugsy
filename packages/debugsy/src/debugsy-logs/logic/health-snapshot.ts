@@ -359,7 +359,7 @@ export function captureHealthSnapshot(
       healthMetrics.performance
     );
     logFunction(
-      "surface-interactions",
+      "health",
       "🖥️ Surface Runtime Metrics",
       healthMetrics.surfaceMetrics
     );

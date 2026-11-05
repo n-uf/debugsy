@@ -16,9 +16,11 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
   tests with external dependencies).
 - The "Debugsy System initialized" console line only appears in
   development.
-- HEALTH works: it captures a health snapshot into the logs. It looked for
+- HEALTH works: it prints a health report to the console, and logs it when
+  the `health`, `performance` and `dependencies` points are on. It looked for
   a `surfaceDebug` global that no longer exists, and the snapshot itself
-  read dependency settings from a field that had moved.
+  read dependency settings from a field that had moved. Its runtime metrics
+  now log to the built-in `health` point, not an unregistered one.
 - The panel styles itself: no Tailwind, no stylesheet import, no
   `transpilePackages` entry for styles. Its CSS is a scoped `dbg-` stylesheet
   that `<DebugsyLook />` renders as a React 19 hoisted style, so it looks the
