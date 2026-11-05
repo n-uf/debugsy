@@ -26,26 +26,28 @@ interface LevelChoice {
   hint: string;
 }
 
-// What each level logs today. The deps logger has no quieter cut for Quiet
-// yet, so the copy says Quiet logs what Normal logs rather than promise one.
+// What each level logs (deps-filters.ts shouldLogLevel, logic/change-utils.ts
+// logPropChange). Quiet keeps the warnings: changes flagged frequent once the
+// initialization phase is over, and useRenderTracker's render and remount
+// warnings. The console help (cli-interface.ts CLI_HELP) says the same.
 const LEVELS: readonly LevelChoice[] = [
   {
     value: "quiet",
     label: "Quiet",
-    title: "Logs what Normal logs",
-    hint: "Quiet logs what Normal logs: changed dependencies, recreated functions and objects.",
+    title: "Warnings only",
+    hint: "Warnings only: functions and objects that keep changing once the app has settled, plus render and remount warnings.",
   },
   {
     value: "normal",
     label: "Normal",
-    title: "Changed dependencies, recreated functions and objects",
-    hint: "Changed dependencies, recreated functions and objects. Verbose adds changed primitive values.",
+    title: "Adds each render's changes",
+    hint: "Quiet, plus a line for each render whose dependencies changed and for every recreated function and object.",
   },
   {
     value: "verbose",
     label: "Verbose",
     title: "Adds changed primitive values",
-    hint: "Normal, plus changed primitive values with their old and new value.",
+    hint: "Normal, plus a line for each changed primitive value, with its old and new value.",
   },
 ];
 
@@ -53,27 +55,32 @@ interface FilterChoice {
   value: DepsFilter;
   label: string;
   hint: string;
+  /** The debugsy.deps command that sets it */
+  command: string;
 }
 
 // A change counts as Unstable once it keeps coming back within a few seconds
 // (logic/change-tracking.ts, isFrequent). Unstable changes leave the Functions
 // and Objects filters, so their hints say so.
 const FILTERS: readonly FilterChoice[] = [
-  { value: "all", label: "All", hint: "Every dependency that changed." },
+  { value: "all", label: "All", hint: "Every dependency that changed.", command: "all" },
   {
     value: "functions-only",
     label: "Functions",
     hint: "Recreated functions. Ones that keep changing show under Unstable instead.",
+    command: "functionsOnly",
   },
   {
     value: "objects-only",
     label: "Objects",
     hint: "Recreated objects and arrays. Ones that keep changing show under Unstable instead.",
+    command: "objectsOnly",
   },
   {
     value: "unstable-only",
     label: "Unstable",
     hint: "Dependencies that changed again within a few seconds, several times in a row.",
+    command: "unstableOnly",
   },
 ];
 
@@ -90,8 +97,6 @@ const TALLY: ReadonlyArray<{ tags: readonly string[]; one: string; many: string 
 // A level or filter the strip doesn't offer (silent, debug, loop-risks…) can
 // still be set from code: name it instead of lighting a choice that isn't set.
 const setElsewhere = (value: string) => `Set to "${value}" outside the panel. Pick one to change it.`;
-
-const DEPS_POINT = "dependencies";
 
 /**
  * Advanced dependency settings: the level and which changes to log, as direct
@@ -240,13 +245,24 @@ export const DependencyAdvancedPanel: React.FC<DependencyAdvancedPanelProps> = (
             </div>
 
             <div className="dbg-advanced-group">
-              <span className="dbg-advanced-label">Console</span>
+              {/* The commands for what is picked now: three lines, so the
+                  strip is no taller than the Level group makes it */}
+              <span className="dbg-advanced-label" title="debugsy.help() lists every console command">
+                Console
+              </span>
               <code className="dbg-advanced-code" title="Click to select">
-                {deps.enabled ? `debugsy.disable("${DEPS_POINT}")` : `debugsy.enable("${DEPS_POINT}")`}
+                {deps.enabled ? "debugsy.deps.off()" : "debugsy.deps.on()"}
               </code>
-              <code className="dbg-advanced-code" title="Click to select">
-                debugsy.status.deps()
-              </code>
+              {level && (
+                <code className="dbg-advanced-code" title="Click to select">
+                  {`debugsy.deps.${level.value}()`}
+                </code>
+              )}
+              {filter && (
+                <code className="dbg-advanced-code" title="Click to select">
+                  {`debugsy.deps.${filter.command}()`}
+                </code>
+              )}
             </div>
           </div>
         </section>
