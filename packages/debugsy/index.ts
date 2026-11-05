@@ -50,6 +50,7 @@ export {
   type DebugsyLookProps,
   ModuleNav,
 } from "./src/debugsy-look";
+export type { DebugsyTheme } from "./src/ui";
 
 // === TYPE EXPORTS ===
 export type {

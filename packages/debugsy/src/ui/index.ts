@@ -5,6 +5,7 @@
 
 // Styles
 export { DebugsyStyles } from "./styles/sheet";
+export type { DebugsyTheme } from "./styles/themes";
 
 // Primitives
 export { Lamp, Meter, Segments, type LampState, type MeterTone } from "./primitives/lamp";
