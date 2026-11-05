@@ -46,7 +46,7 @@ export const PRIMITIVES_CSS = `
 .dbg-signal{width:6px;height:6px;border-radius:50%;flex:none;background:rgb(var(--dbg-led));box-shadow:0 0 6px rgb(var(--dbg-led));
   animation:dbg-k-signal 1.4s ease-in-out infinite}
 .dbg-lamp{display:inline-block;width:7px;height:7px;border-radius:50%;flex:none;background:rgb(var(--dbg-led-off));
-  box-shadow:inset 0 1px 1px rgb(0 0 0 / .35)}
+  box-shadow:var(--dbg-recess)}
 .dbg-lamp[data-state="on"]{background:rgb(var(--dbg-led));box-shadow:0 0 6px rgb(var(--dbg-led) / .9)}
 .dbg-lamp[data-state="partial"]{background:linear-gradient(90deg,rgb(var(--dbg-led)) 50%,rgb(var(--dbg-led-off)) 50%);
   box-shadow:0 0 4px rgb(var(--dbg-led) / .55)}
@@ -55,7 +55,7 @@ export const PRIMITIVES_CSS = `
 .dbg-lamp[data-state="busy"]{background:rgb(var(--dbg-led));box-shadow:0 0 6px rgb(var(--dbg-led) / .9);animation:dbg-k-signal 1s ease-in-out infinite}
 .dbg-lamp[data-state="alert"]{background:rgb(var(--dbg-caution));box-shadow:0 0 7px rgb(var(--dbg-caution) / .9)}
 .dbg-segs{display:inline-flex;align-items:center;gap:2px;flex:none}
-.dbg-segs>i{display:block;width:4px;height:7px;border-radius:1px;background:rgb(var(--dbg-led-off));box-shadow:inset 0 1px 1px rgb(0 0 0 / .3)}
+.dbg-segs>i{display:block;width:4px;height:7px;border-radius:1px;background:rgb(var(--dbg-led-off));box-shadow:var(--dbg-recess)}
 .dbg-segs>i[data-on="true"]{background:rgb(var(--dbg-led));box-shadow:0 0 4px rgb(var(--dbg-led) / .8)}
 .dbg-meter{position:relative;display:block;height:3px;border-radius:2px;background:rgb(var(--dbg-line));overflow:hidden}
 .dbg-meter>i{position:absolute;top:0;bottom:0;left:0;border-radius:2px;background:rgb(var(--dbg-led));

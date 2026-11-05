@@ -134,8 +134,8 @@ export const LOG_CSS = `
 /* .json-view layout adapted from react18-json-view src/style.css (MIT License, (c) 2023 Suni) */
 .dbg-root .json-view{display:block;text-align:left;font-family:var(--dbg-mono);font-size:11.5px;line-height:1.6;
   color:rgb(var(--dbg-text));
-  --json-property:rgb(var(--dbg-text));--json-index:rgb(var(--dbg-dim));--json-number:rgb(var(--dbg-led));
-  --json-string:rgb(var(--dbg-ok));--json-boolean:rgb(var(--dbg-caution));--json-null:rgb(var(--dbg-caution))}
+  --json-property:rgb(var(--dbg-json-key));--json-index:rgb(var(--dbg-dim));--json-number:rgb(var(--dbg-json-number));
+  --json-string:rgb(var(--dbg-json-string));--json-boolean:rgb(var(--dbg-json-literal));--json-null:rgb(var(--dbg-json-literal))}
 .dbg-root .json-view .json-view--property{color:var(--json-property)}
 .dbg-root .json-view .json-view--index{color:var(--json-index)}
 .dbg-root .json-view .json-view--number{color:var(--json-number)}

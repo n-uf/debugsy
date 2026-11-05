@@ -6,26 +6,22 @@
  * No cascade layers: a library that names `@layer base` or `components`
  * would set the host page's layer order (React puts this sheet first in
  * `<head>`). Instead every rule is unlayered and scoped by `.dbg-root`:
- * - `.dbg-root` holds the theme tokens and the type. The app's own
- *   stylesheets load after this one, so an app can override a token with
- *   `.dbg-root { --dbg-led: … }`.
+ * - `.dbg-root` holds the type and the size tokens; the themes fragment
+ *   holds the colour and shadow tokens. The app's own stylesheets load after
+ *   this one, so an app can override a token with `.dbg-root { --dbg-led: … }`.
  * - The resets select `.dbg-root :where(…)` (one class of specificity), so
  *   an app's global `button`, `h3` or `*` rules can't restyle the panel's
  *   insides, while every part's own `dbg-` class, later in this sheet, still
  *   overrides the reset.
  *
- * Tokens are kavun's `dark` theme ("the panel at night") as RGB triplets,
- * used as `rgb(var(--dbg-led) / .3)`, plus the log-level colours kavun has
- * no use for. `--dbg-line` and `--dbg-hover` carry their own alpha: use them
- * as `rgb(var(--dbg-line))` only.
+ * Colour tokens are RGB triplets, used as `rgb(var(--dbg-led) / .3)`.
+ * `--dbg-line` and `--dbg-hover` carry their own alpha: use them as
+ * `rgb(var(--dbg-line))` only.
  */
 
 export const BASE_CSS = `
 .dbg-root{
-  --dbg-bg:24 26 30;--dbg-canvas:14 16 19;--dbg-raised:32 35 41;--dbg-line:255 255 255 / .09;
-  --dbg-text:226 230 236;--dbg-dim:150 157 170;--dbg-engrave:0 -1px 0 rgb(0 0 0 / .7);--dbg-hover:255 255 255 / .06;
-  --dbg-caution:255 105 190;--dbg-led:40 210 245;--dbg-ok:74 222 128;--dbg-on-accent:10 12 16;--dbg-led-off:60 65 74;
-  --dbg-warn:250 190 70;--dbg-error:255 104 104;--dbg-radius:2px;
+  --dbg-radius:2px;
   --dbg-font:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--dbg-mono:var(--dbg-font);
   --dbg-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --dbg-fs-chrome:10.5px;--dbg-fs-small:11px;--dbg-fs-body:12px;

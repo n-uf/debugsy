@@ -14,12 +14,14 @@ import { BASE_CSS } from "./base";
 import { CONTROLS_CSS } from "./controls";
 import { LOG_CSS } from "./log";
 import { PRIMITIVES_CSS } from "./primitives";
+import { THEMES_CSS } from "./themes";
 import { TRAY_CSS } from "./tray";
 import { WINDOW_CSS } from "./window";
 
 /** Every fragment, by part (for tests) */
 export const DEBUGSY_CSS_FRAGMENTS = {
   base: BASE_CSS,
+  themes: THEMES_CSS,
   primitives: PRIMITIVES_CSS,
   window: WINDOW_CSS,
   controls: CONTROLS_CSS,
