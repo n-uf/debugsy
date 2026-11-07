@@ -1,14 +1,7 @@
 @import "tailwindcss";
 @source "../**/*.{ts,tsx}";
 
-/* Harbuz drop-in surface: CSS variables (chrome / LED / semantic tokens)
-   AND the `@utility` declarations that turn `text-chrome`, `bg-hover`,
-   `text-text-secondary`, … into real CSS rules. Single import = full
-   visual contract for every harbuz / debugsy component. */
-@import "@n-uf/harbuz/styles";
-
-/* debugsy's own Tailwind sources (the classes its components use). */
-@import "@n-uf/debugsy/styles";
+/* The debugsy panel renders its own scoped stylesheet: no CSS import for it here. */
 
 @custom-variant dark (&:is(.dark *));
 
