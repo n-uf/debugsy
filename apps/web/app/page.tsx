@@ -2,10 +2,8 @@ import Link from "next/link";
 import type React from "react";
 import { entriesOf, liveSections } from "./_content/content";
 import { jsonLdHtml } from "./_content/jsonld";
-import { CopyCommand } from "./_components/copy-command";
 import { DebugsyLookMounted } from "./_components/debugsy-look-mounted";
-import { OpenPanelButton } from "./_components/open-panel-button";
-import { PageShortcuts } from "./_components/page-shortcuts";
+import { HeroTerminal } from "./_components/hero-terminal";
 import { Tok } from "./_components/tok";
 import { CAPABILITIES } from "./_data/feature-log";
 import { HOME_DESCRIPTION, HOME_H1 } from "./home-meta";
@@ -98,34 +96,14 @@ export default function HomePage(): React.ReactElement {
               </p>
               <h1 className="g-h1">{HOME_H1}</h1>
               <p className="g-promise">{HOME_DESCRIPTION}</p>
-              <div className="g-act">
-                <div className="g-install">
-                  <code>
-                    <span className="g-install-dollar" aria-hidden="true">
-                      ${" "}
-                    </span>
-                    {INSTALL}
-                  </code>
-                  <span className="g-install-note">then mount {"<DebugsyLook />"}</span>
-                  <CopyCommand command={INSTALL} />
-                </div>
-                {useCases ? (
-                  <Link className="g-btn g-btn-pri" href={useCases.path}>
-                    Debugging use cases <span aria-hidden="true">→</span>
-                  </Link>
-                ) : null}
-                {blog ? (
-                  <Link className="g-btn" href={blog.path}>
-                    Articles on React debugging <span aria-hidden="true">→</span>
-                  </Link>
-                ) : null}
-              </div>
             </div>
-            <div className="g-keys">
-              <p className="g-label">The panel below is live</p>
-              <PageShortcuts />
-              <p className="g-keys-note">It folds to its tray as you scroll.</p>
-            </div>
+            <HeroTerminal
+              install={INSTALL}
+              links={[
+                ...(useCases ? [{ href: useCases.path, label: "Debugging use cases" }] : []),
+                ...(blog ? [{ href: blog.path, label: "Articles on React debugging" }] : []),
+              ]}
+            />
           </div>
           <figure className="g-still">
             <div className="g-still-log" aria-label="sample debugsy log">
@@ -142,10 +120,7 @@ export default function HomePage(): React.ReactElement {
                 <b>session</b> <i>auth</i> synced <span>{'{"userId":42}'}</span>
               </p>
             </div>
-            <figcaption>
-              <span>Sample log</span>
-              <OpenPanelButton />
-            </figcaption>
+            <figcaption>Sample log</figcaption>
           </figure>
         </section>
 

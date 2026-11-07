@@ -7,7 +7,7 @@
 }
 .g-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
   gap: 48px;
   align-items: center;
 }
@@ -22,9 +22,9 @@
   font-weight: 600;
 }
 .g-h1 {
-  max-width: 19ch;
+  max-width: 13ch;
   margin: 12px 0 0;
-  font: 600 60px/0.95 var(--g-sans);
+  font: 600 56px/0.95 var(--g-sans);
   letter-spacing: -0.05em;
   color: var(--g-ink);
   text-wrap: balance;
@@ -36,40 +36,229 @@
   line-height: 1.6;
   color: var(--g-text);
 }
-.g-act {
+/* ── the terminal: install line, the links as its menu, the panel's keys (hero-terminal.tsx) ──
+   Dark in both skins, like the code blocks. Muted text is #8a8a8a: 5.6 : 1 on the terminal. */
+.g-term {
+  border: 1px solid #262626;
+  background: #0b0b0b;
+  color: #e6e6e6;
+  font: 13.5px/1.6 var(--g-mono);
+}
+:root[data-skin="dark"] .g-term {
+  border-color: #2e2e2e;
+}
+.g-term-h {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-top: 20px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #1d1d1d;
+  color: #8a8a8a;
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
-.g-install {
-  position: relative;
-  flex: 0 1 300px;
-  padding: 11px 76px 11px 16px;
-  border: 1px solid var(--g-code-line);
-  background: var(--g-code-bg);
-  color: var(--g-code-ink);
+.g-term-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.g-install code {
-  display: block;
+.g-term-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22d3ee;
+}
+.g-term-b {
+  padding: 14px 16px 12px;
+}
+.g-term-cmd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.g-term-cmd code {
+  min-width: 0;
   overflow-x: auto;
-  font: 14px/1.55 var(--g-mono);
+  font: inherit;
   white-space: nowrap;
 }
-.g-install-dollar {
-  color: var(--g-code-muted);
+.g-term-p,
+.g-term-cm {
+  color: #8a8a8a;
 }
-.g-install-note {
-  display: block;
-  font: 11.5px/1.5 var(--g-mono);
-  color: var(--g-code-muted);
+.g-term-cm {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
 }
-.g-copy {
+.g-term-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.g-term-mi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  background: none;
+  color: #e6e6e6;
+  font: 500 14px/1.2 var(--g-sans);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.g-term-mi:hover {
+  background: #1f1f1f;
+}
+/* the main link: the grey key the operator picked (black on #d9d9d5: 14 : 1) */
+.g-term-mi.is-sel {
+  background: #d9d9d5;
+  color: #0a0a0a;
+}
+.g-term-mi.is-sel:hover {
+  background: #e6e6e2;
+}
+.g-term-mi:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+.g-term-chev,
+.g-term-ret {
+  font-family: var(--g-mono);
+  color: #8a8a8a;
+}
+.g-term-ret {
+  margin-left: auto;
+  font-size: 11px;
+}
+.g-term-mi.is-sel .g-term-chev,
+.g-term-mi.is-sel .g-term-ret {
+  color: #444444;
+}
+.g-term-open {
+  display: none;
+}
+.g-term-kb {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid #1d1d1d;
+}
+.g-term-kb-lbl {
+  max-width: 10ch;
+  font: 600 10px/1.3 var(--g-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+
+/* ── keycaps that show their own state (panel-keys.tsx) ──
+   ⌘D latches: down while the panel shows, light on for the full panel. ⌘K and Esc dip when
+   pressed and fade when they can't act. Only transforms, opacity and fill change. */
+.g-keys {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.g-cap-defs {
   position: absolute;
-  top: 50%;
-  right: 10px;
-  transform: translateY(-50%);
+}
+.g-pkey {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+}
+.g-pkey[aria-disabled="true"] {
+  cursor: default;
+}
+.g-pkey:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+.g-cap {
+  display: block;
+  width: 64px;
+  height: 58px;
+  overflow: visible;
+}
+.g-cap-shade {
+  fill: rgba(0, 0, 0, 0.45);
+}
+.g-cap-wall {
+  fill: #1f2023;
+  stroke: #000000;
+  stroke-width: 1;
+}
+.g-cap-front {
+  fill: #141518;
+}
+.g-cap-fleg {
+  font: 600 5.6px var(--g-mono);
+  letter-spacing: 0.14em;
+  fill: #8a8a8a;
+  text-anchor: middle;
+}
+.g-cap-face {
+  fill: url(#g-cap-face);
+  stroke: #000000;
+  stroke-width: 0.8;
+}
+.g-cap-leg {
+  font: 600 12px var(--g-mono);
+  fill: #ececec;
+  text-anchor: middle;
+}
+.g-cap-top {
+  transition: transform 0.09s ease-out;
+}
+.g-cap-led {
+  fill: #34383e;
+  transition: fill 0.12s;
+}
+.g-pkey.is-lit .g-cap-led {
+  fill: #22d3ee;
+  filter: drop-shadow(0 0 2.5px rgba(34, 211, 238, 0.9));
+}
+.g-pkey.is-latched .g-cap-top {
+  transform: translateY(4px);
+}
+.g-pkey:active:not([aria-disabled="true"]):not(.is-latched) .g-cap-top,
+.g-pkey.is-pressed:not(.is-latched):not([aria-disabled="true"]) .g-cap-top {
+  transform: translateY(3px);
+}
+.g-pkey.is-latched:active .g-cap-top,
+.g-pkey.is-latched.is-pressed .g-cap-top {
+  transform: translateY(5px);
+}
+.g-pkey[aria-disabled="true"] .g-cap-top {
+  opacity: 0.38;
+}
+.g-pkey[aria-disabled="true"] .g-cap-wall,
+.g-pkey[aria-disabled="true"] .g-cap-front,
+.g-pkey[aria-disabled="true"] .g-cap-fleg {
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-cap-top,
+  .g-cap-led {
+    transition: none;
+  }
+}
+
+.g-copy {
+  margin-left: auto;
   padding: 7px 9px;
   border: 1px solid #3a3a3a;
   background: transparent;
@@ -78,6 +267,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
+  flex: none;
 }
 .g-copy:hover {
   border-color: #6b6b6b;
@@ -85,54 +275,6 @@
 .g-copy:focus-visible {
   outline: 2px solid var(--g-dot);
   outline-offset: 2px;
-}
-
-/* the panel's keys (desktop: the panel docks below the hero) */
-.g-keys {
-  padding: 18px 20px;
-  border: 1px solid var(--g-line);
-}
-.g-keys-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.g-keys-list button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 0;
-  border: 0;
-  background: none;
-  color: var(--g-text);
-  font: 13.5px/1 var(--g-sans);
-  cursor: pointer;
-}
-.g-keys-list kbd {
-  min-width: 64px;
-  padding: 7px 9px;
-  border: 1px solid var(--g-ink);
-  background: var(--g-bg);
-  color: var(--g-ink);
-  font: 600 11px/1 var(--g-mono);
-  text-align: center;
-  text-transform: uppercase;
-}
-.g-keys-list button:hover kbd {
-  background: var(--g-ink);
-  color: var(--g-bg);
-}
-.g-keys-list button:focus-visible {
-  outline: 2px solid var(--g-dot);
-  outline-offset: 2px;
-}
-.g-keys-note {
-  margin: 12px 0 0;
-  font-size: 12.5px;
-  color: var(--g-muted);
 }
 
 /* a still of the panel for phones and tablets, where it opens on request */
@@ -179,11 +321,7 @@
   color: #f87171;
 }
 .g-still figcaption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 13px;
   color: var(--g-muted);
 }
@@ -347,16 +485,27 @@
   text-decoration: underline;
 }
 
+/* Small desktops: the terminal goes under the text rather than squeezing it. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .g-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .g-h1 {
+    max-width: 19ch;
+  }
+  .g-term {
+    max-width: 560px;
+  }
+}
+
 @media (max-width: 1023px) {
   .g-hero {
     padding: 28px 16px 32px;
   }
   .g-hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-  .g-keys {
-    display: none;
+    gap: 24px;
   }
   .g-h1 {
     max-width: none;
@@ -365,15 +514,12 @@
   .g-promise {
     font-size: 16.5px;
   }
-  .g-act {
-    flex-direction: column;
-    align-items: stretch;
+  /* phones and tablets: no keys (the panel isn't on the page until asked); an entry opens it */
+  .g-term-kb {
+    display: none;
   }
-  .g-install {
-    flex: none;
-  }
-  .g-act .g-btn {
-    justify-content: space-between;
+  .g-term-open {
+    display: block;
   }
   .g-still {
     display: block;
