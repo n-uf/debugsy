@@ -83,7 +83,10 @@ function useFoldOnScroll(enabled: boolean): void {
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("keydown", onKey, true);
     document.addEventListener("pointerdown", onPointer, true);
+    // A reload or a resize to desktop can start mid-page: fold right away instead of on the next scroll.
+    const first = requestAnimationFrame(onScroll);
     return () => {
+      cancelAnimationFrame(first);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("keydown", onKey, true);
       document.removeEventListener("pointerdown", onPointer, true);
