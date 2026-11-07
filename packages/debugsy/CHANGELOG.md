@@ -3,6 +3,15 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
+## 26.11.5
+
+- `getLogs()` returns the log as it is now. Repeated reads within a frame
+  (16 ms) still share one copy, but after a clear or a new line the next
+  read copies again. Before, a read within 16 ms of the last one returned
+  the old copy: a subscriber that re-rendered right after `clearLogs()`
+  could still see the cleared lines, and a new line could be missing for
+  a frame.
+
 ## 26.11.4
 
 - New entry `@n-uf/debugsy/core`: logging without the panel. It has `dsy`,
