@@ -250,7 +250,7 @@ It does nothing until the `dependencies` debug point is on: use the panel's Deps
 📝 [OrderTable] onSort: function changed (#1) (function → function) 🚀
 ```
 
-It only logs. It doesn't pause, stop a render or watch components you didn't add it to. Install it with `npm i @n-uf/debugsy`. It doesn't remove itself from production builds, so guard the mount yourself.
+It only logs. It doesn't pause, stop a render or watch components you didn't add it to. Install debugsy with `npm i @n-uf/debugsy`. It doesn't remove itself from production builds, so guard the mount yourself.
 
 For the other options, React DevTools' Components panel among them, see the list of [React JS debugging tools](/blog/react-debugging-tools).
 

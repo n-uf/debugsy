@@ -228,7 +228,7 @@ What it doesn't do:
 - It doesn't remove itself from production builds. Guard the import or the mount yourself, for example behind `process.env.NODE_ENV !== "production"`.
 - It makes no network requests and sends no telemetry. Settings live in `localStorage`. It isn't a remote logger.
 
-Install it with `npm i @n-uf/debugsy`. It needs React 19. The licence is PolyForm Perimeter 1.0.1: the source is public and any use is allowed except providing others a product that competes with debugsy. It isn't MIT, and no price is published. The mount steps are on the [home page](/).
+Install debugsy with `npm i @n-uf/debugsy`. It needs React 19. The licence is PolyForm Perimeter 1.0.1: the source is public and any use is allowed except providing others a product that competes with debugsy. It isn't MIT, and no price is published. The mount steps are on the [home page](/).
 
 ## Next.js debugging tools
 
