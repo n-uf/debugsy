@@ -323,4 +323,4 @@ Mount `<DebugsyLook />` once near the app root. The hook does nothing until the 
 
 `topic` isn't listed, so it stayed the same. `🚀` marks a line logged during debugsy's start-up phase and `📋 INIT` a key that keeps changing in it. Start-up ends five seconds after the last tracked change, so a loop that never pauses keeps both marks. debugsy warns and never stops a loop, and it sees only the components where you call its hooks.
 
-Install it with `npm i @n-uf/debugsy`. It doesn't remove itself from production builds, so guard the import or the mount yourself. The mount steps are on [debugsy's home page](/). debugsy is independent and not affiliated with Meta, the React team or the React Router project.
+Install debugsy with `npm i @n-uf/debugsy`. It doesn't remove itself from production builds, so guard the import or the mount yourself. The mount steps are on [debugsy's home page](/). debugsy is independent and not affiliated with Meta, the React team or the React Router project.
