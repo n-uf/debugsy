@@ -121,6 +121,18 @@
   color: #ffffff;
   font-weight: 600;
 }
+/* A code block that scrolls sideways shows a cyan edge where there's more (scroll-hints.tsx). */
+main pre.more-r {
+  box-shadow: inset -3px 0 0 var(--g-dot);
+}
+main pre.more-l {
+  box-shadow: inset 3px 0 0 var(--g-dot);
+}
+main pre.more-l.more-r {
+  box-shadow:
+    inset 3px 0 0 var(--g-dot),
+    inset -3px 0 0 var(--g-dot);
+}
 
 /* ── the top bar ──────────────────────────────────────────────────── */
 
