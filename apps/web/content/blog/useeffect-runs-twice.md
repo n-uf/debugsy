@@ -274,7 +274,7 @@ To confirm Strict Mode, run a production build or remove the wrapper for a minut
 
 The console is enough for one effect. When you want setup, cleanup and your own messages in one ordered log, debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows debug messages, render counts and dependency changes in one list. It is independent and not affiliated with Meta, the React team, Vercel or the Vite project.
 
-It isn't on npmjs yet: a public release there is in preparation, and the home page has the mount steps. Declare a debug point for the effect, then log from the setup and the cleanup:
+Install it with `npm i @n-uf/debugsy`; the home page has the mount steps. Declare a debug point for the effect, then log from the setup and the cleanup:
 
 ```tsx
 import { useEffect } from "react";

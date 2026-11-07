@@ -160,7 +160,7 @@ The hook watches the same array React sees. Put `useEffect` back when you're don
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Its `useWhyDidYouUpdate` hook does the comparison for you, and the result lands in that log next to your other messages. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-debugsy isn't on npmjs yet: a public release there is in preparation. It needs React 19. The [home page](/) has the mount steps.
+Install debugsy with `npm i @n-uf/debugsy`. It needs React 19. The [home page](/) has the mount steps.
 
 Mount `<DebugsyLook />` once near the app root, then call the hook next to the effect with the same values you list in its array:
 
@@ -267,7 +267,7 @@ React's `StrictMode` page says that with Strict Mode on, React runs one extra se
 | | Console and `Object.is` | Hook you write | debugsy |
 |---|---|---|---|
 | Runs | Browser console | Your component code | Panel in your app |
-| Setup | `console.log` the array, store two as globals | Paste, replace `useEffect` | Install (npmjs release in preparation), mount, call the hook, switch on Deps |
+| Setup | `console.log` the array, store two as globals | Paste, replace `useEffect` | Install from npm, mount, call the hook, switch on Deps |
 | You give it | The array itself | Effect, array and names | An object with the values |
 | Shows | Same or different, one index at a time | Names, old and new value of what changed | From and to per key, a counter, a frequent flag |
 | Reads your real array | Yes | Yes | No, you pass the values |

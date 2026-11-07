@@ -263,7 +263,7 @@ Decoding minified React errors and reporting what users hit are covered in [debu
 
 A breakpoint shows one moment. For "which value changed on which render", a log that stays in the page helps, and debugsy is one of several tools that keep one ([how they compare](/blog/react-debugging-tools)). It's an in-process [React debug panel](/) by n-uf: a React component, so it works only where React runs in the browser. It doesn't see Server Components, route handlers or Server Functions, it doesn't replace `--inspect`, and it doesn't stop a render or a loop. It only logs.
 
-It isn't on npmjs yet: a public release there is in preparation. It needs React 19.
+Install it with `npm i @n-uf/debugsy`. It needs React 19.
 
 The panel needs the browser, so render it from a Client Component of your own; Next.js's docs suggest wrapping third-party components that rely on client-only features this way. The root layout stays a Server Component:
 

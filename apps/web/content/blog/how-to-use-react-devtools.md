@@ -292,6 +292,6 @@ useWhyDidYouUpdate("CartRow", { item, onRemove });
 
 Mount `<DebugsyLook />` once near the root and switch on the Deps toggle, or run `window.debugsy.enable("dependencies")` in the console: the hook does nothing until the `dependencies` debug point is on. Each change then gets a line that starts `📝 [CartRow] onRemove: function changed`, in order with your other debug messages, for as long as the page runs. `useRenderTracker`, which counts renders, is covered in [counting renders](/use-cases/react-render-count).
 
-It sees only the components where you call its hooks, and only the values you pass in. It has no component tree, no editing and no flame charts, so it doesn't replace React DevTools. It doesn't stop renders, and it doesn't remove itself from production builds: guard the import or the mount yourself. It isn't on npmjs yet: a public release there is in preparation.
+It sees only the components where you call its hooks, and only the values you pass in. It has no component tree, no editing and no flame charts, so it doesn't replace React DevTools. It doesn't stop renders, and it doesn't remove itself from production builds: guard the import or the mount yourself. Install it with `npm i @n-uf/debugsy`.
 
 debugsy is independent and isn't affiliated with Meta or the React team.
