@@ -106,7 +106,7 @@ export default function HomePage(): React.ReactElement {
                     </span>
                     {INSTALL}
                   </code>
-                  <span className="g-install-note">then mount {"<DebugsyLook />"} · React 19</span>
+                  <span className="g-install-note">then mount {"<DebugsyLook />"}</span>
                   <CopyCommand command={INSTALL} />
                 </div>
                 {useCases ? (

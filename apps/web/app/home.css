@@ -1,8 +1,9 @@
 /* The home page in the Grid look. The frame, labels, buttons and code blocks are in
    _components/site-chrome.css; the tokens in globals.css. */
 
+/* At 1440 × 900 the open panel stands about 470 px tall: the hero (bar included) fits above it. */
 .g-hero {
-  padding: 44px 56px 40px;
+  padding: 30px 56px 26px;
 }
 .g-hero-grid {
   display: grid;
@@ -22,16 +23,16 @@
 }
 .g-h1 {
   max-width: 19ch;
-  margin: 14px 0 0;
-  font: 600 66px/0.95 var(--g-sans);
+  margin: 12px 0 0;
+  font: 600 60px/0.95 var(--g-sans);
   letter-spacing: -0.05em;
   color: var(--g-ink);
   text-wrap: balance;
 }
 .g-promise {
-  max-width: 56ch;
-  margin: 16px 0 0;
-  font-size: 18px;
+  max-width: 58ch;
+  margin: 14px 0 0;
+  font-size: 17.5px;
   line-height: 1.6;
   color: var(--g-text);
 }
@@ -40,7 +41,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 .g-install {
   position: relative;
