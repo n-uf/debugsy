@@ -40,39 +40,37 @@ function seedOnce(): void {
   debug.enable("session");
   debug.enable("refresh");
   debug.enable("dependencies");
-  for (const e of SEED_LOGS) debug.log(e.point, e.message, e.data, e.level, ["auth"]);
-}
-
-function dispatchToggle(): void {
-  document.dispatchEvent(
-    new KeyboardEvent("keydown", { key: "d", code: "KeyD", metaKey: true, ctrlKey: true, bubbles: true }),
-  );
+  // The sample's error lines would otherwise be mirrored to the browser console as errors.
+  const mirrored = debug.isConsoleEnabled();
+  debug.setConsoleEnabled(false);
+  try {
+    for (const e of SEED_LOGS) debug.log(e.point, e.message, e.data, e.level, ["auth"]);
+  } finally {
+    debug.setConsoleEnabled(mirrored);
+  }
 }
 
 /**
  * Desktop: the panel opens under the hero, folds to its tray once the reader scrolls on, and opens
  * again back at the top. The moment the reader uses the panel or its keys, it stays as they leave it.
+ *
+ * Folding swaps the open panel for a freshly mounted one already in its tray (a new element, not a
+ * resized one), so the browser doesn't count it as a layout shift; resizing the panel did (0.17 each
+ * way). The logs live in debugsy's own store, so the new panel shows the same ones.
  */
-function useFoldOnScroll(enabled: boolean): void {
+function useFoldOnScroll(enabled: boolean): boolean {
+  const [folded, setFolded] = useState(false);
+
   useEffect(() => {
     if (!enabled) return;
-    let extended = true;
     let touched = false;
-    let ours = false;
 
-    const toggle = (): void => {
-      ours = true;
-      dispatchToggle();
-      ours = false;
-      extended = !extended;
-    };
     const onScroll = (): void => {
       if (touched) return;
-      if (extended && window.scrollY > FOLD_AT) toggle();
-      else if (!extended && window.scrollY < UNFOLD_AT) toggle();
+      if (window.scrollY > FOLD_AT) setFolded(true);
+      else if (window.scrollY < UNFOLD_AT) setFolded(false);
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (ours) return;
       const k = e.key.toLowerCase();
       if (((e.metaKey || e.ctrlKey) && (k === "d" || k === "k")) || e.key === "Escape") touched = true;
     };
@@ -92,6 +90,8 @@ function useFoldOnScroll(enabled: boolean): void {
       document.removeEventListener("pointerdown", onPointer, true);
     };
   }, [enabled]);
+
+  return folded;
 }
 
 function subscribeDesktop(onChange: () => void): () => void {
@@ -102,8 +102,15 @@ function subscribeDesktop(onChange: () => void): () => void {
 
 function DebugsyLookInner({ foldOnScroll }: { readonly foldOnScroll: boolean }): React.ReactElement {
   useEffect(seedOnce, []);
-  useFoldOnScroll(foldOnScroll);
-  return <DebugsyLook initialVisible initialIsCompact={false} closeOnClickOutside={false} />;
+  const folded = useFoldOnScroll(foldOnScroll);
+  return (
+    <DebugsyLook
+      key={folded ? "tray" : "open"}
+      initialVisible
+      initialIsCompact={folded}
+      closeOnClickOutside={false}
+    />
+  );
 }
 
 /**
