@@ -74,7 +74,7 @@ export interface PageShortcut {
 }
 
 export const PAGE_SHORTCUTS: readonly PageShortcut[] = [
-  { key: "d", eventKey: "d", meta: true, label: "toggle" },
+  { key: "d", eventKey: "d", meta: true, label: "fold / expand" },
   { key: "k", eventKey: "k", meta: true, label: "clear" },
   { key: "esc", eventKey: "Escape", meta: false, label: "close" },
 ];
