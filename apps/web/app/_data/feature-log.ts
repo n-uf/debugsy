@@ -1,5 +1,5 @@
 /**
- * Static, server-side data for the home page: the features it lists and the panel's keys.
+ * Static, server-side data for the home page: the features it lists.
  *
  * The live debugsy panel itself is the real `<DebugsyLook>` component — see
  * `app/_components/debugsy-look-mounted.tsx`.
@@ -53,28 +53,4 @@ export const CAPABILITIES: readonly Capability[] = [
     summary:
       "No network requests and nothing sent anywhere; settings stay in localStorage. Load it in development only to keep it out of production builds.",
   },
-];
-
-// =============================================================================
-// Keyboard shortcuts shown beside the home page's hero. Each entry carries the visual
-// label + the `KeyboardEvent.key` value + meta-modifier flag so click handlers
-// can synthesize the exact event debugsy's internal `useKeyboardShortcuts`
-// listener already binds on `document` — no new API surface required.
-// =============================================================================
-
-export interface PageShortcut {
-  /** Glyph rendered inside the kbd button (e.g. "d", "esc"). */
-  readonly key: string;
-  /** `KeyboardEvent.key` value to dispatch (e.g. "d", "Escape"). */
-  readonly eventKey: string;
-  /** Whether the shortcut requires Cmd/Ctrl. */
-  readonly meta: boolean;
-  /** Human-readable action label rendered next to the key. */
-  readonly label: string;
-}
-
-export const PAGE_SHORTCUTS: readonly PageShortcut[] = [
-  { key: "d", eventKey: "d", meta: true, label: "fold / expand" },
-  { key: "k", eventKey: "k", meta: true, label: "clear" },
-  { key: "esc", eventKey: "Escape", meta: false, label: "close" },
 ];
