@@ -1,0 +1,340 @@
+/* The site's frame: the top bar, the side fields it moves into, the footer, and the small parts
+   every page shares (labels, buttons, code). Tokens are in globals.css. */
+
+/* ── the frame ────────────────────────────────────────────────────── */
+
+.g-frame,
+.g-bar-in,
+.g-foot-in {
+  margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  .g-frame,
+  .g-bar-in,
+  .g-foot-in {
+    max-width: min(var(--g-frame), calc(100% - 2 * var(--g-field)));
+    border-inline: 1px solid var(--g-line);
+  }
+}
+
+/* A small square node where a section's bottom line meets the frame. */
+.g-cell {
+  position: relative;
+  border-bottom: 1px solid var(--g-line);
+}
+@media (min-width: 1024px) {
+  .g-cell::before,
+  .g-cell::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    z-index: 1;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--g-node);
+    background: var(--g-bg);
+  }
+  .g-cell::before {
+    left: -4px;
+  }
+  .g-cell::after {
+    right: -4px;
+  }
+}
+
+/* ── shared parts ─────────────────────────────────────────────────── */
+
+.g-label {
+  margin: 0 0 12px;
+  font: 600 10.5px/1.2 var(--g-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--g-faint);
+}
+.g-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 18px/1 var(--g-sans);
+  letter-spacing: -0.02em;
+  color: var(--g-ink);
+  text-decoration: none;
+}
+.g-mark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+}
+.g-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 17px;
+  border: 1px solid var(--g-ink);
+  background: var(--g-bg);
+  color: var(--g-ink);
+  font: 500 14px/1 var(--g-sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+.g-btn:hover {
+  background: var(--g-hover);
+}
+.g-btn-pri {
+  border-color: var(--g-btn-bg);
+  background: var(--g-btn-bg);
+  color: var(--g-btn-ink);
+}
+.g-btn-pri:hover {
+  background: var(--g-btn-bg);
+  opacity: 0.88;
+}
+.g-btn:focus-visible,
+.g-nav a:focus-visible,
+.g-skin:focus-visible,
+.g-foot a:focus-visible,
+.g-bar-r a:focus-visible,
+.g-side-r a:focus-visible,
+.g-brand:focus-visible {
+  outline: 2px solid var(--g-dot);
+  outline-offset: 2px;
+}
+.g-code {
+  margin: 0;
+  padding: 15px 17px;
+  overflow-x: auto;
+  border: 1px solid var(--g-code-line);
+  background: var(--g-code-bg);
+  color: var(--g-code-ink);
+  font: 12.5px/1.7 var(--g-mono);
+}
+.g-code .k {
+  color: var(--g-code-kw);
+}
+.g-code .s {
+  color: var(--g-code-str);
+}
+.g-code .c {
+  color: var(--g-code-muted);
+}
+.g-code .f {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ── the top bar ──────────────────────────────────────────────────── */
+
+.g-bar {
+  border-bottom: 1px solid var(--g-line);
+  background: var(--g-bg);
+}
+.g-bar-in {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 60px;
+  padding: 0 32px;
+}
+.g-bar-l {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.g-nav {
+  display: flex;
+  gap: 4px;
+}
+.g-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  color: var(--g-muted);
+  font: 500 14px/1 var(--g-sans);
+  text-decoration: none;
+}
+.g-nav a::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--g-node);
+}
+.g-nav a:hover,
+.g-nav a.on {
+  color: var(--g-ink);
+}
+.g-nav a.on::before {
+  background: var(--g-dot);
+  box-shadow: none;
+}
+.g-bar-r,
+.g-side-r {
+  font: 12px/1 var(--g-mono);
+  color: var(--g-muted);
+}
+.g-bar-r {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+.g-bar-r a,
+.g-side-r a {
+  color: var(--g-muted);
+  text-decoration: none;
+}
+.g-bar-r a:hover,
+.g-side-r a:hover {
+  color: var(--g-ink);
+}
+.g-ver {
+  padding: 5px 9px;
+  border: 1px solid var(--g-line);
+  font-size: 11px;
+}
+.g-skin {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--g-line);
+  background: var(--g-bg);
+  color: var(--g-ink);
+  font: 12px/1 var(--g-mono);
+  cursor: pointer;
+}
+.g-skin:hover {
+  border-color: var(--g-node);
+}
+.g-skin-dot {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--g-ink);
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--g-ink) 50%, transparent 50%);
+}
+
+/* ── the side fields (desktop): the bar's halves, once it has scrolled away ── */
+
+.g-bar.is-side .g-bar-l,
+.g-bar.is-side .g-bar-r {
+  visibility: hidden;
+}
+.g-side-l,
+.g-side-r {
+  position: fixed;
+  top: 28px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: max(var(--g-field), calc((100% - var(--g-frame)) / 2));
+  padding: 0 18px;
+}
+.g-side-l {
+  left: 0;
+  align-items: flex-start;
+}
+.g-side-r {
+  right: 0;
+  align-items: flex-end;
+}
+.g-side-l .g-brand {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 15px;
+}
+.g-side-l .g-nav {
+  flex-direction: column;
+  gap: 0;
+}
+.g-side-l .g-nav a {
+  padding: 6px 0;
+}
+
+/* ── the footer: a small site map ─────────────────────────────────── */
+
+.g-foot {
+  border-top: 1px solid var(--g-line);
+}
+.g-foot-in {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 1.4fr));
+  gap: 36px;
+  padding: 48px 56px;
+}
+.g-foot-about p {
+  margin: 14px 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--g-muted);
+}
+.g-foot-about p a {
+  color: var(--g-ink);
+}
+.g-foot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.g-foot-col a {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--g-muted);
+  text-decoration: none;
+}
+.g-foot-col a:hover {
+  color: var(--g-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.g-foot-col .g-foot-all {
+  margin-top: 2px;
+  font: 500 12.5px/1.4 var(--g-mono);
+  color: var(--g-ink);
+}
+/* The home's panel docks over the bottom of the page: leave room for it. */
+@media (min-width: 1024px) {
+  body:has(.g-home) .g-foot {
+    padding-bottom: var(--debugsy-panel-h, 0px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .g-fields {
+    display: none;
+  }
+  .g-bar-in {
+    gap: 10px;
+    height: 56px;
+    padding: 0 16px;
+  }
+  .g-bar-l {
+    gap: 8px;
+  }
+  .g-bar-r {
+    display: none;
+  }
+  .g-brand {
+    font-size: 17px;
+  }
+  .g-nav a {
+    padding: 8px;
+  }
+  .g-foot-in {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 36px 16px 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-btn,
+  .g-skin {
+    transition: none;
+  }
+}
