@@ -1,8 +1,9 @@
 "use client";
 
-import { DebugsyLook, getDebugsy } from "@n-uf/debugsy";
+import { DebugsyLook } from "@n-uf/debugsy";
 import type React from "react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+// Registers the demo's Auth module and logs the sample before any panel mounts.
 import "../_lib/register-demo-modules";
 import { OPEN_PANEL_EVENT } from "./open-panel-button";
 
@@ -10,45 +11,6 @@ const DESKTOP_VIEWPORT_QUERY = "(min-width: 1024px)";
 /** Scrolled this far, the panel folds to its tray; back above UNFOLD_AT it opens again. */
 const FOLD_AT = 200;
 const UNFOLD_AT = 80;
-
-interface SeedLog {
-  readonly point: string;
-  readonly message: string;
-  readonly level: "info" | "warn" | "error" | "critical";
-  readonly data?: Record<string, unknown>;
-}
-
-/**
- * The sample log, following the page's own example: the Auth module's session and refresh points,
- * logged with the calls the page shows (debug.log, dsy.warn, getDebugsy().error, window.debugsy.critical).
- */
-const SEED_LOGS: readonly SeedLog[] = [
-  { point: "session", message: "synced", level: "info", data: { userId: 42 } },
-  { point: "refresh", message: "renewed", level: "info", data: { expiresIn: 3600 } },
-  { point: "session", message: "expired", level: "warn", data: { ttl: 0 } },
-  { point: "refresh", message: "5xx", level: "error", data: { status: 503 } },
-  { point: "refresh", message: "failed", level: "critical" },
-];
-
-let seeded = false;
-
-/** Turns on the demo's points and logs the sample once per page load. */
-function seedOnce(): void {
-  if (seeded) return;
-  seeded = true;
-  const debug = getDebugsy();
-  debug.enable("session");
-  debug.enable("refresh");
-  debug.enable("dependencies");
-  // The sample's error lines would otherwise be mirrored to the browser console as errors.
-  const mirrored = debug.isConsoleEnabled();
-  debug.setConsoleEnabled(false);
-  try {
-    for (const e of SEED_LOGS) debug.log(e.point, e.message, e.data, e.level, ["auth"]);
-  } finally {
-    debug.setConsoleEnabled(mirrored);
-  }
-}
 
 /**
  * Desktop: the panel opens under the hero, folds to its tray once the reader scrolls on, and opens
@@ -101,7 +63,6 @@ function subscribeDesktop(onChange: () => void): () => void {
 }
 
 function DebugsyLookInner({ foldOnScroll }: { readonly foldOnScroll: boolean }): React.ReactElement {
-  useEffect(seedOnce, []);
   const folded = useFoldOnScroll(foldOnScroll);
   return (
     <DebugsyLook
