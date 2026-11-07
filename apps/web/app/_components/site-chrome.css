@@ -65,31 +65,6 @@
   width: 26px;
   height: 26px;
 }
-.g-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 17px;
-  border: 1px solid var(--g-ink);
-  background: var(--g-bg);
-  color: var(--g-ink);
-  font: 500 14px/1 var(--g-sans);
-  text-decoration: none;
-  cursor: pointer;
-}
-.g-btn:hover {
-  background: var(--g-hover);
-}
-.g-btn-pri {
-  border-color: var(--g-btn-bg);
-  background: var(--g-btn-bg);
-  color: var(--g-btn-ink);
-}
-.g-btn-pri:hover {
-  background: var(--g-btn-bg);
-  opacity: 0.88;
-}
-.g-btn:focus-visible,
 .g-nav a:focus-visible,
 .g-skin:focus-visible,
 .g-foot a:focus-visible,
@@ -351,7 +326,6 @@ main pre.more-l.more-r {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .g-btn,
   .g-skin {
     transition: none;
   }
