@@ -53,9 +53,14 @@ no module registered warns once in the console.
 - **Light or dark.** `<DebugsyLook theme="light" />`: `"dark"` (default),
   `"light"`, `"system"` (follows the OS), `"surface"` (cool grey), `"paper"`
   (warm) or `"contrast"` (black on white).
+- **Logging without the panel.** Code that only logs (a library, a shared
+  package) imports from `@n-uf/debugsy/core`: `dsy`, `registerModule`,
+  `useDebugsy`, `useRenderTracker` and `useWhyDidYouUpdate`, with no UI. The
+  app mounts `<DebugsyLook />` from the root as usual, and the two share one
+  state, so the panel shows what the core logged.
 - **An ES module** with type definitions, for bundlers (Node 22.12+ can also
-  `require()` it). The package exports only its root (`@n-uf/debugsy/styles`
-  is an empty file kept for older setups).
+  `require()` it). The package exports its root, `/core` (logging without
+  the panel) and `/styles` (an empty file kept for older setups).
 
 Licence: PolyForm Perimeter 1.0.1 (source-available). Third-party notices:
 THIRD_PARTY_NOTICES.md.

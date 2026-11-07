@@ -5,6 +5,13 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 
 ## Unreleased
 
+- New entry `@n-uf/debugsy/core`: logging without the panel. It has `dsy`,
+  the module registry, `useDebugsy`, `useRenderTracker`,
+  `useWhyDidYouUpdate` and the object-depth helpers: everything the root
+  exports except `DebugsyLook`, `ModuleNav` and the theme type. Code that
+  only logs imports it and never loads the panel or its UI kit. The root
+  is unchanged, and both entries share one state, so a panel loaded from
+  the root shows what was logged through the core.
 - Quiet logs less than Normal. It keeps only warnings: functions and
   objects that keep changing (`⚠️ FREQUENT`) and the render and remount
   warnings of `useRenderTracker`. It leaves out each render's
