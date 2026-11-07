@@ -11,6 +11,11 @@ const DESKTOP_VIEWPORT_QUERY = "(min-width: 1024px)";
 /** Scrolled this far, the panel folds to its tray; back above UNFOLD_AT it opens again. */
 const FOLD_AT = 200;
 const UNFOLD_AT = 80;
+/**
+ * At most one fold or unfold this often. DebugsyLook warns at 5 mounts within 5 s
+ * (useRenderTracker's mountThreshold), and each fold is a remount.
+ */
+const SWAP_GAP_MS = 1500;
 
 /**
  * Desktop: the panel opens under the hero, folds to its tray once the reader scrolls on, and opens
@@ -21,35 +26,49 @@ const UNFOLD_AT = 80;
  * way). The logs live in debugsy's own store, so the new panel shows the same ones.
  */
 function useFoldOnScroll(enabled: boolean): boolean {
-  const [folded, setFolded] = useState(false);
+  // This component only mounts in the browser, after hydration: a reload mid-page starts folded.
+  const [folded, setFolded] = useState(() => enabled && window.scrollY > FOLD_AT);
 
   useEffect(() => {
     if (!enabled) return;
     let touched = false;
+    let current = window.scrollY > FOLD_AT;
+    let lastSwap = performance.now();
+    let pending = 0;
 
     const onScroll = (): void => {
       if (touched) return;
-      if (window.scrollY > FOLD_AT) setFolded(true);
-      else if (window.scrollY < UNFOLD_AT) setFolded(false);
+      const want = window.scrollY > FOLD_AT ? true : window.scrollY < UNFOLD_AT ? false : current;
+      if (want === current) return;
+      const wait = SWAP_GAP_MS - (performance.now() - lastSwap);
+      if (wait > 0) {
+        // Too soon after the last swap: look again when the gap has passed.
+        if (!pending) pending = window.setTimeout(() => ((pending = 0), onScroll()), wait);
+        return;
+      }
+      current = want;
+      lastSwap = performance.now();
+      setFolded(want);
     };
     const onKey = (e: KeyboardEvent): void => {
       const k = e.key.toLowerCase();
       if (((e.metaKey || e.ctrlKey) && (k === "d" || k === "k")) || e.key === "Escape") touched = true;
     };
-    const onPointer = (e: PointerEvent): void => {
+    // Mouse, touch or keyboard focus on the panel or its keys: the reader is using it.
+    const onUse = (e: Event): void => {
       if (e.target instanceof Element && e.target.closest(".dbg-root, .g-keys")) touched = true;
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("keydown", onKey, true);
-    document.addEventListener("pointerdown", onPointer, true);
-    // A reload or a resize to desktop can start mid-page: fold right away instead of on the next scroll.
-    const first = requestAnimationFrame(onScroll);
+    document.addEventListener("pointerdown", onUse, true);
+    document.addEventListener("focusin", onUse, true);
     return () => {
-      cancelAnimationFrame(first);
+      window.clearTimeout(pending);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("keydown", onKey, true);
-      document.removeEventListener("pointerdown", onPointer, true);
+      document.removeEventListener("pointerdown", onUse, true);
+      document.removeEventListener("focusin", onUse, true);
     };
   }, [enabled]);
 
