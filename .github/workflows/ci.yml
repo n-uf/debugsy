@@ -12,7 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   verify:
@@ -28,18 +27,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-          # Writes a user-level .npmrc with the registry token: pnpm ignores
-          # ${ENV} tokens from the project .npmrc.
-          registry-url: https://npm.pkg.github.com
-          scope: "@n-uf"
 
+      # Every dependency comes from npmjs: no registry token needed.
       - name: Install
         run: pnpm install --frozen-lockfile
-        env:
-          # @n-uf/harbuz comes from GitHub Packages. GITHUB_TOKEN reads it only
-          # once the package grants this repo access (Package settings >
-          # Manage Actions access).
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint, check types, build, test
         run: pnpm turbo run lint check-types build test

@@ -66,15 +66,15 @@ app and a plain one. More in [the package README](packages/debugsy/README.md).
 ## Develop
 
 ```sh
-pnpm install              # needs a GitHub token with read:packages for @n-uf/*
+pnpm install              # everything comes from npmjs, no token
 pnpm dev                  # the site on http://localhost:3004
 pnpm turbo lint check-types build
 ```
 
 ### Live editing from an app (HMR)
 
-An app that uses `scripts/local-lib-links.mjs` (pdf-n-uf's web, admin; this
-repo's site for harbuz) can alias `@n-uf/debugsy` to this checkout's source,
+An app that uses `scripts/local-lib-links.mjs` (pdf-n-uf's web and admin) can
+alias `@n-uf/debugsy` to this checkout's source,
 so edits hot-reload in the app:
 
 ```sh
