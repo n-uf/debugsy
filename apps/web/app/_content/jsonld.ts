@@ -62,7 +62,7 @@ export function entryGraph(e: Entry, imageUrl: string): Node {
       page,
       breadcrumbs([
         { name: SITE_NAME, path: "/" },
-        { name: section.title, path: section.path },
+        { name: section.name, path: section.path },
         { name: e.h1, path: e.path },
       ]),
       faq,
@@ -99,7 +99,7 @@ export function sectionGraph(s: SectionInfo, entries: readonly Entry[]): Node {
       },
       breadcrumbs([
         { name: SITE_NAME, path: "/" },
-        { name: s.title, path: s.path },
+        { name: s.name, path: s.path },
       ]),
     ],
   };

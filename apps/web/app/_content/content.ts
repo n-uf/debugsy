@@ -31,7 +31,9 @@ export type Section = "blog" | "use-cases";
 export interface SectionInfo {
   readonly section: Section;
   readonly path: string;
-  /** The index page's title, heading and description. */
+  /** The section's short name, as Google's sitelinks and the breadcrumbs show it. */
+  readonly name: string;
+  /** The index page's title (the short name and the site name), heading and description. */
   readonly title: string;
   readonly h1: string;
   readonly description: string;
@@ -44,7 +46,8 @@ export const SECTIONS: Readonly<Record<Section, SectionInfo>> = {
   blog: {
     section: "blog",
     path: "/blog",
-    title: "React debugging articles",
+    name: "Blog",
+    title: "React debugging articles — debugsy",
     h1: "Articles on debugging React",
     description:
       "Articles on debugging React apps: render loops, re-renders, effects and logs, with the exact error messages and the fixes, from the makers of debugsy.",
@@ -54,7 +57,8 @@ export const SECTIONS: Readonly<Record<Section, SectionInfo>> = {
   "use-cases": {
     section: "use-cases",
     path: "/use-cases",
-    title: "React debugging use cases",
+    name: "Use cases",
+    title: "React debugging use cases — debugsy",
     h1: "What you can debug with debugsy",
     description:
       "Use cases for debugsy, an in-app React debugging panel: each page takes one job, like finding why a component re-rendered, step by step.",
