@@ -106,6 +106,15 @@ export function PanelKeys(): React.ReactElement {
   const logs = hydrated ? liveLogCount() : SAMPLE_LOG_COUNT;
   const mod = mac ? "⌘" : "Ctrl";
 
+  // The panel lives on the home page only: once the keys leave with it, a return visit starts as a first load
+  // ("about to open"), not "closed" for the frame before the panel mounts again.
+  useEffect(
+    () => () => {
+      panelSeen = false;
+    },
+    [],
+  );
+
   // A real key press dips the matching cap on screen too.
   const [pressed, setPressed] = useState<KeyDef["id"] | null>(null);
   useEffect(() => {
