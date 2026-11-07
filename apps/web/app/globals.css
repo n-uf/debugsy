@@ -12,119 +12,77 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* The font files are self-hosted by next/font (layout.tsx), which sets
-   --font-jetbrains and --font-inter on <html>: no third-party stylesheet
-   blocks the first paint. */
+/* The font files are self-hosted by next/font (layout.tsx), which sets --font-geist and
+   --font-geist-mono on <html>: no third-party stylesheet blocks the first paint. */
 @theme inline {
-  --font-mono: var(--font-jetbrains), 'Fira Code', monospace;
-  --font-sans: var(--font-inter), -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-geist), -apple-system, sans-serif;
+}
+
+/* The Grid look (sketch approved 2026-11-06): black, white, hairlines and one cyan dot.
+   Light is the default; <html data-skin="dark"> (skin.ts) swaps the tokens. */
+:root {
+  --g-sans: var(--font-geist), -apple-system, "Segoe UI", system-ui, sans-serif;
+  --g-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --g-bg: #ffffff;
+  --g-ink: #0a0a0a;
+  --g-text: #1e1e1e;
+  --g-muted: #555555;
+  --g-faint: #6e6e6e;
+  --g-line: #e3e3e3;
+  --g-node: #bdbdbd;
+  --g-dot: #06b6d4;
+  --g-soft: #fafafa;
+  --g-hover: #f3f3f3;
+  --g-inline-code: #f1f1f1;
+  --g-btn-bg: #0a0a0a;
+  --g-btn-ink: #ffffff;
+  --g-code-bg: #0a0a0a;
+  --g-code-line: #0a0a0a;
+  --g-code-ink: #ededed;
+  --g-code-muted: #8f8f8f;
+  --g-code-kw: #7dd3fc;
+  --g-code-str: #86efac;
+  /* The page frame: 1200 px, narrower on small desktops so the side fields keep 120 px. */
+  --g-frame: 1200px;
+  --g-field: 120px;
+  color-scheme: light;
+}
+:root[data-skin="dark"] {
+  --g-bg: #0a0a0a;
+  --g-ink: #f2f2f2;
+  --g-text: #e2e2e2;
+  --g-muted: #a8a8a8;
+  --g-faint: #8f8f8f;
+  --g-line: #262626;
+  --g-node: #4d4d4d;
+  --g-dot: #22d3ee;
+  --g-soft: #111111;
+  --g-hover: #1a1a1a;
+  --g-inline-code: #1c1c1c;
+  --g-btn-bg: #f2f2f2;
+  --g-btn-ink: #0a0a0a;
+  --g-code-bg: #000000;
+  --g-code-line: #2a2a2a;
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Page chrome uses harbuz "chrome" tokens (light surface in ocean theme).
-   The bottom debugsy stage uses "bg" tokens (dark slate). */
 html,
 body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background: rgb(var(--color-chrome-bg));
-  color: rgb(var(--color-chrome-text));
-  font-family: var(--font-sans);
-  font-feature-settings: "ss01", "ss02", "calt", "liga";
+  background: var(--g-bg);
+  color: var(--g-text);
+  font-family: var(--g-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Single-screen no-scroll layout, for the home page on desktop only
-   (its <main> carries .dbg-lock). Mobile/tablet needs natural document
-   scroll because the live <DebugsyLook> panel is hidden there, and the
-   blog and use-case pages always scroll. */
-@media (min-width: 1024px) {
-  html:has(.dbg-lock),
-  html:has(.dbg-lock) body {
-    height: 100%;
-    overflow: hidden;
-  }
-}
-
 ::selection {
-  background: rgba(245, 158, 11, 0.3);
-  color: #fff;
-}
-
-/* Pulsing status dot */
-@keyframes dbg-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-  }
-}
-
-.dbg-pulse-dot {
-  animation: dbg-pulse 1.6s ease-out infinite;
-}
-
-/* Terminal cursor blink */
-@keyframes dbg-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-
-.dbg-cursor {
-  display: inline-block;
-  width: 0.55em;
-  height: 1em;
-  background: rgb(var(--color-warning));
-  vertical-align: text-bottom;
-  margin-left: 2px;
-  animation: dbg-blink 1s step-end infinite;
-}
-
-/* Pseudo-debugsy chrome surfaces (left rail + main card) */
-.dbg-surface {
-  background: rgb(var(--color-chrome-bg));
-  color: rgb(var(--color-chrome-text));
-}
-
-/* ===========================================================================
-   Capability tile — numbered code block
-   =========================================================================== */
-
-.dbg-cap-num {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  color: rgb(var(--color-chrome-text-muted));
-}
-
-/* Inline keycap glyph used in the intro */
-.dbg-key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25rem;
-  padding: 0 0.3rem;
-  height: 1.1rem;
-  border: 1px solid rgb(var(--color-chrome-text) / 0.4);
-  border-bottom-width: 2px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  color: rgb(var(--color-chrome-text));
-  background: rgb(var(--color-chrome-text) / 0.04);
-  vertical-align: 1px;
-}
-
-/* No focus outlines globally */
-*:focus,
-*:focus-visible {
-  outline: none;
+  background: rgba(6, 182, 212, 0.25);
 }
