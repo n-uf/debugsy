@@ -202,7 +202,7 @@ Now it reads as a story: the coupon changed only the total, and the second add r
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Your action logs and the changed values land in one list, in order. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-Install it with `npm i @n-uf/debugsy`. It needs React 19.
+Install debugsy with `npm i @n-uf/debugsy`. It needs React 19.
 
 ### Declare a debug point for the feature
 
