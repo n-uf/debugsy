@@ -268,6 +268,43 @@
 .g-steps p {
   margin-top: 10px;
 }
+/* Desktop: one full-width row per step, the code beside its title and note, so the lines people
+   copy are never cut at the card edge. */
+@media (min-width: 1024px) {
+  .g-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .g-steps li {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "num code"
+      "title code"
+      "note code";
+    grid-template-rows: auto auto 1fr;
+    column-gap: 40px;
+    align-items: start;
+    padding: 24px 28px;
+  }
+  .g-steps li + li {
+    margin-top: -1px;
+    margin-left: 0;
+  }
+  .g-steps li::before {
+    grid-area: num;
+  }
+  .g-steps h3 {
+    grid-area: title;
+  }
+  .g-steps p {
+    grid-area: note;
+    max-width: 44ch;
+  }
+  .g-steps .g-code {
+    grid-area: code;
+    margin-top: 0;
+  }
+}
 .g-reads {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
