@@ -23,7 +23,8 @@ export function TocSpy({ ids }: { readonly ids: readonly string[] }): null {
       let current = heads[0]?.id ?? "";
       for (const h of heads) if (h.getBoundingClientRect().top <= line) current = h.id;
       // At the very end of the page the last sections may never reach that line: mark the last one.
-      const atEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      const page = document.documentElement.scrollHeight;
+      const atEnd = page > window.innerHeight + 2 && window.scrollY + window.innerHeight >= page - 2;
       if (atEnd) current = heads[heads.length - 1]?.id ?? current;
       for (const [id, a] of links) {
         const on = id === current;
