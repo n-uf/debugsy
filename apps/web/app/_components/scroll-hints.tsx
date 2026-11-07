@@ -27,7 +27,13 @@ export function ScrollHints(): null {
       pre.addEventListener("scroll", onScroll, { passive: true });
       ro.observe(pre);
     }
+    // The web fonts can change how wide the code is without resizing its box.
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live) for (const pre of blocks) mark(pre);
+    });
     return () => {
+      live = false;
       ro.disconnect();
       for (const pre of blocks) pre.removeEventListener("scroll", onScroll);
     };
