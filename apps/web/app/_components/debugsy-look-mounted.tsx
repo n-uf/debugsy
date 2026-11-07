@@ -2,187 +2,134 @@
 
 import { DebugsyLook, getDebugsy } from "@n-uf/debugsy";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
-import "../_lib/register-real-modules";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import "../_lib/register-demo-modules";
+import { OPEN_PANEL_EVENT } from "./open-panel-button";
 
 const DESKTOP_VIEWPORT_QUERY = "(min-width: 1024px)";
-
-/**
- * Realistic surface IDs and a wss endpoint pattern that mirrors what
- * pdfized.com emits in the screenshot.
- */
-const SURFACE_ID = "3f06a121-ea73-430b-8b3b-2cfc7a6b18f";
-const REALTIME_URL = `wss://realtime.pdfized.com/?room=surface&id=${SURFACE_ID}`;
+/** Scrolled this far, the panel folds to its tray; back above UNFOLD_AT it opens again. */
+const FOLD_AT = 200;
+const UNFOLD_AT = 80;
 
 interface SeedLog {
   readonly point: string;
   readonly message: string;
-  readonly tags: readonly string[];
+  readonly level: "info" | "warn" | "error" | "critical";
   readonly data?: Record<string, unknown>;
 }
 
 /**
- * 8 seed logs patterned after the actual `pdf-surf.realtime` feed that
- * shows in the homepage screenshot.
- *
- * NOTE: Seeded tags include both the registry tags (`conn`, `room`,
- * `broadcast`) AND the user-side discovery tags shown in the screenshot
- * sidebar (`surface`, `comm`, `connecting`, `connected`, `synced`,
- * `acquire`).
+ * The sample log, following the page's own example: the Auth module's session and refresh points,
+ * logged with the calls the page shows (debug.log, dsy.warn, getDebugsy().error, window.debugsy.critical).
  */
 const SEED_LOGS: readonly SeedLog[] = [
-  {
-    point: "realtime",
-    message: "state:quanta:state",
-    tags: ["surface", "broadcast"],
-    data: {
-      type: "render-tracker",
-      component: "PDFSurface",
-      renderCount: 142,
-      propsChanged: ["camera", "docks"],
-    },
-  },
-  {
-    point: "realtime",
-    message: `synced surface:${SURFACE_ID}`,
-    tags: ["surface", "comm", "synced"],
-    data: { surfaceId: SURFACE_ID, lamport: 142 },
-  },
-  {
-    point: "realtime",
-    message: `connect surface:${SURFACE_ID}`,
-    tags: ["surface", "comm", "connect", "conn"],
-    data: { surfaceId: SURFACE_ID },
-  },
-  {
-    point: "realtime",
-    message: `connecting surface:${SURFACE_ID}`,
-    tags: ["surface", "comm", "connecting", "conn"],
-    data: { surfaceId: SURFACE_ID, attempt: 1 },
-  },
-  {
-    point: "realtime",
-    message: `connected surface:${SURFACE_ID}`,
-    tags: ["surface", "comm", "connected", "conn"],
-    data: { surfaceId: SURFACE_ID, latencyMs: 17 },
-  },
-  {
-    point: "realtime",
-    message: `connect surface:${SURFACE_ID}`,
-    tags: ["surface", "comm", "connect", "conn"],
-    data: { surfaceId: SURFACE_ID, channel: "presence" },
-  },
-  {
-    point: "realtime",
-    message: `connected surface:${SURFACE_ID}`,
-    tags: ["surface", "comm", "connected", "conn"],
-    data: { surfaceId: SURFACE_ID, channel: "presence", latencyMs: 19 },
-  },
-  {
-    point: "realtime",
-    message: `acquire surface:${SURFACE_ID}`,
-    tags: ["surface", "room", "acquire"],
-    data: { url: REALTIME_URL, seat: "owner" },
-  },
+  { point: "session", message: "synced", level: "info", data: { userId: 42 } },
+  { point: "refresh", message: "renewed", level: "info", data: { expiresIn: 3600 } },
+  { point: "session", message: "expired", level: "warn", data: { ttl: 0 } },
+  { point: "refresh", message: "5xx", level: "error", data: { status: 503 } },
+  { point: "refresh", message: "failed", level: "critical" },
 ];
 
-/**
- * Fires ⌘+D twice on mount so the panel auto-shows in extended mode,
- * matching "always visible" intent. ⌘+D is registered globally on
- * `document` by the harbuz `useKeyboardShortcuts` hook.
- */
-function useAutoOpenDebugsyPanel(): void {
-  const opened = useRef(false);
+let seeded = false;
 
-  useEffect(() => {
-    if (opened.current) return;
-
-    const dispatchToggle = (): void => {
-      document.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "d",
-          code: "KeyD",
-          metaKey: true,
-          bubbles: true,
-        }),
-      );
-    };
-
-    // Mark it opened only when the toggles actually fire: React's Strict Mode (on in `next dev`)
-    // runs this effect, cleans it up (cancelling the frame) and runs it again, and a flag set up
-    // front made the second run skip, so the panel never opened in development.
-    let r2 = 0;
-    const r1 = requestAnimationFrame(() => {
-      opened.current = true;
-      dispatchToggle();
-      r2 = requestAnimationFrame(() => dispatchToggle());
-    });
-    return () => {
-      cancelAnimationFrame(r1);
-      cancelAnimationFrame(r2);
-    };
-  }, []);
+/** Turns on the demo's points and logs the sample once per page load. */
+function seedOnce(): void {
+  if (seeded) return;
+  seeded = true;
+  const debug = getDebugsy();
+  debug.enable("session");
+  debug.enable("refresh");
+  debug.enable("dependencies");
+  for (const e of SEED_LOGS) debug.log(e.point, e.message, e.data, e.level, ["auth"]);
 }
 
-/**
- * Re-enables key debug points (some are off by default) and emits the
- * seed log batch once on mount. Uses `getDebugsy()` instead of the
- * `useDebugsy()` hook because the latter's stable interface omits the
- * `tags` parameter on `log()`.
- */
-function useDebugsySimulator(): void {
-  const seeded = useRef(false);
-
-  useEffect(() => {
-    if (seeded.current) return;
-    seeded.current = true;
-
-    const debug = getDebugsy();
-    debug.enable("realtime");
-    debug.enable("surface");
-    debug.enable("dependencies");
-
-    for (const entry of SEED_LOGS) {
-      debug.log(entry.point, entry.message, entry.data, "info", [
-        ...entry.tags,
-      ]);
-    }
-  }, []);
-}
-
-/**
- * Desktop-only mount: the live `<DebugsyLook>` panel is intentionally hidden
- * on phones/tablets. The runtime cost (auto-open keystroke, seed-log
- * simulator, render tracking) is also avoided there because the inner
- * component never mounts. Reads `matchMedia` after hydration to keep SSR /
- * first-paint deterministic.
- */
-function useIsDesktopViewport(): boolean {
-  const [isDesktop, setIsDesktop] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia(DESKTOP_VIEWPORT_QUERY).matches,
+function dispatchToggle(): void {
+  document.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "d", code: "KeyD", metaKey: true, ctrlKey: true, bubbles: true }),
   );
+}
+
+/**
+ * Desktop: the panel opens under the hero, folds to its tray once the reader scrolls on, and opens
+ * again back at the top. The moment the reader uses the panel or its keys, it stays as they leave it.
+ */
+function useFoldOnScroll(enabled: boolean): void {
+  useEffect(() => {
+    if (!enabled) return;
+    let extended = true;
+    let touched = false;
+    let ours = false;
+
+    const toggle = (): void => {
+      ours = true;
+      dispatchToggle();
+      ours = false;
+      extended = !extended;
+    };
+    const onScroll = (): void => {
+      if (touched) return;
+      if (extended && window.scrollY > FOLD_AT) toggle();
+      else if (!extended && window.scrollY < UNFOLD_AT) toggle();
+    };
+    const onKey = (e: KeyboardEvent): void => {
+      if (ours) return;
+      const k = e.key.toLowerCase();
+      if (((e.metaKey || e.ctrlKey) && (k === "d" || k === "k")) || e.key === "Escape") touched = true;
+    };
+    const onPointer = (e: PointerEvent): void => {
+      if (e.target instanceof Element && e.target.closest(".dbg-root, .g-keys")) touched = true;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("pointerdown", onPointer, true);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("keydown", onKey, true);
+      document.removeEventListener("pointerdown", onPointer, true);
+    };
+  }, [enabled]);
+}
+
+function subscribeDesktop(onChange: () => void): () => void {
+  const mql = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
+function DebugsyLookInner({ foldOnScroll }: { readonly foldOnScroll: boolean }): React.ReactElement {
+  useEffect(seedOnce, []);
+  useFoldOnScroll(foldOnScroll);
+  return <DebugsyLook initialVisible initialIsCompact={false} closeOnClickOutside={false} />;
+}
+
+/**
+ * The live panel. On desktops it is part of the page from the start; on phones and tablets it mounts
+ * only when the reader asks (the "Open the live panel" button), so they pay nothing for it otherwise.
+ * The server renders nothing here, so the first paint is the same for everyone.
+ */
+export function DebugsyLookMounted(): React.ReactElement | null {
+  const isDesktop = useSyncExternalStore(
+    subscribeDesktop,
+    () => window.matchMedia(DESKTOP_VIEWPORT_QUERY).matches,
+    () => false,
+  );
+  const [openCount, setOpenCount] = useState(0);
+  const listening = useRef(false);
 
   useEffect(() => {
-    const mql = window.matchMedia(DESKTOP_VIEWPORT_QUERY);
-    const onChange = (e: MediaQueryListEvent): void => setIsDesktop(e.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
+    if (listening.current) return;
+    listening.current = true;
+    const open = (): void => setOpenCount((n) => n + 1);
+    window.addEventListener(OPEN_PANEL_EVENT, open);
+    return () => {
+      listening.current = false;
+      window.removeEventListener(OPEN_PANEL_EVENT, open);
+    };
   }, []);
 
-  return isDesktop;
-}
-
-function DebugsyLookInner(): React.ReactElement {
-  useAutoOpenDebugsyPanel();
-  useDebugsySimulator();
-
-  return <DebugsyLook closeOnClickOutside={false} />;
-}
-
-export function DebugsyLookMounted(): React.ReactElement | null {
-  const isDesktop = useIsDesktopViewport();
-  if (!isDesktop) return null;
-  return <DebugsyLookInner />;
+  if (isDesktop) return <DebugsyLookInner foldOnScroll />;
+  // A fresh mount per request, so the panel opens again after the reader closed it.
+  if (openCount > 0) return <DebugsyLookInner key={openCount} foldOnScroll={false} />;
+  return null;
 }
