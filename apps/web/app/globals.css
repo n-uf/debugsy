@@ -28,8 +28,6 @@
   --g-soft: #fafafa;
   --g-hover: #f3f3f3;
   --g-inline-code: #f1f1f1;
-  --g-btn-bg: #0a0a0a;
-  --g-btn-ink: #ffffff;
   --g-code-bg: #0a0a0a;
   --g-code-line: #0a0a0a;
   --g-code-ink: #ededed;
@@ -53,8 +51,6 @@
   --g-soft: #111111;
   --g-hover: #1a1a1a;
   --g-inline-code: #1c1c1c;
-  --g-btn-bg: #f2f2f2;
-  --g-btn-ink: #0a0a0a;
   --g-code-bg: #000000;
   --g-code-line: #2a2a2a;
   color-scheme: dark;
