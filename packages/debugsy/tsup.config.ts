@@ -1,9 +1,14 @@
 import { defineConfig } from "tsup";
 
 /**
- * The published build: one ES module for the package root, with type
- * definitions. The panel's CSS is TypeScript strings in the source, so it
- * travels inside the JavaScript; there is no CSS output.
+ * The published build: ES modules for the package root (`index`, with the
+ * panel) and `core` (logging without the panel), with type definitions. The
+ * panel's CSS is TypeScript strings in the source, so it travels inside the
+ * JavaScript; there is no CSS output.
+ *
+ * - Code splitting: what both entries use (the debug point registry, the
+ *   settings, the log queue) lands in a shared chunk that both import, so an
+ *   app that loads both still has one copy of the state.
  *
  * - ES module only. The library keeps module-level state (the debug point
  *   registry, settings, the display queue), and an app that loaded both an
@@ -18,8 +23,9 @@ import { defineConfig } from "tsup";
  * - Dependencies and peer dependencies stay external (tsup's default).
  */
 export default defineConfig({
-  entry: { index: "index.ts" },
+  entry: { index: "index.ts", core: "core.ts" },
   format: ["esm"],
+  splitting: true,
   dts: true,
   sourcemap: true,
   clean: true,
