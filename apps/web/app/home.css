@@ -504,7 +504,8 @@
   }
 }
 
-@media (max-width: 1023px) {
+/* 1023.98, not 1023: the panel mounts at min-width 1024, so a zoomed 1023.5 px window must hide the keys too */
+@media (max-width: 1023.98px) {
   .g-hero {
     padding: 28px 16px 32px;
   }
