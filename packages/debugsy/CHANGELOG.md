@@ -3,7 +3,7 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
-## Unreleased
+## 26.11.5
 
 - `getLogs()` returns the log as it is now. Repeated reads within a frame
   (16 ms) still share one copy, but after a clear or a new line the next
