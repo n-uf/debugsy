@@ -77,7 +77,6 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-      packages: read
     # The patch and the page list cross to the push job as an artifact uploaded before any third-party code
     # runs; no commit id crosses (both jobs check out github.sha, the main commit this run started on). The
     # outputs, `ready` and the artifact's name, are set by the last step, so they exist only when the build
@@ -135,17 +134,11 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-          # Writes a user-level .npmrc with the registry token: pnpm ignores
-          # ${ENV} tokens from the project .npmrc.
-          registry-url: https://npm.pkg.github.com
-          scope: "@n-uf"
 
+      # Every dependency comes from npmjs: no registry token needed.
       - name: Install
         if: steps.flip.outputs.due == 'true'
         run: pnpm install --frozen-lockfile
-        env:
-          # @n-uf/harbuz comes from GitHub Packages (see ci.yml).
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Production mode, the build Vercel runs. A red build fails the job, and `ready` is never set.
       - name: Build the site with the pages live

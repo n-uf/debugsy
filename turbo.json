@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["scripts/local-lib-links.mjs", ".npmrc", "pnpm-workspace.yaml"],
+  "globalDependencies": ["scripts/local-lib-links.mjs", "pnpm-workspace.yaml"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

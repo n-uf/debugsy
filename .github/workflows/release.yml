@@ -21,8 +21,8 @@ name: Release
 #   npmjs.com for @n-uf/debugsy (Trusted Publisher: GitHub Actions, n-uf/debugsy,
 #   release.yml; `npm trust github`). It needs npm 11.5.1+ (Node 22 ships npm
 #   10, so the job installs npm 11) and adds provenance by itself.
-# - GITHUB_TOKEN: installs @n-uf packages from GitHub Packages and publishes
-#   there.
+# - GITHUB_TOKEN: publishes to GitHub Packages. Installing needs no token:
+#   every dependency comes from npmjs.
 
 on:
   push:

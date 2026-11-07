@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "printf \"//npm.pkg.github.com/:_authToken=%s\\n\" \"${GITHUB_TOKEN:?set GITHUB_TOKEN (read:packages) in the Vercel project}\" >> ~/.npmrc && cd ../.. && pnpm install --frozen-lockfile",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm turbo build --filter=web",
   "outputDirectory": ".next"
 }
