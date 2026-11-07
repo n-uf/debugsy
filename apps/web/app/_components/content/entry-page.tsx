@@ -119,11 +119,11 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
         <aside className="ct-cta" aria-label="about debugsy">
           <div>
             <p>
-              debugsy runs inside your own app and logs the values you pass to its hooks. A
-              public npm release is in preparation.
+              debugsy runs inside your own app and logs the values you pass to its hooks. Install
+              it from npm, then mount {"<DebugsyLook />"} once from a client component.
             </p>
             <pre>
-              <code>{"<DebugsyLook />"}</code>
+              <code>npm i @n-uf/debugsy</code>
             </pre>
           </div>
           <Link className="ct-cta-link" href="/">
