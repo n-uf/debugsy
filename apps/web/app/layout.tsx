@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type React from "react";
 import "./globals.css";
+import { ScrollHints } from "./_components/scroll-hints";
 import { SiteBar } from "./_components/site-bar";
 import { SiteFooter } from "./_components/site-footer";
 import { SKIN_INIT_SCRIPT } from "./_components/skin";
@@ -96,6 +97,7 @@ export default function RootLayout({
         <SiteBar />
         {children}
         <SiteFooter />
+        <ScrollHints />
       </body>
     </html>
   );
