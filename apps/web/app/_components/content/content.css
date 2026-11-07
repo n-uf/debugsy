@@ -1,87 +1,56 @@
-/* Blog and use-case pages: the home page's chrome tokens, a lighter reading column, Inter for running
-   text and JetBrains Mono for labels, navigation and code (sketch approved 2026-11-03). */
+/* Blog and use-case pages in the Grid look (sketch approved 2026-11-06): the site frame, Geist for
+   running text, Geist Mono for labels and code, "On this page" in a right column. Tokens are in
+   globals.css; the frame, labels and code blocks in site-chrome.css. */
 
 .ct {
-  --ct-paper: color-mix(in srgb, rgb(var(--color-chrome-bg)) 50%, white);
-  --ct-line: rgb(var(--color-chrome-border));
-  --ct-muted: rgb(var(--color-chrome-text-muted));
-  --ct-text: rgb(var(--color-chrome-text));
-  --ct-code-bg: rgb(var(--color-chrome-button));
-  /* next/font's own variables: harbuz's unlayered :root sets --font-sans and --font-mono to
-     system fonts, which win over Tailwind's @theme, so these pages read the font files directly. */
-  --ct-sans: var(--font-inter), system-ui, sans-serif;
-  --ct-mono: var(--font-jetbrains), "Fira Code", ui-monospace, monospace;
-  font-family: var(--ct-sans);
-  min-height: 100dvh;
-  background: rgb(var(--color-chrome-bg));
-  color: var(--ct-text);
+  min-height: 60vh;
 }
-[data-theme="midnight"] .ct,
-[data-theme="abyss"] .ct {
-  --ct-paper: color-mix(in srgb, rgb(var(--color-chrome-bg)) 82%, black);
-}
-
 .ct a {
   color: inherit;
 }
 
-/* ── frame ─────────────────────────────────────────────────────────── */
-
-/* The rail's width, padding and gap match the home page's rail (page.tsx), and its identity block
-   and links are the shared SiteRail (site-rail.css), so nothing moves between pages. */
-.ct-shell {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  min-height: 100dvh;
-}
-.ct-rail {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 24px 20px;
-  overflow: hidden;
-  border-right: 1px solid var(--ct-line);
-  font-family: var(--ct-mono);
-}
-/* the phone top bar */
-.ct-wordmark {
-  font-family: var(--ct-mono);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  text-decoration: none;
-}
-.ct-topnav a:hover,
-.ct-crumbs a:hover {
-  text-decoration: underline;
-}
-.ct-topnav a {
-  color: var(--ct-muted);
-  text-decoration: none;
-}
-.ct-topnav a.on {
-  color: var(--ct-text);
-  font-weight: 600;
-}
-.ct-topbar {
-  display: none;
-}
-.ct-main {
-  min-width: 0;
-  background: var(--ct-paper);
-  padding: 28px 48px 72px;
-}
-
 /* ── article page ─────────────────────────────────────────────────── */
 
-/* The page's "On this page" list sits in the rail (rail-toc.tsx), so the article is one column. */
 .ct-page {
-  max-width: 700px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
 }
+.ct-article {
+  min-width: 0;
+  max-width: 860px;
+  padding: 56px 64px 72px;
+}
+.ct-toc-col {
+  border-left: 1px solid var(--g-line);
+}
+.ct-toc {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 56px 24px 40px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ct-toc a {
+  display: block;
+  padding: 6px 0 6px 12px;
+  border-left: 2px solid transparent;
+  color: var(--g-muted);
+  text-decoration: none;
+}
+.ct-toc a:hover {
+  color: var(--g-ink);
+}
+.ct-toc a.on {
+  border-left-color: var(--g-dot);
+  color: var(--g-ink);
+  font-weight: 500;
+}
+.ct-toc-m {
+  display: none;
+}
+
 .ct-crumbs {
   display: flex;
   flex-wrap: wrap;
@@ -89,8 +58,8 @@
   margin: 0 0 18px;
   padding: 0;
   list-style: none;
-  font: 11px/1.4 var(--ct-mono);
-  color: var(--ct-muted);
+  font: 11.5px/1.4 var(--g-mono);
+  color: var(--g-faint);
 }
 .ct-crumbs li + li::before {
   content: "/";
@@ -99,21 +68,28 @@
 .ct-crumbs a {
   text-decoration: none;
 }
+.ct-crumbs a:hover,
+.ct-sources a:hover {
+  color: var(--g-ink);
+  text-decoration: underline;
+}
 .ct h1 {
-  margin: 0 0 12px;
-  font: 600 32px/1.2 var(--ct-sans);
-  letter-spacing: -0.015em;
+  margin: 0 0 14px;
+  font: 600 50px/1 var(--g-sans);
+  letter-spacing: -0.045em;
+  color: var(--g-ink);
+  text-wrap: balance;
 }
 .ct-byline {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
-  margin: 0 0 22px;
-  font: 11px/1.5 var(--ct-mono);
-  color: var(--ct-muted);
+  margin: 0 0 24px;
+  font: 11.5px/1.5 var(--g-mono);
+  color: var(--g-faint);
 }
 .ct-byline b {
-  color: var(--ct-text);
+  color: var(--g-ink);
   font-weight: 600;
 }
 /* A draft, shown on previews and in dev only: its go-live day. */
@@ -121,46 +97,46 @@
   display: inline-block;
   margin: 0 0 12px;
   padding: 3px 8px;
-  border: 1px dashed var(--ct-line);
-  border-radius: 3px;
-  font: 600 11px/1.5 var(--ct-mono);
-  color: var(--ct-text);
+  border: 1px dashed var(--g-node);
+  font: 600 11px/1.5 var(--g-mono);
+  color: var(--g-ink);
 }
 .ct-takeaways {
   margin: 0 0 30px;
-  padding: 12px 14px;
-  border: 1px solid var(--ct-line);
-  border-radius: 3px;
-  background: rgb(var(--color-chrome-bg));
-  font: 12.5px/1.55 var(--ct-mono);
+  padding: 16px 18px;
+  border: 1px solid var(--g-line);
+  background: var(--g-soft);
+  font-size: 14.5px;
+  line-height: 1.6;
 }
 .ct-label {
-  margin: 0 0 8px;
-  font: 600 10px/1.3 var(--ct-mono);
-  letter-spacing: 0.2em;
+  margin: 0 0 10px;
+  font: 600 10.5px/1.2 var(--g-mono);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ct-muted);
+  color: var(--g-faint);
 }
 .ct-takeaways ul {
   margin: 0;
   padding-left: 18px;
 }
 .ct-takeaways li {
-  margin: 2px 0;
+  margin: 4px 0;
 }
 
 /* running text */
 .ct-prose {
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: 16.5px;
+  line-height: 1.72;
+  color: var(--g-text);
 }
 .ct-prose > p:first-child {
-  font-size: 17px;
+  font-size: 18px;
 }
 .ct-prose p,
 .ct-prose ul,
 .ct-prose ol {
-  margin: 0 0 14px;
+  margin: 0 0 15px;
 }
 .ct-prose ul,
 .ct-takeaways ul {
@@ -178,50 +154,52 @@
   margin: 4px 0;
 }
 .ct-prose li::marker {
-  color: var(--ct-muted);
+  color: var(--g-faint);
 }
 .ct-prose h2,
 .ct-section-head {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  margin: 38px 0 10px;
-  font: 600 21px/1.3 var(--ct-sans);
-  scroll-margin-top: 20px;
+  gap: 12px;
+  margin: 44px 0 12px;
+  font: 600 23px/1.3 var(--g-sans);
+  letter-spacing: -0.025em;
+  color: var(--g-ink);
+  scroll-margin-top: 24px;
 }
 .ct-prose h3 {
-  margin: 24px 0 6px;
-  font: 600 16.5px/1.35 var(--ct-sans);
-  scroll-margin-top: 20px;
+  margin: 26px 0 6px;
+  font: 600 17px/1.35 var(--g-sans);
+  color: var(--g-ink);
+  scroll-margin-top: 24px;
 }
 .sec-num {
   flex: none;
-  font: 600 11px/1 var(--ct-mono);
+  font: 600 11px/1 var(--g-mono);
   letter-spacing: 0.1em;
-  color: var(--ct-muted);
+  color: var(--g-faint);
 }
 .ct-prose a {
   text-decoration: underline;
-  text-decoration-color: rgb(var(--color-chrome-text) / 0.35);
+  text-decoration-color: var(--g-node);
   text-underline-offset: 3px;
 }
 .ct-prose a:hover {
   text-decoration-color: currentColor;
 }
 .ct-prose code {
-  padding: 1px 4px;
-  border-radius: 2px;
-  background: rgb(var(--color-chrome-button) / 0.6);
-  font: 0.85em var(--ct-mono);
+  padding: 1px 5px;
+  background: var(--g-inline-code);
+  font: 0.86em var(--g-mono);
 }
 .ct-prose pre {
-  margin: 6px 0 18px;
-  padding: 10px 12px;
+  margin: 8px 0 20px;
+  padding: 15px 17px;
   overflow-x: auto;
-  border: 1px solid var(--ct-code-bg);
-  border-radius: 2px;
-  background: var(--ct-code-bg);
-  font: 12.5px/1.6 var(--ct-mono);
+  border: 1px solid var(--g-code-line);
+  background: var(--g-code-bg);
+  color: var(--g-code-ink);
+  font: 12.5px/1.7 var(--g-mono);
 }
 .ct-prose pre code {
   padding: 0;
@@ -229,10 +207,10 @@
   font: inherit;
 }
 .ct-prose blockquote {
-  margin: 0 0 14px;
+  margin: 0 0 15px;
   padding: 2px 0 2px 14px;
-  border-left: 2px solid var(--ct-line);
-  color: var(--ct-muted);
+  border-left: 2px solid var(--g-line);
+  color: var(--g-muted);
 }
 .table-wrap {
   margin: 8px 0 22px;
@@ -245,18 +223,18 @@
   line-height: 1.5;
 }
 .ct-prose th {
-  padding: 6px 8px;
-  border-bottom: 1px solid rgb(var(--color-chrome-text) / 0.35);
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--g-ink);
   text-align: left;
   vertical-align: bottom;
-  font: 600 10px/1.3 var(--ct-mono);
-  letter-spacing: 0.14em;
+  font: 600 10.5px/1.3 var(--g-mono);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ct-muted);
+  color: var(--g-faint);
 }
 .ct-prose td {
-  padding: 7px 8px;
-  border-bottom: 1px solid var(--ct-line);
+  padding: 8px;
+  border-bottom: 1px solid var(--g-line);
   vertical-align: top;
 }
 .ct-prose figure {
@@ -266,62 +244,58 @@
   display: block;
   max-width: 100%;
   height: auto;
-  border: 1px solid var(--ct-line);
-  border-radius: 3px;
+  border: 1px solid var(--g-line);
 }
 .ct-prose figcaption {
   margin-top: 6px;
-  font: 12px/1.5 var(--ct-mono);
-  color: var(--ct-muted);
+  font: 12px/1.5 var(--g-mono);
+  color: var(--g-faint);
 }
 
 /* install block */
 .ct-cta {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  margin: 34px 0 6px;
-  padding: 14px 16px;
-  border: 1px solid var(--ct-line);
-  border-radius: 3px;
-  background: rgb(var(--color-chrome-bg));
+  margin: 36px 0 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--g-line);
 }
 .ct-cta p {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .ct-cta pre {
   margin: 0;
-  padding: 8px 10px;
+  padding: 9px 12px;
   overflow-x: auto;
-  border-radius: 2px;
-  background: var(--ct-code-bg);
-  font: 12.5px/1.5 var(--ct-mono);
+  background: var(--g-code-bg);
+  color: var(--g-code-ink);
+  font: 12.5px/1.5 var(--g-mono);
 }
 .ct-cta-link {
-  padding: 9px 12px;
-  border: 1px solid var(--ct-text);
-  border-radius: 2px;
-  font: 600 11px/1 var(--ct-mono);
+  padding: 11px 14px;
+  border: 1px solid var(--g-ink);
+  font: 600 11px/1 var(--g-mono);
   letter-spacing: 0.1em;
   text-decoration: none;
   text-transform: uppercase;
   white-space: nowrap;
 }
 .ct-cta-link:hover {
-  background: var(--ct-text);
-  color: var(--ct-paper);
+  background: var(--g-ink);
+  color: var(--g-bg);
 }
 
 /* questions */
 .ct-faq details {
-  padding: 10px 0;
-  border-top: 1px solid var(--ct-line);
+  padding: 12px 0;
+  border-top: 1px solid var(--g-line);
 }
 .ct-faq details:last-child {
-  border-bottom: 1px solid var(--ct-line);
+  border-bottom: 1px solid var(--g-line);
 }
 .ct-faq summary {
   display: flex;
@@ -331,6 +305,7 @@
   font-size: 16px;
   font-weight: 600;
   line-height: 1.5;
+  color: var(--g-ink);
 }
 .ct-faq summary::-webkit-details-marker {
   display: none;
@@ -339,8 +314,8 @@
   content: "+";
   flex: none;
   width: 10px;
-  font-family: var(--ct-mono);
-  color: var(--ct-muted);
+  font-family: var(--g-mono);
+  color: var(--g-faint);
 }
 .ct-faq details[open] summary::before {
   content: "−";
@@ -355,125 +330,120 @@
 .ct-sources {
   margin: 0;
   padding-left: 22px;
-  font: 12px/1.6 var(--ct-mono);
-  color: var(--ct-muted);
+  font: 12px/1.6 var(--g-mono);
+  color: var(--g-faint);
 }
 .ct-sources li {
   margin: 3px 0;
 }
 .ct-sources a {
-  color: var(--ct-text);
+  color: var(--g-text);
   text-underline-offset: 2px;
 }
 
-/* related and index cards */
+/* related and index cards: cells with shared borders */
 .ct-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 10px 0 0;
+  margin: 14px 0 0;
   padding: 0;
   list-style: none;
+}
+.ct-cards li {
+  margin: 0 0 -1px -1px;
 }
 .ct-card {
   display: block;
   height: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--ct-line);
-  border-radius: 3px;
-  background: rgb(var(--color-chrome-bg));
+  padding: 16px 18px;
+  border: 1px solid var(--g-line);
   text-decoration: none;
 }
-.ct-card:hover {
-  border-color: rgb(var(--color-chrome-text) / 0.5);
+.ct-card:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .ct-card small {
   display: block;
-  margin-bottom: 4px;
-  font: 10px/1.3 var(--ct-mono);
-  letter-spacing: 0.18em;
+  margin-bottom: 6px;
+  font: 10.5px/1.3 var(--g-mono);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ct-muted);
+  color: var(--g-faint);
 }
 .ct-card strong {
   display: block;
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--g-ink);
 }
 .ct-card span {
   display: block;
   margin-top: 6px;
   font-size: 14px;
   line-height: 1.55;
-  color: var(--ct-muted);
+  color: var(--g-muted);
+}
+.ct-card:focus-visible,
+.ct-toc a:focus-visible,
+.ct-cta-link:focus-visible {
+  outline: 2px solid var(--g-dot);
+  outline-offset: 2px;
 }
 .ct-index {
-  max-width: 760px;
+  max-width: 860px;
+  padding: 56px 64px 72px;
 }
 .ct-index .ct-cards {
   grid-template-columns: minmax(0, 1fr);
 }
 .ct-lede {
-  margin: 0 0 22px;
+  max-width: 62ch;
+  margin: 0 0 24px;
   font-size: 17px;
   line-height: 1.65;
+  color: var(--g-text);
 }
 
-/* on this page: in the rail, under the links; it scrolls on its own when it's taller than the rest */
-.ct-toc {
-  min-height: 72px;
-  overflow-y: auto;
-  font: 11px/1.5 var(--ct-mono);
-}
-.ct-toc a {
-  display: block;
-  padding: 3px 0 3px 10px;
-  border-left: 1px solid var(--ct-line);
-  color: var(--ct-muted);
-  text-decoration: none;
-}
-.ct-toc a:hover {
-  border-left-color: var(--ct-text);
-  color: var(--ct-text);
-}
-
-@media (max-width: 1100px) {
-  .ct-main {
-    padding: 24px 28px 64px;
-  }
-}
-
-@media (max-width: 760px) {
-  .ct-shell {
+@media (max-width: 1023px) {
+  .ct-page {
     grid-template-columns: minmax(0, 1fr);
   }
-  .ct-rail {
+  .ct-toc-col {
     display: none;
   }
-  .ct-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--ct-line);
-    background: rgb(var(--color-chrome-bg));
-    font-family: var(--ct-mono);
+  .ct-toc-m {
+    display: block;
+    margin: 0 0 22px;
+    border-top: 1px solid var(--g-line);
+    border-bottom: 1px solid var(--g-line);
   }
-  .ct-topnav {
-    display: flex;
-    gap: 12px;
-    font-size: 11px;
+  .ct-toc-m summary {
+    padding: 14px 0;
+    cursor: pointer;
+    font: 600 11px/1 var(--g-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--g-muted);
   }
-  .ct-main {
-    padding: 18px 16px 56px;
+  .ct-toc-m a {
+    display: block;
+    padding: 7px 0;
+    font-size: 14.5px;
+    color: var(--g-muted);
+    text-decoration: none;
+  }
+  .ct-toc-m nav {
+    padding-bottom: 10px;
+  }
+  .ct-article,
+  .ct-index {
+    padding: 24px 16px 48px;
   }
   .ct h1 {
-    font-size: 26px;
+    font-size: 32px;
+    line-height: 1.1;
   }
   /* Wide tables scroll inside their box instead of squeezing every column. */
   .ct-prose table {
