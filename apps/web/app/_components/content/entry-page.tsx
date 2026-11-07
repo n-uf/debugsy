@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type React from "react";
-import { type Entry, findByPath, SECTIONS } from "../../_content/content";
+import { type Entry, entryToc, findByPath, SECTIONS } from "../../_content/content";
 import { entryGraph, jsonLdHtml } from "../../_content/jsonld";
 import { absoluteUrl, SITE_NAME } from "../../site";
+import { TocSpy } from "./toc-spy";
 
 /** Where the page's generated share card lives (its opengraph-image route). */
 export const imageUrlOf = (e: Entry): string => absoluteUrl(`${e.path}/opengraph-image`);
@@ -48,15 +49,21 @@ const day = (iso: string): string =>
     timeZone: "UTC",
   });
 
-/** A blog article or a use-case page, laid out as in the approved sketch. */
+/** A blog article or a use-case page: the article, and its "On this page" list in a right column. */
 export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactElement {
   const section = SECTIONS[e.section];
   const next = e.headings.length + 1;
   const num = (n: number): string => String(n).padStart(2, "0");
+  const toc = entryToc(e);
+  const tocLinks = toc.map((t) => (
+    <a key={t.id} href={`#${t.id}`}>
+      {t.text}
+    </a>
+  ));
 
   return (
     <div className="ct-page">
-      <article>
+      <article className="ct-article">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdHtml(entryGraph(e, imageUrlOf(e))) }}
@@ -91,6 +98,12 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
           ) : null}
           <span>{e.minutes} min read</span>
         </p>
+
+        {/* Phones and tablets: the contents list folds open here; desktops have the right column. */}
+        <details className="ct-toc-m">
+          <summary>On this page</summary>
+          <nav aria-label="on this page">{tocLinks}</nav>
+        </details>
 
         <div className="ct-takeaways">
           <p className="ct-label">Key takeaways</p>
@@ -167,6 +180,13 @@ export function EntryPage({ entry: e }: { readonly entry: Entry }): React.ReactE
           ) : null}
         </section>
       </article>
+      <aside className="ct-toc-col">
+        <nav className="ct-toc" aria-label="on this page">
+          <p className="g-label">On this page</p>
+          {tocLinks}
+        </nav>
+        <TocSpy ids={toc.map((t) => t.id)} />
+      </aside>
     </div>
   );
 }
