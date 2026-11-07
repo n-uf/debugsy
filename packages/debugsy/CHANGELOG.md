@@ -3,7 +3,7 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
-## Unreleased
+## 26.11.4
 
 - New entry `@n-uf/debugsy/core`: logging without the panel. It has `dsy`,
   the module registry, `useDebugsy`, `useRenderTracker`,

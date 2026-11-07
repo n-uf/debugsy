@@ -1,6 +1,6 @@
 {
   "name": "@n-uf/debugsy",
-  "version": "26.11.3",
+  "version": "26.11.4",
   "description": "In-process React debugging panel: structured logs, render and dependency tracking, module LEDs, and a virtualised log view.",
   "keywords": [
     "react",
