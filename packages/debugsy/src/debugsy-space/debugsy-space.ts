@@ -143,6 +143,7 @@ declare global {
 function createDebugsySpace(): DebugsySpace {
   // Memoization for expensive getters to prevent performance issues
   let memoizedLogs: DebugLogEntry[] | null = null;
+  let memoizedLogsSource: DebugLogEntry[] | null = null;
   let lastLogsChange = 0;
   let memoizedState: any = null;
   let lastStateChange = 0;
@@ -329,13 +330,21 @@ function createDebugsySpace(): DebugsySpace {
       const globalState = getGlobalDebugState();
       const currentTime = Date.now();
 
-      // Return memoized result if logs haven't changed (within 16ms for ~60fps)
-      if (memoizedLogs && currentTime - lastLogsChange < 16) {
+      // Reuse the copy for repeated reads within a frame (16 ms), but only
+      // while the log is the one it copied: a clear swaps in a new array, a
+      // new line makes it longer, and a line past MAX_STORED_LOGS swaps in a
+      // new array of the same length.
+      if (
+        memoizedLogs &&
+        memoizedLogsSource === globalState.logs &&
+        memoizedLogs.length === globalState.logs.length &&
+        currentTime - lastLogsChange < 16
+      ) {
         return memoizedLogs;
       }
 
-      // Create new array copy only when needed
       memoizedLogs = [...globalState.logs];
+      memoizedLogsSource = globalState.logs;
       lastLogsChange = currentTime;
 
       return memoizedLogs;
