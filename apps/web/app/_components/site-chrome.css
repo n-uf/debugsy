@@ -208,6 +208,12 @@
 .g-skin:hover {
   border-color: var(--g-node);
 }
+/* As wide as "light", so switching to "dark" (or hydrating as dark) doesn't move the bar. */
+.g-skin-name {
+  display: inline-block;
+  min-width: 5ch;
+  text-align: left;
+}
 .g-skin-dot {
   width: 10px;
   height: 10px;
