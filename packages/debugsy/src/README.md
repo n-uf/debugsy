@@ -91,10 +91,12 @@ import {
 } from "@n-uf/debugsy";
 ```
 
-### One entry point
+### Entry points
 
-The package exposes only its root: everything public is re-exported from
-`@n-uf/debugsy`. The folders under `src/` are internal.
+Everything public is re-exported from `@n-uf/debugsy`. `@n-uf/debugsy/core`
+(`core.ts`) is the same minus the panel (`DebugsyLook`, `ModuleNav`), for
+code that only logs; both share one state. The folders under `src/` are
+internal.
 
 ### Global Usage
 

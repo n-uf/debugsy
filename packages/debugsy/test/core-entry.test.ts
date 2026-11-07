@@ -31,4 +31,13 @@ describe("the core entry", () => {
       expect(rootExports[name], name).toBe(value);
     }
   });
+
+  it("is the whole root but the panel: a new root export must reach the core too", () => {
+    const panelOnly = new Set(["DebugsyLook", "ModuleNav"]);
+    const coreExports = core as Record<string, unknown>;
+    for (const name of Object.keys(root)) {
+      if (panelOnly.has(name)) continue;
+      expect(name in coreExports, `${name} is missing from core.ts`).toBe(true);
+    }
+  });
 });

@@ -14,7 +14,7 @@ Site: https://debugsy.n-uf.com
 
 | Folder | What |
 | --- | --- |
-| `packages/debugsy` | `@n-uf/debugsy`, the library (one entry point, published as a built ES module) |
+| `packages/debugsy` | `@n-uf/debugsy`, the library (the root and `/core`, published as a built ES module) |
 | `apps/web` | the showcase site (Next.js), debugsy.n-uf.com |
 | `packages/eslint-config`, `packages/typescript-config` | internal shared configs |
 
@@ -59,8 +59,8 @@ export function DebugPanel() {
 A point logs nothing until it's on: its LED in the panel, `?debug=session` in
 the URL, or `dsy.enable("session")`.
 
-The package exports only its root; the folders under `src/` are internal. The
-panel renders its own scoped stylesheet, so it looks the same in a Tailwind
+The package exports its root and `/core` (logging without the panel); the
+folders under `src/` are internal. The panel renders its own scoped stylesheet, so it looks the same in a Tailwind
 app and a plain one. More in [the package README](packages/debugsy/README.md).
 
 ## Develop
