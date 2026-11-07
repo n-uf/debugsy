@@ -288,7 +288,7 @@ An array counts as an object here. `(#1)` counts that key's changes since the pa
 
 The hook compares the values you pass by reference, and sees only the components where you call it. It does nothing until the Deps toggle (the `dependencies` debug point) is on, in the panel or with `window.debugsy.enable("dependencies")`. By default it skips a render that comes within 100 ms of its last comparison. It logs; it never stops a render. For a count instead of a reason, `useRenderTracker` counts committed renders. The [React render count](/use-cases/react-render-count) guide shows it, with the `trackRenders: true` option that version 26.11.0 needs.
 
-Install it with `npm i @n-uf/debugsy`. It needs React 19. Mount `<DebugsyLook />` once near the root; it starts hidden, and ⌘+D opens it. debugsy doesn't remove itself from production builds, so guard the import or the mount, for example behind `process.env.NODE_ENV !== "production"`. It is independent and not affiliated with Meta or the React team.
+Install debugsy with `npm i @n-uf/debugsy`. It needs React 19. Mount `<DebugsyLook />` once near the root; it starts hidden, and ⌘+D opens it. debugsy doesn't remove itself from production builds, so guard the import or the mount, for example behind `process.env.NODE_ENV !== "production"`. It is independent and not affiliated with Meta or the React team.
 
 ## Which fix for which problem
 

@@ -328,7 +328,7 @@ useLayoutEffect(() => {
 
 ## Debugging a render loop with debugsy
 
-debugsy is an [in-app React debug panel](/) that shows structured logs, render counts and dependency changes in one ordered list inside your own app. Two of its hooks fit this bug. Install it with `npm i @n-uf/debugsy`.
+debugsy is an [in-app React debug panel](/) that shows structured logs, render counts and dependency changes in one ordered list inside your own app. Two of its hooks fit this bug. Install debugsy with `npm i @n-uf/debugsy`.
 
 Put both hooks in the looping component, here `Results` from the parent and child example:
 

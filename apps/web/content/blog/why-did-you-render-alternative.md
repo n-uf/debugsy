@@ -200,7 +200,7 @@ A key that keeps changing gets a `⚠️ FREQUENT` mark once start-up is over. N
 
 It sees only the components where you call the hook, and only the values you pass in. Because it compares by reference, it can't tell you a new object had equal contents. It doesn't read React's internals, so a context shows up only if you pass its value in. It needs React 19 (the package's peer range starts at 19.2.0), and the sources say nothing about the React Compiler, so test that if you use it. It isn't removed from production builds: guard the import or the mount yourself.
 
-Install it with `npm i @n-uf/debugsy`.
+Install debugsy with `npm i @n-uf/debugsy`.
 
 ## The options side by side
 
