@@ -42,6 +42,9 @@ const SEED_LOGS: readonly SeedLog[] = [
   { point: "refresh", message: "failed", level: "critical" },
 ];
 
+/** How many lines the sample logs: what the panel holds when the page loads (the server's view too). */
+export const SAMPLE_LOG_COUNT = SEED_LOGS.length;
+
 /** Turns on the demo's points and logs the sample, once per page load, in the browser only. */
 function seedSample(): void {
   const debug = getDebugsy();
