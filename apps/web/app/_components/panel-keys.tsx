@@ -160,7 +160,8 @@ export function PanelKeys(): React.ReactElement {
             className={cls}
             aria-disabled={off}
             aria-pressed={k.id === "d" ? latched : undefined}
-            aria-label={label}
+            // ⌘D is a toggle: a fixed name, its state in aria-pressed (the full sentence stays in the tooltip)
+            aria-label={k.id === "d" ? `${mod} ${k.letter}: show the panel, then switch between its tray and the full panel` : label}
             title={label}
             onClick={() => {
               if (!off) press(k);
