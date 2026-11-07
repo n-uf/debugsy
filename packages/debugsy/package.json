@@ -35,6 +35,10 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
+      "./core": {
+        "types": "./dist/core.d.ts",
+        "default": "./dist/core.js"
+      },
       "./styles": "./styles.css",
       "./package.json": "./package.json"
     }
@@ -81,6 +85,10 @@
     ".": {
       "types": "./index.ts",
       "default": "./index.ts"
+    },
+    "./core": {
+      "types": "./core.ts",
+      "default": "./core.ts"
     },
     "./styles": "./styles.css"
   }
