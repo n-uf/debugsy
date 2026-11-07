@@ -80,6 +80,7 @@ if (jsFiles.includes("core.js")) {
     for (const [marker, what] of [
       ["DebugsyLook", "the panel (DebugsyLook)"],
       ["dbg-window", "the panel's markup (dbg-window)"],
+      ["data-dbg-theme", "the panel's stylesheet (data-dbg-theme)"],
       ["react18-json-view", "the log view (react18-json-view)"],
     ]) {
       if (code.includes(marker)) problems.push(`core: ${file} holds ${what}`);
