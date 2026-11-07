@@ -37,7 +37,7 @@ export function SkinToggle(): React.ReactElement {
       aria-label={`Skin: ${skin}. Switch to ${other}`}
     >
       <span className="g-skin-dot" aria-hidden="true" />
-      {skin}
+      <span className="g-skin-name">{skin}</span>
     </button>
   );
 }
