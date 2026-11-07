@@ -1,0 +1,372 @@
+/* The home page in the Grid look. The frame, labels, buttons and code blocks are in
+   _components/site-chrome.css; the tokens in globals.css. */
+
+.g-hero {
+  padding: 44px 56px 40px;
+}
+.g-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 48px;
+  align-items: center;
+}
+.g-kicker {
+  margin: 0;
+  font: 500 12px/1.4 var(--g-mono);
+  letter-spacing: 0.04em;
+  color: var(--g-muted);
+}
+.g-kicker b {
+  color: var(--g-ink);
+  font-weight: 600;
+}
+.g-h1 {
+  max-width: 19ch;
+  margin: 14px 0 0;
+  font: 600 66px/0.95 var(--g-sans);
+  letter-spacing: -0.05em;
+  color: var(--g-ink);
+  text-wrap: balance;
+}
+.g-promise {
+  max-width: 56ch;
+  margin: 16px 0 0;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--g-text);
+}
+.g-act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.g-install {
+  position: relative;
+  flex: 0 1 300px;
+  padding: 11px 76px 11px 16px;
+  border: 1px solid var(--g-code-line);
+  background: var(--g-code-bg);
+  color: var(--g-code-ink);
+}
+.g-install code {
+  display: block;
+  overflow-x: auto;
+  font: 14px/1.55 var(--g-mono);
+  white-space: nowrap;
+}
+.g-install-dollar {
+  color: var(--g-code-muted);
+}
+.g-install-note {
+  display: block;
+  font: 11.5px/1.5 var(--g-mono);
+  color: var(--g-code-muted);
+}
+.g-copy {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  padding: 7px 9px;
+  border: 1px solid #3a3a3a;
+  background: transparent;
+  color: #dddddd;
+  font: 600 10px/1 var(--g-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.g-copy:hover {
+  border-color: #6b6b6b;
+}
+.g-copy:focus-visible {
+  outline: 2px solid var(--g-dot);
+  outline-offset: 2px;
+}
+
+/* the panel's keys (desktop: the panel docks below the hero) */
+.g-keys {
+  padding: 18px 20px;
+  border: 1px solid var(--g-line);
+}
+.g-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.g-keys-list button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--g-text);
+  font: 13.5px/1 var(--g-sans);
+  cursor: pointer;
+}
+.g-keys-list kbd {
+  min-width: 64px;
+  padding: 7px 9px;
+  border: 1px solid var(--g-ink);
+  background: var(--g-bg);
+  color: var(--g-ink);
+  font: 600 11px/1 var(--g-mono);
+  text-align: center;
+  text-transform: uppercase;
+}
+.g-keys-list button:hover kbd {
+  background: var(--g-ink);
+  color: var(--g-bg);
+}
+.g-keys-list button:focus-visible {
+  outline: 2px solid var(--g-dot);
+  outline-offset: 2px;
+}
+.g-keys-note {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--g-muted);
+}
+
+/* a still of the panel for phones and tablets, where it opens on request */
+.g-still {
+  display: none;
+  margin: 28px 0 0;
+}
+.g-still-log {
+  overflow: hidden;
+  background: #0d1014;
+  font: 11px/1 var(--g-mono);
+  color: #cbd5e1;
+}
+.g-still-log p {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 31px;
+  margin: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid #222932;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.g-still-log b {
+  font-weight: 400;
+  color: #22d3ee;
+}
+.g-still-log i {
+  padding: 2px 4px;
+  border: 1px solid #2c343f;
+  font-style: normal;
+  color: #8b95a3;
+}
+.g-still-log span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #6b7684;
+}
+.g-still-log .warn {
+  color: #fbbf24;
+}
+.g-still-log .err {
+  color: #f87171;
+}
+.g-still figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--g-muted);
+}
+
+/* sections */
+.g-sec {
+  padding: 64px 56px;
+}
+.g-sec h2 {
+  margin: 0 0 26px;
+  font: 600 46px/1 var(--g-sans);
+  letter-spacing: -0.045em;
+  color: var(--g-ink);
+}
+.g-sec h3 {
+  margin: 0 0 8px;
+  font: 600 17px/1.3 var(--g-sans);
+  color: var(--g-ink);
+}
+.g-sec p {
+  margin: 0;
+  color: var(--g-muted);
+}
+.g-feat {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 40px;
+  align-items: start;
+  padding: 28px;
+  border: 1px solid var(--g-line);
+}
+.g-feat + .g-feat {
+  margin-top: -1px;
+}
+.g-feat p {
+  max-width: 44ch;
+  line-height: 1.6;
+}
+.g-minor,
+.g-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.g-minor {
+  margin-top: -1px;
+}
+.g-minor li,
+.g-steps li {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--g-line);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.g-minor li + li,
+.g-steps li + li {
+  margin-left: -1px;
+}
+.g-minor h3 {
+  font-size: 15px;
+}
+.g-steps {
+  counter-reset: step;
+}
+.g-steps li {
+  counter-increment: step;
+}
+.g-steps li::before {
+  content: counter(step, decimal-leading-zero);
+  display: block;
+  margin-bottom: 10px;
+  font: 600 11px/1 var(--g-mono);
+  letter-spacing: 0.14em;
+  color: var(--g-faint);
+}
+.g-steps .g-code {
+  margin-top: 4px;
+}
+.g-steps p {
+  margin-top: 10px;
+}
+.g-reads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.g-reads > div {
+  min-width: 0;
+  padding-right: 24px;
+}
+.g-reads > div + div {
+  padding: 0 0 0 24px;
+  border-left: 1px solid var(--g-line);
+}
+.g-card {
+  display: block;
+  padding: 18px 0;
+  border-top: 1px solid var(--g-line);
+  text-decoration: none;
+}
+.g-card p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.g-card:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.g-card:focus-visible,
+.g-more:focus-visible {
+  outline: 2px solid var(--g-dot);
+  outline-offset: 2px;
+}
+.g-more {
+  display: inline-block;
+  margin-top: 12px;
+  font: 500 13px/1.4 var(--g-mono);
+  color: var(--g-ink);
+  text-decoration: none;
+}
+.g-more:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1023px) {
+  .g-hero {
+    padding: 28px 16px 32px;
+  }
+  .g-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .g-keys {
+    display: none;
+  }
+  .g-h1 {
+    max-width: none;
+    font-size: 44px;
+  }
+  .g-promise {
+    font-size: 16.5px;
+  }
+  .g-act {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .g-install {
+    flex: none;
+  }
+  .g-act .g-btn {
+    justify-content: space-between;
+  }
+  .g-still {
+    display: block;
+  }
+  .g-sec {
+    padding: 40px 16px;
+  }
+  .g-sec h2 {
+    font-size: 32px;
+  }
+  .g-feat {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px;
+  }
+  .g-minor,
+  .g-steps,
+  .g-reads {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .g-minor li + li,
+  .g-steps li + li {
+    margin-top: -1px;
+    margin-left: 0;
+  }
+  .g-reads > div,
+  .g-reads > div + div {
+    padding: 0;
+    border-left: 0;
+  }
+  .g-reads > div + div {
+    margin-top: 28px;
+  }
+}

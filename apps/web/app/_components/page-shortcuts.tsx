@@ -93,43 +93,19 @@ export function PageShortcuts(): React.ReactElement {
   const modifierWord = isMac ? "command" : "control";
 
   return (
-    <ul
-      aria-label="keyboard shortcuts"
-      className="m-0 flex list-none flex-row flex-wrap items-center gap-x-5 gap-y-1 p-0"
-    >
+    <ul aria-label="keyboard shortcuts" className="g-keys-list">
       {PAGE_SHORTCUTS.map((s) => (
-        <li key={s.key} className="m-0 p-0">
+        <li key={s.key}>
           <button
             type="button"
             onClick={() => triggerShortcut(s)}
             aria-label={`${s.meta ? `${modifierWord} ` : ""}${s.key} — ${s.label}`}
-            className="group inline-flex cursor-pointer items-center gap-2 rounded-sm py-0 pr-1 text-left font-mono text-[12px] focus:outline-none focus-visible:ring-1 focus-visible:ring-[rgb(var(--color-chrome-text)/0.4)]"
           >
-            <span
-              className="inline-flex items-baseline justify-center gap-1 rounded border px-1.5 py-px font-mono font-semibold uppercase tracking-wide transition-colors group-hover:bg-chrome-button-hover group-active:bg-[rgb(var(--color-chrome-button-pressed))] group-active:text-[rgb(var(--color-chrome-button-pressed-text))]"
-              style={{
-                borderColor: "rgb(var(--color-chrome-border))",
-                background: "rgb(var(--color-chrome-button))",
-                color: "rgb(var(--color-chrome-text))",
-              }}
-            >
-              {s.meta && (
-                <span
-                  aria-hidden="true"
-                  className="text-[9.5px] tracking-normal"
-                  style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-                >
-                  {modifierGlyph}
-                </span>
-              )}
-              <span className="text-[11px] leading-none">{s.key}</span>
-            </span>
-            <span
-              className="transition-colors group-hover:text-chrome"
-              style={{ color: "rgb(var(--color-chrome-text-muted))" }}
-            >
-              {s.label}
-            </span>
+            <kbd>
+              {s.meta ? <span aria-hidden="true">{modifierGlyph} </span> : null}
+              {s.key}
+            </kbd>
+            <span>{s.label}</span>
           </button>
         </li>
       ))}
