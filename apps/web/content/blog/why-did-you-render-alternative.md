@@ -200,7 +200,7 @@ A key that keeps changing gets a `⚠️ FREQUENT` mark once start-up is over. N
 
 It sees only the components where you call the hook, and only the values you pass in. Because it compares by reference, it can't tell you a new object had equal contents. It doesn't read React's internals, so a context shows up only if you pass its value in. It needs React 19 (the package's peer range starts at 19.2.0), and the sources say nothing about the React Compiler, so test that if you use it. It isn't removed from production builds: guard the import or the mount yourself.
 
-It isn't on npmjs yet: a public release there is in preparation.
+Install it with `npm i @n-uf/debugsy`.
 
 ## The options side by side
 
@@ -211,7 +211,7 @@ It isn't on npmjs yet: a public release there is in preparation.
 | React Scan | Script tag or package | `init` command or a script tag | Highlights renders that cause performance issues | Peer range 16.8 to 19 on npm | `dangerouslyForceRunInProduction`, default false, "not recommended" |
 | React Render Tracker | Script tag, UI in the page or devtools | One `<script>` | Tree over time, event log with context, state and props changes | 16.9+ per README | README: some data isn't captured in production builds |
 | Hook you write | Your component code | Paste, call per component | Changed keys you pass | Whatever your app runs | Stays until deleted |
-| debugsy `useWhyDidYouUpdate` | Hook in your component, panel in your app | Install (npmjs release in preparation), mount, call the hook, Deps on | From and to per key you pass, a counter, a frequent mark | 19 | Not removed for you: guard it |
+| debugsy `useWhyDidYouUpdate` | Hook in your component, panel in your app | Install from npm, mount, call the hook, Deps on | From and to per key you pass, a counter, a frequent mark | 19 | Not removed for you: guard it |
 
 ## When why-did-you-render is still the better choice
 

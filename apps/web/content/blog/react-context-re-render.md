@@ -326,4 +326,4 @@ The 🚀 marks debugsy's start-up phase, which ends five seconds after the last 
 
 The hook sees only the components where you call it and only the values you pass, and does nothing while Deps is off. It logs; it never stops a render.
 
-It isn't on npmjs yet: a public release there is in preparation. debugsy doesn't remove itself from production builds, so guard the import or the mount yourself. It is independent and not affiliated with Meta, the React team or the Zustand project.
+Install it with `npm i @n-uf/debugsy`. debugsy doesn't remove itself from production builds, so guard the import or the mount yourself. It is independent and not affiliated with Meta, the React team or the Zustand project.

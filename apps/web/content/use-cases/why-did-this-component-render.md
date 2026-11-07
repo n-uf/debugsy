@@ -137,7 +137,7 @@ It compares by reference only. You add it to each component by hand and take it 
 
 debugsy is an in-process [React debug panel](/): a component you mount in your own app that shows one ordered log of debug messages, render counts and dependency changes. Its `useWhyDidYouUpdate` hook does the same job as the hook above, and the results land in that log, so you can debug a component re-render without leaving the page. The source is on [GitHub](https://github.com/n-uf/debugsy).
 
-debugsy isn't on npmjs yet: a public release there is in preparation. It needs React 19. The [home page](/) has the mount steps.
+Install debugsy with `npm i @n-uf/debugsy`. It needs React 19. The [home page](/) has the mount steps.
 
 Mount the panel once near the root, then call the hook in the component you're chasing.
 
@@ -252,7 +252,7 @@ const ShippingForm = memo(function ShippingForm({ onSubmit }: Props) {
 | | React DevTools Profiler | why-did-you-render | Hook you write | debugsy |
 |---|---|---|---|---|
 | Runs | Browser extension or standalone app | Library that patches React in your app | Your component code | Panel in your app |
-| Setup | Install, tick the setting, record | Dev dependency, JSX `importSource` in Babel, `wdyr.js` as the first import | Paste, call per component | Install (npmjs release in preparation), mount, call the hook, switch on Deps |
+| Setup | Install, tick the setting, record | Dev dependency, JSX `importSource` in Babel, `wdyr.js` as the first import | Paste, call per component | Install from npm, mount, call the hook, switch on Deps |
 | Shows | Props, state, hooks or context changed, or the parent rendered | Re-renders it flags as potentially avoidable | Changed keys you pass | From and to per key you pass, a counter, a frequent flag |
 | React | Not stated on react.dev's DevTools page | Latest version tested with React 19 only; React 18 uses its v8 readme, 16 and 17 v7 | Whatever your app runs | 19 |
 | In production | Nothing in your code | README says never | Stays until deleted | Not removed for you: guard it |
