@@ -49,12 +49,6 @@ function subscribePanel(onChange: () => void): () => void {
 
 const noSubscribe = (): (() => void) => () => {};
 
-/** How many lines the log holds right now. */
-function liveLogCount(): number {
-  const state = getDebugsy().getDebugState() as { readonly logs?: readonly unknown[] } | undefined;
-  return state?.logs?.length ?? 0;
-}
-
 function isMac(): boolean {
   const uad = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData;
   const platform = [uad?.platform, navigator.platform, navigator.userAgent].find((p) => p && p.length > 0);
@@ -102,8 +96,7 @@ export function PanelKeys(): React.ReactElement {
   const hydrated = useSyncExternalStore(noSubscribe, () => true, () => false);
   useDebugSubscription();
   // The sample is logged before hydration, so the server's count matches the first client render.
-  // The live state, not getLogs(): that returns a copy cached for 16 ms, which can predate a clear.
-  const logs = hydrated ? liveLogCount() : SAMPLE_LOG_COUNT;
+  const logs = hydrated ? getDebugsy().getLogs().length : SAMPLE_LOG_COUNT;
   const mod = mac ? "⌘" : "Ctrl";
 
   // The panel lives on the home page only: once the keys leave with it, a return visit starts as a first load
