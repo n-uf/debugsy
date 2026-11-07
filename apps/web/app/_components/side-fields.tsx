@@ -90,8 +90,10 @@ export function SideFields({
     const enter = (): void => {
       sideRef.current = true;
       // A copy still gliding out is reused; otherwise it mounts and the layout effect glides it in.
+      // setSide(true) either way: it overrides a setSide(false) from a leave that just finished
+      // but hasn't rendered yet, which would otherwise unmount the reused copy.
       if (fieldsRef.current?.firstChild) glideIn();
-      else setSide(true);
+      setSide(true);
     };
     const leave = (animate: boolean): void => {
       sideRef.current = false;
