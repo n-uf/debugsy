@@ -6,7 +6,7 @@ mainKeyword: "when does react re render"
 kind: what-is
 published: 2026-11-09
 updated: 2026-11-09
-draft: true
+draft: false
 author: n-uf
 takeaways:
   - "A React component renders again when its own state is updated, when an ancestor renders, when a context it reads gets a new value, or when an external store it subscribes to changes."

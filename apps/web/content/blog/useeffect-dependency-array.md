@@ -6,7 +6,7 @@ mainKeyword: "useeffect dependency array"
 kind: what-is
 published: 2026-11-09
 updated: 2026-11-09
-draft: true
+draft: false
 author: n-uf
 takeaways:
   - "With no dependency array an effect runs after every commit. With [] it runs after the initial commit only. With [a, b] it runs after the initial commit and after commits where a or b changed."
