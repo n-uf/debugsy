@@ -3,6 +3,26 @@
 Versions are calendar versions, `YY.M.R` (year, month of the release, counter
 within the month), the same scheme as `@n-uf/hypr-tiling`.
 
+## Unreleased
+
+### Changed
+
+- The `debugsy` console command (`window.debugsy`) is off in production
+  builds. Before, every page that loaded debugsy put it on the page, so any
+  visitor of a live site could read its log with `debugsy.getLogs()`. In
+  development it's on as before. Logging, the hooks and the panel don't
+  depend on it.
+
+### Added
+
+- `exposeConsole(on)`, from the root and `/core`, puts the console command on
+  the page or takes it off: for example on once an app's own debug gate lets
+  someone in. The choice holds through HMR and for every copy of debugsy on
+  the page.
+- The page's debug space now lives under `Symbol.for("@n-uf/debugsy")`, so
+  two copies of debugsy (both entries, a duplicate in another bundle) still
+  share it, as they shared `globalThis.debugsy` before.
+
 ## 26.11.5
 
 - `getLogs()` returns the log as it is now. Repeated reads within a frame

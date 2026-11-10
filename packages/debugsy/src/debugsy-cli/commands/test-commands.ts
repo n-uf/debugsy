@@ -4,6 +4,7 @@
  */
 
 import { depsSettingsControls } from "../../debugsy-space/debugsy-space-settings";
+import { readSpace } from "../../debugsy-space/space-holder";
 
 export interface TestCommands {
   testDependencyTracking: () => boolean;
@@ -22,9 +23,10 @@ export function createTestCommands(): TestCommands {
 🔍 CHECKING SYSTEM AVAILABILITY...`);
 
       // Check if global debugsy object exists
-      if (!globalThis.debugsy) {
+      const debugsy = readSpace();
+      if (!debugsy) {
         console.log(`
-❌ TEST FAILED: Global debugsy object not found
+❌ TEST FAILED: the debug space was not found
    The debugsy system is not initialized.
    
 💡 TROUBLESHOOTING:
@@ -34,10 +36,10 @@ export function createTestCommands(): TestCommands {
         return false;
       }
 
-      console.log("✅ Global debugsy object found");
+      console.log("✅ Debug space found");
 
       // Check if getDepsSettings method exists
-      if (!globalThis.debugsy.getDepsSettings) {
+      if (!debugsy.getDepsSettings) {
         console.log(`
 ❌ TEST FAILED: getDepsSettings method not found
    The dependency tracking system is not properly initialized.
@@ -47,7 +49,7 @@ export function createTestCommands(): TestCommands {
 
       console.log("✅ getDepsSettings method found");
 
-      const depStatus = globalThis.debugsy.getDepsSettings();
+      const depStatus = debugsy.getDepsSettings();
       console.log(`
 📊 CURRENT DEPENDENCY STATUS:
    Enabled: ${depStatus.enabled ? "✅ Yes" : "❌ No"}
@@ -59,7 +61,7 @@ export function createTestCommands(): TestCommands {
       console.log("🔄 Testing dependency tracking toggle...");
       // Turn tracking on the way debugsy.deps.on() does: saved, panel follows
       depsSettingsControls.setEnabled(true);
-      const newStatus = globalThis.debugsy.getDepsSettings();
+      const newStatus = debugsy.getDepsSettings();
 
       console.log(`
 📊 UPDATED DEPENDENCY STATUS:
@@ -86,9 +88,10 @@ export function createTestCommands(): TestCommands {
 🔍 CHECKING SYSTEM HEALTH...`);
 
       // Check if global debugsy space exists
-      if (!globalThis.debugsy) {
+      const debugsy = readSpace();
+      if (!debugsy) {
         console.log(`
-❌ TEST FAILED: Global debugsy object not found
+❌ TEST FAILED: the debug space was not found
    The debugsy system is not initialized.
    
 💡 TROUBLESHOOTING:
@@ -98,7 +101,7 @@ export function createTestCommands(): TestCommands {
         return false;
       }
 
-      console.log("✅ Global debugsy object found");
+      console.log("✅ Debug space found");
 
       // Test emergency stop functionality
       console.log(`
@@ -121,7 +124,7 @@ export function createTestCommands(): TestCommands {
       }
 
       // Test dependency status
-      const depState = globalThis.debugsy?.getDepsSettings?.();
+      const depState = debugsy?.getDepsSettings?.();
 
       console.log(`
 📊 DEPENDENCY SYSTEM STATUS:`);

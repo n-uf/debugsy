@@ -10,15 +10,12 @@
 import {
   type LogLevel,
 } from "../debugsy-space/debugsy-constants";
-import { initializeDebugsySpace } from "../debugsy-space/debugsy-space";
+import { getDebugsy } from "../debugsy-space/debugsy-space";
 import { shouldLogLevel } from "./deps-filters";
 
 class DependencyLogger {
   private ensureDebugsy() {
-    if (!globalThis.debugsy) {
-      initializeDebugsySpace();
-    }
-    return globalThis.debugsy;
+    return getDebugsy();
   }
 
   log(
@@ -49,10 +46,7 @@ class DependencyLogger {
 export const dependencyLogger = new DependencyLogger();
 
 export function getDepsDebugManager() {
-  if (!globalThis.debugsy) {
-    initializeDebugsySpace();
-  }
-  return globalThis.debugsy;
+  return getDebugsy();
 }
 
 export const logToDebugSystem = (

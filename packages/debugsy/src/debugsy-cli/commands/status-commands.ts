@@ -2,9 +2,12 @@
  * Status command implementations for the Debugsy CLI
  */
 
+import { readSpace } from "../../debugsy-space/space-holder";
+
 export const statusCommands = {
   status: (): void => {
-    if (!globalThis.debugsy) {
+    const debugsy = readSpace();
+    if (!debugsy) {
       console.log("❌ Debugsy system not initialized");
       return;
     }
@@ -13,8 +16,8 @@ export const statusCommands = {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // Get current state from unified system
-    const state = globalThis.debugsy.getDebugState();
-    const depState = globalThis.debugsy?.getDepsSettings?.() || {};
+    const state = debugsy.getDebugState();
+    const depState = debugsy?.getDepsSettings?.() || {};
 
     console.log("📊 Debug Points:", Array.from(state.enabled));
     console.log("🖥️  Console Logging:", state.console ? "✅ ON" : "❌ OFF");
@@ -34,12 +37,13 @@ export const statusCommands = {
   },
 
   list: (): void => {
-    if (!globalThis.debugsy) {
+    const debugsy = readSpace();
+    if (!debugsy) {
       console.log("❌ Debugsy system not initialized");
       return;
     }
 
-    const state = globalThis.debugsy.getDebugState();
+    const state = debugsy.getDebugState();
     const enabledPoints = Array.from(state.enabled);
 
     console.log("📋 Debug Points Status:");
@@ -51,7 +55,7 @@ export const statusCommands = {
     }
 
     enabledPoints.forEach((point) => {
-      const visual = globalThis.debugsy.showVisual(point as any) ? "👁️" : "🚫";
+      const visual = debugsy.showVisual(point as any) ? "👁️" : "🚫";
       console.log(`  ✅ ${point} ${visual}`);
     });
 
@@ -59,12 +63,13 @@ export const statusCommands = {
   },
 
   deps: (): void => {
-    if (!globalThis.debugsy) {
+    const debugsy = readSpace();
+    if (!debugsy) {
       console.log("❌ Debugsy system not initialized");
       return;
     }
 
-    const depState = globalThis.debugsy?.getDepsSettings?.();
+    const depState = debugsy?.getDepsSettings?.();
 
     if (!depState) {
       console.log("❌ Dependency tracking not available");
@@ -93,12 +98,13 @@ export const statusCommands = {
   },
 
   logs: (count: number = 10): void => {
-    if (!globalThis.debugsy) {
+    const debugsy = readSpace();
+    if (!debugsy) {
       console.log("❌ Debugsy system not initialized");
       return;
     }
 
-    const logs = globalThis.debugsy.getLogs();
+    const logs = debugsy.getLogs();
     const recentLogs = logs.slice(-count);
 
     console.log(`📝 Recent Logs (${recentLogs.length}/${logs.length}):`);

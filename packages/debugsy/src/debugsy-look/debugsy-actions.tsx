@@ -71,7 +71,7 @@ export const DebugsyActions = <T,>({
 
   // Health Snapshot Handler
   const handleHealthSnapshot = useCallback(() => {
-    // The debug space (globalThis.debugsy); there is no surfaceDebug global
+    // The debug space (the console command may be off); there is no surfaceDebug global
     const globalDebug = getDebugsy();
     if (typeof globalDebug?.captureHealthSnapshot === "function") {
       globalDebug.captureHealthSnapshot();
