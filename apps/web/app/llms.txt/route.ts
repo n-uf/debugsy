@@ -13,7 +13,7 @@ export function GET(): Response {
     "",
     `- Package: \`@n-uf/debugsy\` ${LIB_VERSION} on npm, public: \`npm i @n-uf/debugsy\` (no token, no \`.npmrc\`).`,
     '- Setup: mount `<DebugsyLook />` from a client component (the package is marked "use client"). No CSS import, no Tailwind, no bundler config. Needs React 19 and react-dom 19 (peer dependencies). Works in the Next.js App Router and Vite.',
-    "- Main API: `<DebugsyLook />` (the panel), `useDebugsy()` / `dsy` / `window.debugsy` (logging), `registerModule()` (debug points), `useWhyDidYouUpdate()` (which values changed between renders), `useRenderTracker()` (render and mount count warnings).",
+    "- Main API: `<DebugsyLook />` (the panel), `useDebugsy()` / `dsy` (logging), `window.debugsy` (the console command: on in development, off in production builds unless `exposeConsole(true)`), `registerModule()` (debug points), `useWhyDidYouUpdate()` (which values changed between renders), `useRenderTracker()` (render and mount count warnings).",
     '- `useWhyDidYouUpdate()` and `useRenderTracker()` log nothing until the dependencies debug point is on: the panel\'s Deps toggle, or `window.debugsy.enable("dependencies")` in the console.',
     "- It warns; it doesn't stop render loops. It makes no network requests. It doesn't remove itself from production builds: guard the import.",
     `- Licence: ${LICENSE_NAME}. Source: ${REPO_URL}`,
