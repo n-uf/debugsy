@@ -60,9 +60,11 @@ no module registered warns once in the console.
   state, so the panel shows what the core logged.
 - **Console command.** `window.debugsy` (`debugsy.help()` lists the commands)
   is there in development and left off in production builds, so a live site
-  doesn't hand every visitor its log. `exposeConsole(true)` puts it on, for
-  example once your own debug gate lets someone in; `exposeConsole(false)`
-  takes it off. Logging, the hooks and the panel work either way.
+  doesn't offer its log to every visitor's console. `exposeConsole(true)`
+  puts it on, for example once your own debug gate lets someone in;
+  `exposeConsole(false)` takes it off. Logging, the hooks and the panel work
+  either way. It hides the log from casual reach only: the log stays in the
+  page's memory, so don't log secrets in production.
 - **An ES module** with type definitions, for bundlers (Node 22.12+ can also
   `require()` it). The package exports its root, `/core` (logging without
   the panel) and `/styles` (an empty file kept for older setups).

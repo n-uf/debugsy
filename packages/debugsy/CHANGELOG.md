@@ -7,11 +7,17 @@ within the month), the same scheme as `@n-uf/hypr-tiling`.
 
 ### Changed
 
-- The `debugsy` console command (`window.debugsy`) is off in production
-  builds. Before, every page that loaded debugsy put it on the page, so any
-  visitor of a live site could read its log with `debugsy.getLogs()`. In
-  development it's on as before. Logging, the hooks and the panel don't
-  depend on it.
+- The `debugsy` console command (`window.debugsy`) is no longer on the page
+  in production builds, nor where the bundler provides no
+  `process.env.NODE_ENV`. Before, every page that loaded debugsy put it
+  there, so a visitor of a live site could read its log with
+  `debugsy.getLogs()` in the console. In development it's on as before.
+  Logging, the hooks and the panel don't depend on it. This keeps the log
+  out of casual reach, not out of reach: the log is in the page's memory and
+  under the shared `Symbol.for("@n-uf/debugsy")` key, so don't log secrets in
+  production.
+- The global's type is now `DebugsySpaceWithCLI | undefined`: code that calls
+  `window.debugsy` directly needs a check, or use `dsy` / `getDebugsy()`.
 
 ### Added
 
