@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SPACE_KEY = Symbol.for("@n-uf/debugsy");
 const CONSOLE_KEY = Symbol.for("@n-uf/debugsy/console");
+const SHOWN_KEY = Symbol.for("@n-uf/debugsy/shown");
 const holder = globalThis as unknown as Record<symbol, unknown>;
 const nodeEnv = process.env.NODE_ENV;
 
@@ -26,6 +27,7 @@ async function loadCore(): Promise<Core> {
 function resetPage(): void {
   delete holder[SPACE_KEY];
   delete holder[CONSOLE_KEY];
+  delete holder[SHOWN_KEY];
   delete globalThis.debugsy;
 }
 
@@ -35,7 +37,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  process.env.NODE_ENV = nodeEnv;
+  if (nodeEnv === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = nodeEnv;
   vi.restoreAllMocks();
   resetPage();
 });
@@ -88,6 +91,26 @@ describe("exposeConsole", () => {
     expect(globalThis.debugsy).toBeUndefined();
     second.exposeConsole(true);
     expect(globalThis.debugsy).toBe(first.getDebugsy());
+  });
+
+  it("holds through a re-initialisation in the same copy (HMR), showing the new space", async () => {
+    process.env.NODE_ENV = "production";
+    const core = await loadCore();
+    core.exposeConsole(true);
+    const before = core.getDebugsy();
+    core.initializeUnifiedDebugSystem();
+    expect(core.getDebugsy()).not.toBe(before);
+    expect(globalThis.debugsy).toBe(core.getDebugsy());
+  });
+
+  it("never removes a debugsy global that isn't debugsy's", async () => {
+    process.env.NODE_ENV = "production";
+    const core = await loadCore();
+    const theirs = { mine: true } as unknown as typeof globalThis.debugsy;
+    globalThis.debugsy = theirs;
+    core.exposeConsole(false);
+    core.initializeUnifiedDebugSystem();
+    expect(globalThis.debugsy).toBe(theirs);
   });
 });
 
