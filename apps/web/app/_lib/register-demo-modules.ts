@@ -9,7 +9,7 @@
  */
 
 import type { DebugModuleDef } from "@n-uf/debugsy";
-import { getDebugsy, registerModule } from "@n-uf/debugsy";
+import { exposeConsole, getDebugsy, registerModule } from "@n-uf/debugsy";
 
 const AUTH_MODULE: DebugModuleDef = {
   label: "Auth",
@@ -61,4 +61,8 @@ function seedSample(): void {
   }
 }
 
-if (typeof window !== "undefined") seedSample();
+if (typeof window !== "undefined") {
+  // The site is the demo: its pages show `window.debugsy…` in the console, which production builds leave off
+  exposeConsole(true);
+  seedSample();
+}
