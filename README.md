@@ -8,6 +8,16 @@
 
 # debugsy
 
+> [!CAUTION]
+> ## Not yet stable
+>
+> **debugsy is young and still changing. Its API, panel and log format are not final.**
+>
+> Version numbers are dates (YY.M.R), not semantic versions, so any release may break things, including
+> the exports you call, the panel's controls and the shape of the log entries you read. Pin an exact version and read the
+> [CHANGELOG](packages/debugsy/CHANGELOG.md) before you upgrade. If you need a stable React debugging tool, use
+> [React Developer Tools](https://react.dev/learn/react-developer-tools) for components and renders.
+
 In-process React debugging panel: structured logs, render and dependency
 tracking, module LEDs and a virtualised log view, mounted inside your app.
 Site: https://debugsy.n-uf.com
