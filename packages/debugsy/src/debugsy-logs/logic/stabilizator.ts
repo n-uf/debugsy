@@ -11,7 +11,7 @@
  */
 
 import { type DebugPoint } from "../../debugsy-space/debugsy-constants";
-import { initializeDebugsySpace } from "../../debugsy-space/debugsy-space";
+import { getDebugsy } from "../../debugsy-space/debugsy-space";
 import { getGlobalDebugState } from "../../debugsy-space/debugsy-space-settings";
 
 /**
@@ -72,40 +72,37 @@ let globalStableInterface: StableDebugsyInterface | null = null;
  * Create a stable debugsy interface.
  *
  * State-checking and control methods use live delegation (arrow wrappers)
- * so that HMR-triggered re-initialization of `globalThis.debugsy` is
+ * so that HMR-triggered re-initialization of the debug space is
  * picked up without needing to clear the stabilizator cache.
  */
 function createStableDebugsyInterface(): StableDebugsyInterface {
-  if (!globalThis.debugsy) {
-    initializeDebugsySpace();
-  }
 
   const stable: StableDebugsyInterface = {
-    log: (...args) => globalThis.debugsy.log(...args),
-    warn: (...args) => globalThis.debugsy.warn(...args),
-    error: (...args) => globalThis.debugsy.error(...args),
-    critical: (...args) => globalThis.debugsy.critical(...args),
-    time: (...args) => globalThis.debugsy.time(...args),
-    timeEnd: (...args) => globalThis.debugsy.timeEnd(...args),
+    log: (...args) => getDebugsy().log(...args),
+    warn: (...args) => getDebugsy().warn(...args),
+    error: (...args) => getDebugsy().error(...args),
+    critical: (...args) => getDebugsy().critical(...args),
+    time: (...args) => getDebugsy().time(...args),
+    timeEnd: (...args) => getDebugsy().timeEnd(...args),
 
-    isEnabled: (point) => globalThis.debugsy.isEnabled(point),
-    showVisual: (point) => globalThis.debugsy.showVisual(point),
+    isEnabled: (point) => getDebugsy().isEnabled(point),
+    showVisual: (point) => getDebugsy().showVisual(point),
 
-    enable: (point) => globalThis.debugsy.enable(point),
-    disable: (point) => globalThis.debugsy.disable(point),
-    toggle: (point) => globalThis.debugsy.toggle(point),
-    enableAll: () => globalThis.debugsy.enableAll(),
-    disableAll: () => globalThis.debugsy.disableAll(),
+    enable: (point) => getDebugsy().enable(point),
+    disable: (point) => getDebugsy().disable(point),
+    toggle: (point) => getDebugsy().toggle(point),
+    enableAll: () => getDebugsy().enableAll(),
+    disableAll: () => getDebugsy().disableAll(),
 
-    setConsoleEnabled: (v) => globalThis.debugsy.setConsoleEnabled(v),
-    setVisualEnabled: (v) => globalThis.debugsy.setVisualEnabled(v),
-    setPerformanceEnabled: (v) => globalThis.debugsy.setPerformanceEnabled(v),
+    setConsoleEnabled: (v) => getDebugsy().setConsoleEnabled(v),
+    setVisualEnabled: (v) => getDebugsy().setVisualEnabled(v),
+    setPerformanceEnabled: (v) => getDebugsy().setPerformanceEnabled(v),
 
-    getLogs: () => globalThis.debugsy.getLogs(),
-    clearLogs: () => globalThis.debugsy.clearLogs(),
+    getLogs: () => getDebugsy().getLogs(),
+    clearLogs: () => getDebugsy().clearLogs(),
 
-    getDebugState: () => globalThis.debugsy.getDebugState(),
-    getDepsSettings: () => globalThis.debugsy.getDepsSettings(),
+    getDebugState: () => getDebugsy().getDebugState(),
+    getDepsSettings: () => getDebugsy().getDepsSettings(),
 
     get state() {
       return {

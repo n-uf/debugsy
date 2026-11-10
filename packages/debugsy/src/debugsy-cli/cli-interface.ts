@@ -71,8 +71,8 @@ export function createDebugsyCLI(coreManager: any): DebugsyCLI {
 }
 
 /**
- * What debugsy.help() prints. Every command named here exists on
- * globalThis.debugsy (test/cli-commands.test.ts checks it), and the level
+ * What debugsy.help() prints. Every command named here exists on the
+ * debug space (test/cli-commands.test.ts checks it), and the level
  * lines match the panel's advanced strip (dependency-advanced-panel.tsx).
  */
 export const CLI_HELP = `

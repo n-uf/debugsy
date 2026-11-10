@@ -18,6 +18,7 @@ import {
   getGlobalDebugState,
 } from "./debugsy-space-settings";
 import { getAllPointKeys, isKnownPoint } from "../config";
+import { applyConsole, consoleExposed, readSpace, rememberConsoleExposed, writeSpace } from "./space-holder";
 
 const IS_DEVELOPMENT = (() => {
   try {
@@ -126,7 +127,8 @@ export interface DebugsySpaceWithCLI extends DebugsySpace, DebugsyCLIWithHelp {}
  * Global type declarations for the unified system
  */
 declare global {
-  var debugsy: DebugsySpaceWithCLI; // Single unified interface with core + CLI
+  /** The console command: the debug space, while exposeConsole allows it (development by default) */
+  var debugsy: DebugsySpaceWithCLI | undefined;
   var __debugsySanitizationLogged: boolean | undefined;
   var __DEBUGSY_EMERGENCY_STOP: {
     active: boolean;
@@ -404,7 +406,7 @@ function createDebugsySpace(): DebugsySpace {
  * Now properly separates core debug functionality from CLI
  */
 export function initializeDebugsySpace(): void {
-  const isReinit = !!globalThis.debugsy;
+  const isReinit = !!readSpace();
 
   // Register superjson custom serializers for React Fiber and DOM elements
   registerSuperjsonCustomSerializers();
@@ -440,10 +442,12 @@ export function initializeDebugsySpace(): void {
   const cliInterface = createFullDebugsyCLI(coreDebugManager);
 
   // Always (re-)create unified interface so HMR picks up new closures
-  globalThis.debugsy = {
+  writeSpace({
     ...coreDebugManager,
     ...cliInterface,
-  } as DebugsySpaceWithCLI;
+  } as DebugsySpaceWithCLI);
+  // The console command follows: the app's last exposeConsole call, else on in development only
+  applyConsole(consoleExposed(IS_DEVELOPMENT));
 
   if (!isReinit && IS_DEVELOPMENT) {
     console.log("✅ Debugsy System initialized");
@@ -456,13 +460,14 @@ export function initializeDebugsySpace(): void {
  * BULLETPROOF: Guaranteed to never return undefined
  */
 export function getDebugsy(): DebugsySpaceWithCLI {
-  if (!globalThis.debugsy) {
+  if (!readSpace()) {
     initializeDebugsySpace();
   }
 
   // Final safety check: if initialization somehow failed,
   // return minimal working interface to prevent crashes
-  if (!globalThis.debugsy) {
+  const space = readSpace();
+  if (!space) {
     console.error(
       "❌ CRITICAL: Debugsy initialization failed - using emergency fallback"
     );
@@ -495,7 +500,19 @@ export function getDebugsy(): DebugsySpaceWithCLI {
     } as any; // Emergency fallback - minimal interface
   }
 
-  return globalThis.debugsy;
+  return space;
+}
+
+/**
+ * Puts the `debugsy` console command on the page (`globalThis.debugsy`), or takes it off. Default: on in
+ * development, off in production builds, so a live site doesn't hand every visitor its log. An app that gates its
+ * debugging (a token, a signed-in admin) turns it on once allowed. Logging, the hooks and the panel work either
+ * way; the choice holds for every copy of debugsy on the page and through HMR.
+ */
+export function exposeConsole(on: boolean): void {
+  rememberConsoleExposed(on);
+  if (on) getDebugsy();
+  applyConsole(on);
 }
 
 // ===== AUTO-INITIALIZATION =====
@@ -507,7 +524,7 @@ initializeDebugsySpace();
  * Convenient short export for non-React usage
  * GUARANTEED SAFE: Uses getDebugsy() which handles edge cases
  *
- * Why safer than direct globalThis.debugsy:
+ * Why safer than the console command (globalThis.debugsy, absent in production by default):
  * 1. Handles potential CLI initialization failures
  * 2. Provides auto-recovery if needed
  * 3. Always returns a valid DebugsySpaceWithCLI object

@@ -16,6 +16,7 @@ export {
 // === SHARED CORE SYSTEM ===
 export {
   dsy,
+  exposeConsole,
   getDebugsy,
   initializeDebugsySpace as initializeUnifiedDebugSystem,
   type DebugPoint,
