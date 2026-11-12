@@ -6,6 +6,7 @@ import { DebugsyLookMounted } from "./_components/debugsy-look-mounted";
 import { HeroTerminal } from "./_components/hero-terminal";
 import { Tok } from "./_components/tok";
 import { CAPABILITIES } from "./_data/feature-log";
+import { HOME_FAQ, plainAnswer } from "./_data/home-faq";
 import { HOME_DESCRIPTION, HOME_H1 } from "./home-meta";
 import {
   absoluteUrl,
@@ -58,8 +59,22 @@ const STRUCTURED_DATA = {
         "No telemetry and no network requests",
       ],
     },
+    // The visible "Questions" section below, word for word; this page only.
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: HOME_FAQ.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: plainAnswer(f.a) },
+      })),
+    },
   ],
 };
+
+/** An FAQ answer as text with `code` spans (the backticks mark them). */
+const answerNodes = (a: string): React.ReactNode[] =>
+  a.split("`").map((part, i) => (i % 2 === 1 ? <code key={i}>{part}</code> : part));
 
 const INSTALL = "npm i @n-uf/debugsy";
 /** How many of each section's newest pages "Read next" shows. */
@@ -233,6 +248,18 @@ export default function HomePage(): React.ReactElement {
               <p>It doesn't remove itself: load it only in development to keep it out of production builds.</p>
             </li>
           </ol>
+        </section>
+
+        <section className="g-cell g-sec" aria-labelledby="faq">
+          <h2 id="faq">Questions</h2>
+          <div className="g-faq">
+            {HOME_FAQ.map((f) => (
+              <div key={f.q}>
+                <h3>{f.q}</h3>
+                <p>{answerNodes(f.a)}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         {sections.length > 0 ? (
