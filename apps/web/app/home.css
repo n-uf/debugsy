@@ -362,6 +362,19 @@
   max-width: 44ch;
   line-height: 1.6;
 }
+.g-faq {
+  display: grid;
+  gap: 28px;
+  max-width: 72ch;
+}
+.g-faq p {
+  line-height: 1.65;
+}
+.g-faq code {
+  font: 0.9em var(--g-mono);
+  color: var(--g-ink);
+  overflow-wrap: anywhere;
+}
 .g-minor,
 .g-steps {
   display: grid;
