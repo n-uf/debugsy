@@ -325,6 +325,57 @@ main pre.more-l.more-r {
   }
 }
 
+/* Phones: 44 px tap targets in the bar and the footer, labels and footer text at 14 px, and the skin switch back in the bar
+   (GitHub and the changelog stay in the footer's Project column; the switch is in the footer too). */
+@media (max-width: 640px) {
+  .g-label {
+    font-size: 14px;
+  }
+  .g-code {
+    font-size: 13px;
+  }
+  .g-brand {
+    min-height: 44px;
+  }
+  .g-nav a {
+    min-height: 44px;
+  }
+  .g-bar-r {
+    display: flex;
+  }
+  .g-bar-r > :not(.g-skin) {
+    display: none;
+  }
+  .g-bar .g-skin {
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .g-bar .g-skin-name {
+    display: none;
+  }
+  .g-skin {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .g-foot-about p {
+    font-size: 14px;
+  }
+  .g-foot-col {
+    gap: 0;
+  }
+  .g-foot-col a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .g-foot-col .g-foot-all {
+    font-size: 14px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .g-skin {
     transition: none;
