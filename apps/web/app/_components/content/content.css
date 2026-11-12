@@ -457,3 +457,61 @@
     justify-self: start;
   }
 }
+
+/* Phones: 44 px tap targets and text at 14 px or more (code at 13, which scrolls inside its box). */
+@media (max-width: 640px) {
+  .ct-crumbs,
+  .ct-byline,
+  .ct-scheduled,
+  .ct-label,
+  .sec-num,
+  .ct-prose th,
+  .ct-prose figcaption,
+  .ct-sources,
+  .ct-card small,
+  .ct-toc-m summary {
+    font-size: 14px;
+  }
+  .ct-crumbs a {
+    display: inline-flex;
+    align-items: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .ct-prose code {
+    font-size: 0.93em;
+  }
+  .ct-crumbs {
+    gap: 0 6px;
+    margin-bottom: 6px;
+  }
+  .ct-prose pre,
+  .ct-cta pre {
+    font-size: 13px;
+  }
+  .ct-sources li {
+    margin: 10px 0;
+  }
+  .ct-toc-m summary {
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+  }
+  .ct-toc-m a,
+  .ct-cta-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .ct-cta-link {
+    display: inline-flex;
+    font-size: 14px;
+  }
+  .ct-faq summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
