@@ -6,7 +6,7 @@ mainKeyword: "react js debugging tools"
 kind: best-tools
 published: 2026-11-12
 updated: 2026-11-12
-draft: true
+draft: false
 author: n-uf
 takeaways:
   - "No one tool covers every debugging job in a React app: React Developer Tools shows components, props and state, Chrome DevTools or VS Code handle breakpoints, and render tools like React Scan report re-renders."

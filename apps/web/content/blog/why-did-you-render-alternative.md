@@ -6,7 +6,7 @@ mainKeyword: "why did you render alternative"
 kind: comparison
 published: 2026-11-12
 updated: 2026-11-12
-draft: true
+draft: false
 author: n-uf
 takeaways:
   - "why-did-you-render works by patching React. Its README says the latest version was tested with React 19 only, points React 18 to the v8 readme and React 16 and 17 to v7, and says never to use it in production."
