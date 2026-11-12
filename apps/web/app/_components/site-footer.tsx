@@ -23,7 +23,11 @@ export function SiteFooter(): React.ReactElement {
             debugsy
           </Link>
           <p>
-            In-process React debug panel, by <a href="https://n-uf.com">n-uf</a>. {LICENSE_NAME}.
+            In-process React debug panel, by{" "}
+            <a href="https://n-uf.com" target="_blank" rel="noopener">
+              n-uf
+            </a>
+            . {LICENSE_NAME}.
           </p>
           <div className="g-foot-skin">
             <SkinToggle />
