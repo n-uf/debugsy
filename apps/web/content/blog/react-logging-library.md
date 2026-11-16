@@ -6,7 +6,7 @@ mainKeyword: "react logging library"
 kind: comparison
 published: 2026-11-16
 updated: 2026-11-16
-draft: true
+draft: false
 author: n-uf
 takeaways:
   - "Plain console has levels, groups, tables and timers, but no namespaces and no level you can set from your own code."

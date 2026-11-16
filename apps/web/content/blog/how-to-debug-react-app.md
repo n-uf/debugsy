@@ -6,7 +6,7 @@ mainKeyword: "debug react app"
 kind: how-to
 published: 2026-11-16
 updated: 2026-11-16
-draft: true
+draft: false
 author: n-uf
 takeaways:
   - "Chrome's DevTools tutorial says finding a series of actions that reproduces the bug every time is the first step of debugging."
