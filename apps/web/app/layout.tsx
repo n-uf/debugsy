@@ -6,6 +6,7 @@ import { ScrollHints } from "./_components/scroll-hints";
 import { SiteBar } from "./_components/site-bar";
 import { SiteFooter } from "./_components/site-footer";
 import { SKIN_INIT_SCRIPT } from "./_components/skin";
+import { WebAnalytics } from "./_components/web-analytics";
 import { HOME_DESCRIPTION, HOME_TITLE } from "./home-meta";
 import { SITE_NAME, SITE_URL } from "./site";
 
@@ -98,6 +99,7 @@ export default function RootLayout({
         {children}
         <SiteFooter />
         <ScrollHints />
+        <WebAnalytics />
       </body>
     </html>
   );
